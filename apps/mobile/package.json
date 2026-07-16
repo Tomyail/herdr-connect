@@ -1,0 +1,24 @@
+{
+  "name": "@herdr-connect/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios --device",
+    "typecheck": "tsc --noEmit",
+    "config": "expo config --type public"
+  },
+  "dependencies": {
+    "@inthepocket/react-native-service-discovery": "0.2.9",
+    "expo": "~56.0.16",
+    "expo-dev-client": "~56.0.23",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-native": "0.85.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.2"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "herdr-connect",
+  "private": true,
+  "packageManager": "pnpm@10.28.1",
+  "scripts": {
+    "demo:lan": "go run ./cmd/herdr-connect --source herdr demo-lan",
+    "dev:mobile": "pnpm --filter @herdr-connect/mobile start",
+    "ios:mobile": "pnpm --filter @herdr-connect/mobile ios",
+    "dev:daemon": "go run ./cmd/herdr-connect --db ./.data/fake-daemon.db --source fake daemon",
+    "trace:daemon": "go run ./cmd/herdr-connect --db ./.data/fake-daemon.db --source fake trace",
+    "test:conformance": "pnpm --filter @herdr-connect/protocol build && node --test test/conformance.test.mjs",
+    "test:go": "go test ./...",
+    "test:ts": "pnpm --filter @herdr-connect/protocol test",
+    "typecheck": "pnpm --filter @herdr-connect/protocol typecheck && pnpm --filter @herdr-connect/mobile typecheck",
+    "test": "pnpm test:go && pnpm test:ts && pnpm test:conformance"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "description": "Protocol v1 生命周期事件固定互操作向量；其中密钥仅用于测试，不对应真实安装实例或设备。",
+  "header": {
+    "message_type": "lifecycle_event",
+    "installation_id": "ins_vector",
+    "sender_id": "installation_primary",
+    "sender_signing_key_id": "sign_installation_1",
+    "recipient_id": "device_vector",
+    "recipient_encryption_key_id": "enc_device_1",
+    "message_id": "msg_vector_1",
+    "event_id": "evt_vector_1",
+    "event_seq": 17,
+    "through_event_seq": 0,
+    "command_id": "",
+    "request_id": "",
+    "ack_seq": 0,
+    "created_at_ms": 1784084400000,
+    "expires_at_ms": 1784088000000
+  },
+  "keys": {
+    "sender_signing_public_key": "TYO11wfkiP4zhN28CBDiqQL_mWXQ8h5Fy3YrSTQcQ5c",
+    "sender_signing_private_key": "HfU1MnsrkeRLS8YvaelLyaGaeeTwocXEuaDjvInqKWc",
+    "recipient_encryption_public_key": "ao5Q83oVkabb1fxWq9exXj9bnkL15sYh9_KLuFoiCxI",
+    "recipient_encryption_private_key": "NfND0RP6bTYoyD-kD8YNd5Qk3zNqdSQUUOyVG1Wwawk"
+  },
+  "ephemeral_key_material": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "plaintext": "5Zu65a6a5rWL6K-V5ZCR6YeP",
+  "envelope": {
+    "protected": "eyJ2IjoxLCJzdWl0ZSI6IkhQS0UtWDI1NTE5LUhLREYtU0hBMjU2LUNIQUNIQTIwUE9MWTEzMDUrRWQyNTUxOSIsIm1lc3NhZ2VfdHlwZSI6ImxpZmVjeWNsZV9ldmVudCIsImluc3RhbGxhdGlvbl9pZCI6Imluc192ZWN0b3IiLCJzZW5kZXJfaWQiOiJpbnN0YWxsYXRpb25fcHJpbWFyeSIsInNlbmRlcl9zaWduaW5nX2tleV9pZCI6InNpZ25faW5zdGFsbGF0aW9uXzEiLCJzZW5kZXJfc2lnbmluZ19wdWJsaWNfa2V5IjoiIiwicmVjaXBpZW50X2lkIjoiZGV2aWNlX3ZlY3RvciIsInJlY2lwaWVudF9lbmNyeXB0aW9uX2tleV9pZCI6ImVuY19kZXZpY2VfMSIsIm1lc3NhZ2VfaWQiOiJtc2dfdmVjdG9yXzEiLCJldmVudF9pZCI6ImV2dF92ZWN0b3JfMSIsImV2ZW50X3NlcSI6MTcsInRocm91Z2hfZXZlbnRfc2VxIjowLCJjb21tYW5kX2lkIjoiIiwicmVxdWVzdF9pZCI6IiIsImFja19zZXEiOjAsImNyZWF0ZWRfYXRfbXMiOjE3ODQwODQ0MDAwMDAsImV4cGlyZXNfYXRfbXMiOjE3ODQwODgwMDAwMDAsImVuYyI6InNmRzRRTjU2TWtHd0owalBtd1czVGNqRjZFVVNtSE9JRjcxMnFvNi1qQ3MifQ",
+    "ciphertext": "RJ2a35gJ48Pa53Q0XzpLoJQ7Siyow-tuZHnXiZm7Za15Bg",
+    "signature": "utTLHRtQXI1dG1Wy07VjiT-7r-siZAjj5GRSsZpq5Ur3H2D2ydVdsPYjYvf4ZXs4BdyJi_Z77qy-EveJ63EdBg"
+  }
+}

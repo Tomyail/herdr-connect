@@ -1,0 +1,19 @@
+{
+  "id": "cli:agent:list",
+  "result": {
+    "type": "agent_list",
+    "agents": [
+      {
+        "terminal_id": "term-7",
+        "name": "Issue 6",
+        "agent": "codex",
+        "agent_status": "done",
+        "workspace_id": "workspace-1",
+        "tab_id": "tab-1",
+        "pane_id": "pane-1",
+        "focused": true,
+        "revision": 0
+      }
+    ]
+  }
+}
