@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/cloudflare/circl v1.6.4
 	github.com/grandcat/zeroconf v1.0.0
-	golang.org/x/sys v0.46.0
+	golang.org/x/sys v0.47.0
 	modernc.org/sqlite v1.54.0
 )
 
