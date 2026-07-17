@@ -1,7 +1,7 @@
 {
   "name": "herdr-connect",
   "private": true,
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "demo:lan": "go run ./cmd/herdr-connect --source herdr demo-lan",
     "dev:mobile": "pnpm --filter @herdr-connect/mobile start",
