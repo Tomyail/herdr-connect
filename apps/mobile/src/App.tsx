@@ -8,10 +8,16 @@ import { ConnectionProvider } from "./connection";
 import { AgentsScreen } from "./AgentsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
+import { Ionicons, type IoniconName } from "./icons";
 import type { RootStackParamList, TabParamList } from "./navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+
+const tabIcons: Record<keyof TabParamList, { active: IoniconName; inactive: IoniconName }> = {
+  Agents: { active: "people", inactive: "people-outline" },
+  Settings: { active: "settings", inactive: "settings-outline" },
+};
 
 const theme = {
   ...DefaultTheme,
@@ -28,14 +34,18 @@ const theme = {
 function Tabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: "#1E211D",
         tabBarInactiveTintColor: "#8A8E86",
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginTop: 2 },
+        tabBarIcon: ({ color, focused, size }) => {
+          const iconName = focused ? tabIcons[route.name].active : tabIcons[route.name].inactive;
+          return <Ionicons name={iconName} size={focused ? size + 1 : size} color={color} />;
+        },
         tabBarStyle: { backgroundColor: "#F3F1EA", borderTopColor: "#DAD8D0" },
-      }}
+      })}
     >
       <Tab.Screen name="Agents" component={AgentsScreen} options={{ title: "Agents" }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "设置" }} />

@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { interactionStateLabel, turnOutcomeLabel, type DemoAgent } from "./demo-contract";
+import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
 import { ScreenHeader } from "./ScreenHeader";
 import type { RootStackParamList } from "./navigation";
@@ -14,12 +15,15 @@ function formatTime(value: string): string {
   return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
 
+const FOCUS_FEEDBACK: Record<FocusPhase, { text: string; icon?: "checkmark-circle" | "alert-circle"; color?: string }> = {
+  switching: { text: "切换中…" },
+  switched: { text: "已切换", icon: "checkmark-circle", color: "#4F744D" },
+  failed: { text: "切换失败", icon: "alert-circle", color: "#A34B43" },
+};
+
 function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
   const title = agent.workspace_label || agent.display_name || "未命名 Agent";
-  const agentDetail = [
-    agent.agent_name,
-    focusPhase === "switching" ? "切换中…" : focusPhase === "switched" ? "已切换" : focusPhase === "failed" ? "切换失败" : undefined,
-  ].filter(Boolean).join(" · ");
+  const feedback = focusPhase ? FOCUS_FEEDBACK[focusPhase] : undefined;
   return (
     <Pressable
       accessibilityRole="button"
@@ -31,7 +35,14 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
         <Text numberOfLines={1} style={styles.agentName}>{title}</Text>
         {agent.tab_label ? <Text numberOfLines={1} style={styles.tabName}>{agent.tab_label}</Text> : null}
       </View>
-      {agentDetail ? <Text style={[styles.agentKind, focusPhase === "failed" && styles.agentKindFailed]}>{agentDetail}</Text> : null}
+      {agent.agent_name || feedback ? (
+        <View style={styles.agentKindRow}>
+          {agent.agent_name ? <Text style={styles.agentKind}>{agent.agent_name}</Text> : null}
+          {agent.agent_name && feedback ? <Text style={styles.agentKind}> · </Text> : null}
+          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedback.color} style={styles.feedbackIcon} /> : null}
+          {feedback ? <Text style={[styles.agentKind, feedback.color != null && { color: feedback.color }]}>{feedback.text}</Text> : null}
+        </View>
+      ) : null}
       <View style={styles.agentFacts}>
         <Text style={styles.factLabel}>交互状态</Text>
         <Text style={styles.factValue}>{interactionStateLabel(agent.interaction_state)}</Text>
@@ -76,7 +87,7 @@ export function AgentsScreen() {
               onPress={() => void refresh()}
               style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
             >
-              <Text style={styles.refreshText}>刷新</Text>
+              <Ionicons name="refresh" size={20} color="#FFFFFF" />
             </Pressable>
           }
         />
@@ -134,9 +145,8 @@ export function AgentsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#F3F1EA" },
   screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
-  refreshButton: { backgroundColor: "#1E211D", borderRadius: 18, paddingHorizontal: 17, paddingVertical: 10 },
+  refreshButton: { backgroundColor: "#1E211D", borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   buttonPressed: { opacity: 0.72 },
-  refreshText: { color: "#FFFFFF", fontSize: 15, fontWeight: "600" },
   statusCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#E8E5DC", borderRadius: 18, padding: 16, marginBottom: 28 },
   statusConnected: { backgroundColor: "#DFE9DA" },
   statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#9A7B57", marginRight: 12 },
@@ -156,8 +166,9 @@ const styles = StyleSheet.create({
   agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   agentName: { color: "#191C18", fontSize: 17, fontWeight: "700", flex: 1 },
   tabName: { color: "#666B62", fontSize: 12, fontWeight: "600", marginLeft: 14, maxWidth: "46%" },
-  agentKind: { color: "#777B72", fontSize: 13, marginTop: 5 },
-  agentKindFailed: { color: "#A34B43" },
+  agentKindRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+  agentKind: { color: "#777B72", fontSize: 13 },
+  feedbackIcon: { marginRight: 3 },
   agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
   factLabel: { color: "#858981", fontSize: 12 },
   factValue: { color: "#32362F", fontSize: 12, fontWeight: "600", marginRight: 8 },

@@ -21,6 +21,7 @@ import {
   type DemoAgentHistory,
 } from "./network";
 import { useConnection } from "./connection";
+import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 
 const HISTORY_REFRESH_MS = 2_000;
@@ -109,7 +110,7 @@ function AgentDetail({
           onPress={() => void loadHistory(true)}
           style={({ pressed }) => pressed && styles.pressed}
         >
-          <Text style={styles.refreshText}>刷新</Text>
+          <Ionicons name="refresh" size={ICON_SIZE} color="#466447" />
         </Pressable>
       ),
     });
@@ -218,7 +219,6 @@ const styles = StyleSheet.create({
   identity: { alignItems: "center", maxWidth: 220 },
   title: { color: "#191C18", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
   subtitle: { color: "#777B72", fontSize: 11, marginTop: 2 },
-  refreshText: { color: "#466447", fontSize: 15, fontWeight: "600" },
   pressed: { opacity: 0.55 },
   historyHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
   historyTitle: { color: "#1B1E1A", fontSize: 21, fontWeight: "700", letterSpacing: -0.35 },
