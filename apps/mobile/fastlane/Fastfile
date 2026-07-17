@@ -87,7 +87,8 @@ platform :ios do
         stripSwiftSymbols: true,
         uploadSymbols: true
       },
-      xcargs: "DEVELOPMENT_TEAM=#{team} CODE_SIGN_STYLE=Automatic"
+      xcargs: "-allowProvisioningUpdates DEVELOPMENT_TEAM=#{team} CODE_SIGN_STYLE=Automatic",
+      export_xcargs: "-allowProvisioningUpdates"
     )
   end
 

@@ -61,14 +61,15 @@ function validateConfig() {
 
 function prepare() {
   const config = validateConfig();
-  const args = ["exec", "expo", "prebuild", "--platform", "ios"];
+  const args = ["exec", "expo", "prebuild", "--platform", "ios", "--no-install"];
   if (["1", "true", "yes"].includes((process.env.EXPO_PREBUILD_CLEAN || "").toLowerCase())) {
     args.push("--clean");
   }
 
   run("pnpm", args);
+  run("bundle", ["exec", "pod", "install", "--project-directory=ios"]);
   if (!existsSync(iosWorkspace)) {
-    throw new Error(`prebuild 完成后仍未找到 workspace：${iosWorkspace}`);
+    throw new Error(`Pod install 完成后仍未找到 workspace：${iosWorkspace}`);
   }
   console.log(`iOS 工程已准备：Herdr Connect ${config.version} (${config.ios.buildNumber})`);
 }
