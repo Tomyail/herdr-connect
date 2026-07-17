@@ -1,5 +1,7 @@
 # Privacy Policy
 
+[简体中文](docs/zh-CN/PRIVACY.md)
+
 Last updated: July 17, 2026
 
 Herdr Connect is an open-source companion app that discovers and connects to a Herdr daemon on the same local network.

@@ -1,0 +1,45 @@
+name: Feature request / 功能建议
+description: Propose an improvement that fits the current LAN milestone. / 提议符合当前局域网里程碑的改进。
+title: "[Feature]: "
+labels:
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The MVP first targets reliable discovery and connection on the same LAN. Remote connectivity, relay services, and push notifications are later TODOs and may be deferred.
+
+        MVP 第一目标是同一局域网内可靠发现与连接。远程连接、Relay 和推送通知属于后续 TODO，可能会被推迟。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched existing issues and roadmap notes. / 我已搜索现有 Issues 和路线图说明。
+          required: true
+        - label: I understand that remote connectivity is not part of the current release commitment. / 我理解远程连接不属于当前发布承诺。
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem / 用户问题
+      description: Describe the problem, not only a proposed implementation. / 请描述问题，而不仅是实现方案。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Fit with the LAN milestone / 与 LAN 里程碑的关系
+      description: Explain how this improves same-network discovery, connection, diagnostics, safety, or documentation. / 说明它如何改进同网发现、连接、诊断、安全或文档。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome / 建议结果
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 考虑过的替代方案

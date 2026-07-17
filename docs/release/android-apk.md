@@ -1,5 +1,8 @@
 # Android APK 发布
 
+> [!IMPORTANT]
+> 当前尚未向用户发布 Android APK。本文件是维护者使用的打包与发布准备说明，不是可用下载的安装指南。公开预览版目前只提供 daemon 与 iOS TestFlight。
+
 Herdr Connect 的 Android MVP 不依赖 EAS。发布流程使用 Expo prebuild 生成原生工程，再由 Gradle 构建经过 release keystore 签名的 APK 和 AAB。
 
 ## 用户获得什么

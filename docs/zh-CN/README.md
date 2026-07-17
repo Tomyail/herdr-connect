@@ -14,9 +14,9 @@ Herdr Connect 目前是早期预览，不是可用于生产环境的远程访问
 | 能力 | 状态 |
 | --- | --- |
 | Bonjour/mDNS daemon 广播 | 实验性 |
-| iOS 真机发现 | 已有 demo |
+| iOS 真机发现 | 已开放公开 TestFlight 预览 |
 | Agent 列表、近期输出、焦点切换和文本输入 | 仅限不安全 LAN demo |
-| Android 真机验证 | 尚未完成 |
+| Android App / APK | 尚未发布 |
 | 配对、认证和 E2EE | 尚未实现 |
 | Relay、推送和远程访问 | 后期研究方向 |
 
@@ -32,15 +32,17 @@ Herdr Connect 目前是早期预览，不是可用于生产环境的远程访问
 
 发现只能证明实例可达，不建立信任，也不授予读取或操作 Agent 的权限。
 
-## 安装预览版
+## 获取预览版
 
-首个可下载预览版通过三个渠道提供：
+体验 Herdr Connect 需要安装局域网连接的两端：
 
-- 在 [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases) 下载 macOS、Linux 和 Windows 的预编译 Go daemon；
-- 在同一个 Release 下载已经签名的 Android APK；
-- iOS 通过 TestFlight 分发，首个外部测试版本通过 Apple 审核后会在这里补充公开测试链接。
+1. 从 [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1) 下载适用于 macOS、Linux 或 Windows 的 **v0.1.0-preview.1 daemon**，然后参照 [daemon 安装说明](release/daemon.md)。
+2. 加入公开的 [iOS TestFlight 测试](https://testflight.apple.com/join/ZkRzJ6rm)，然后参照 [TestFlight 说明](release/ios-testflight.md)。
+3. 确保 daemon 主机与 iPhone 位于同一个可信局域网。当前预览版不支持远程连接。
 
-使用这些产物不需要安装 Go、Node.js、pnpm 或 Expo。具体参见 [daemon 安装说明](../release/daemon.md)、[Android APK 说明](../release/android-apk.md)和 [iOS TestFlight 发布说明](../release/ios-testflight.md)。下面的源码运行方式继续供贡献者使用。
+目前没有发布 Android APK。Android 打包仍是维护者进行中的工作，请勿假定本版本存在可下载的 Android 安装包。
+
+下载 daemon 不需要安装 Go、Node.js、pnpm 或 Expo。下面的源码运行方式继续供贡献者使用。
 
 ## 架构
 
@@ -141,7 +143,7 @@ docs/              技术与协作文档
 
 ## 安全
 
-不要在公开 Issue 中报告漏洞、凭据、私有 prompt、Agent 输出或敏感路径。项目会在具备生产能力的版本发布前提供私密报告渠道。
+不要在公开 Issue 中报告漏洞、凭据、私有 prompt、Agent 输出或敏感路径。请按照[安全政策](SECURITY.md)中的私密报告说明操作。
 
 在认证和加密实现以前，只能把 `demo-lan` 视为用于受控环境的不安全开发工具。
 
@@ -149,7 +151,9 @@ docs/              技术与协作文档
 
 项目仍处于早期范围收敛阶段。欢迎通过 [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues) 提交缺陷、可复现的发现失败、文档修正和设计反馈。
 
-提交代码前，请先创建 Issue，确认改动属于当前 LAN discovery 里程碑。仓库约定参见 [AGENTS.md](../../AGENTS.md)。
+提交代码前，请先创建 Issue，确认改动属于当前 LAN discovery 里程碑。请阅读[贡献指南](CONTRIBUTING.md)和仓库约定 [AGENTS.md](../../AGENTS.md)。
+
+社区政策：[行为准则](CODE_OF_CONDUCT.md)、[安全政策](SECURITY.md)和[隐私政策](PRIVACY.md)。
 
 ## 与 Herdr 的关系
 

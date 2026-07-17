@@ -1,62 +1,64 @@
-# Go daemon 发布与安装
+# Install the daemon preview
 
-Herdr Connect 的 Go daemon 通过 GitHub Releases 提供预编译压缩包。普通用户不需要安装 Go、Node.js 或 pnpm。
+[简体中文](https://github.com/Tomyail/herdr-connect/blob/main/docs/zh-CN/release/daemon.md)
 
-## 支持的发行目标
+Herdr Connect provides precompiled daemon archives for macOS, Linux, and Windows. The current public build is [v0.1.0-preview.1](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1). It is an early preview for trusted local networks, not a production remote-access service.
 
-每个 `v*` tag 会触发 `.github/workflows/daemon-release.yml`，生成以下资产：
+## Choose a download
 
-- macOS Apple Silicon：`darwin_arm64`
-- macOS Intel：`darwin_amd64`
-- Linux ARM64：`linux_arm64`
-- Linux x86-64：`linux_amd64`
-- Windows x86-64：`windows_amd64`
-- 所有资产的 SHA-256 校验文件：`SHA256SUMS`
+Download the archive matching your computer:
 
-带连字符的版本 tag，例如 `v0.1.0-preview.1`，会创建 GitHub prerelease；稳定 tag，例如 `v0.1.0`，会创建正式 Release。
+| Platform | Architecture | Asset suffix |
+| --- | --- | --- |
+| macOS | Apple Silicon | `darwin_arm64.tar.gz` |
+| macOS | Intel | `darwin_amd64.tar.gz` |
+| Linux | ARM64 | `linux_arm64.tar.gz` |
+| Linux | x86-64 | `linux_amd64.tar.gz` |
+| Windows | x86-64 | `windows_amd64.zip` |
 
-## 下载与运行
+The release also includes `SHA256SUMS`. The daemon archives do not require Go, Node.js, pnpm, or Expo.
 
-从项目的 GitHub Releases 页面下载与系统匹配的压缩包，解压后直接运行：
+## Verify and run
 
-```bash
+Extract the archive. On macOS or Linux, make the binary executable if necessary and inspect its capabilities:
+
+```sh
+chmod +x herdr-connect
 ./herdr-connect --source fake capabilities
+```
+
+Confirm that the separately installed `herdr` CLI is available, then start the LAN demo:
+
+```sh
+herdr agent list
 ./herdr-connect --source herdr diagnostics
 ./herdr-connect --source herdr demo-lan
 ```
 
-Windows 使用 `herdr-connect.exe`。`herdr` source 要求机器上已经安装 `herdr`，并且该命令位于当前进程的 `PATH` 中；`fake` source 只用于演示和诊断。
+On Windows, run `herdr-connect.exe` from PowerShell or Command Prompt. The daemon listens on TCP port `9808` and advertises `_herdr-connect._tcp`. Keep it in the foreground and press `Ctrl+C` when finished.
 
-`demo-lan` 是 MVP 预览能力，目前没有认证和加密，只应在可信局域网中运行。退出前台进程可按 `Ctrl+C`。
+The current demo has no pairing, authentication, or encryption. Use it only on a trusted network, never enter secrets, and stop it after testing. The iPhone and daemon host must be on the same LAN; remote connectivity is a later TODO.
 
-## 校验下载文件
+## Verify the checksum
 
-macOS 和 Linux 可以在下载目录运行：
+On Linux:
 
-```bash
+```sh
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-macOS 如果没有 `sha256sum`，可以使用：
+On macOS:
 
-```bash
+```sh
 shasum -a 256 herdr-connect_*.tar.gz
 ```
 
-然后与 `SHA256SUMS` 中对应记录比较。
+Compare the output with the matching entry in `SHA256SUMS`.
 
-## 维护者发布流程
+## Known limitations
 
-先在本地完成验证，再推送 tag：
+- Binaries are not Apple-notarized or Windows code-signed, so the operating system may show an origin warning.
+- Android APKs are not published with this preview.
+- Pairing, device authentication, end-to-end encryption, and remote access are not implemented.
 
-```bash
-gofmt -w cmd/herdr-connect
-go test ./...
-go build ./cmd/herdr-connect
-git tag v0.1.0-preview.1
-git push origin v0.1.0-preview.1
-```
-
-工作流会先测试真实入口，再交叉编译、压缩、生成校验和并创建或更新 GitHub Release。工作流只使用 GitHub 自动提供的 `github.token`，不需要额外发布 secret。
-
-当前工作流不对二进制做 Apple notarization 或 Windows code signing。用户可能会看到系统来源确认提示，这是 MVP 阶段的已知限制。
+For source setup and development commands, return to the [project README](https://github.com/Tomyail/herdr-connect#readme).

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/Tomyail/herdr-connect/security/advisories/new
+    about: Report vulnerabilities privately; never include sensitive details in a public issue. / 请私密报告漏洞，勿在公开 Issue 中写入敏感细节。
+  - name: Contribution guide / 贡献指南
+    url: https://github.com/Tomyail/herdr-connect/blob/main/CONTRIBUTING.md
+    about: Read the project scope and contribution process before proposing code changes. / 提议代码改动前请先阅读项目范围与贡献流程。

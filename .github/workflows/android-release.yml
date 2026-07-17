@@ -22,13 +22,6 @@ jobs:
   build-and-publish:
     name: 构建并发布 APK/AAB
     runs-on: ubuntu-latest
-    env:
-      ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/herdr-connect-release.jks
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      ANDROID_SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
-      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: 确定发布 tag
@@ -56,12 +49,23 @@ jobs:
         env:
           TAG: ${{ steps.release.outputs.tag }}
           APK_NAME: ${{ steps.release.outputs.basename }}.apk
+          AAB_NAME: ${{ steps.release.outputs.basename }}.aab
+          CHECKSUM_NAME: ${{ steps.release.outputs.basename }}-SHA256SUMS
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json assets \
-            --jq '.assets[].name' 2>/dev/null | grep -Fxq "${APK_NAME}"; then
+          assets="$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json assets \
+            --jq '.assets[].name' 2>/dev/null || true)"
+          complete=true
+          for name in "${APK_NAME}" "${AAB_NAME}" "${CHECKSUM_NAME}"; do
+            if ! grep -Fxq "${name}" <<<"${assets}"; then
+              complete=false
+              break
+            fi
+          done
+          if [[ "${complete}" == "true" ]]; then
             echo "skip=true" >>"${GITHUB_OUTPUT}"
-            echo "${APK_NAME} 已存在，本次事件无需重复构建。"
+            echo "Android 发布产物已完整存在，本次事件无需重复构建。"
           else
             echo "skip=false" >>"${GITHUB_OUTPUT}"
           fi
@@ -102,7 +106,12 @@ jobs:
       - name: 载入 release keystore
         if: steps.existing.outputs.skip != 'true'
         env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/herdr-connect-release.jks
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
         run: |
           set -euo pipefail
           required=(
@@ -125,8 +134,19 @@ jobs:
       - name: 构建并验证 release APK/AAB
         if: steps.existing.outputs.skip != 'true'
         env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/herdr-connect-release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
           ANDROID_ARTIFACT_BASENAME: ${{ steps.release.outputs.basename }}
         run: apps/mobile/scripts/android-release.sh
+
+      - name: 避免覆盖 daemon 校验清单
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          CHECKSUM_NAME: ${{ steps.release.outputs.basename }}-SHA256SUMS
+        run: mv dist/android/SHA256SUMS "dist/android/${CHECKSUM_NAME}"
 
       - name: 保存工作流产物
         if: steps.existing.outputs.skip != 'true'
@@ -141,6 +161,7 @@ jobs:
         if: steps.existing.outputs.skip != 'true'
         env:
           TAG: ${{ steps.release.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           for attempt in $(seq 1 30); do
@@ -158,6 +179,7 @@ jobs:
         if: steps.existing.outputs.skip != 'true'
         env:
           TAG: ${{ steps.release.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh release upload "${TAG}" dist/android/* \
@@ -166,4 +188,6 @@ jobs:
 
       - name: 清理 release keystore
         if: always()
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/herdr-connect-release.jks
         run: rm -f "${ANDROID_KEYSTORE_PATH}"

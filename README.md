@@ -14,9 +14,9 @@ Herdr Connect is an early preview, not a production-ready remote access product.
 | Area | Status |
 | --- | --- |
 | Bonjour/mDNS daemon advertisement | Experimental |
-| iOS discovery on a physical device | Demo available |
+| iOS discovery on a physical device | Public TestFlight preview available |
 | Agent list, recent output, focus, and text input | Unsafe LAN demo only |
-| Android device validation | Not completed |
+| Android app / APK | Not published |
 | Pairing, authentication, and E2EE | Not implemented |
 | Relay, push notifications, and remote access | Future research |
 
@@ -32,15 +32,17 @@ The current public milestone is **LAN Discovery Preview**:
 
 Discovery proves reachability only. It does not establish trust or grant permission to read or control an Agent.
 
-## Install the preview
+## Get the preview
 
-The first downloadable preview will be published through three channels:
+To try Herdr Connect, install both sides of the LAN connection:
 
-- precompiled Go daemon archives for macOS, Linux, and Windows on [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases);
-- a signed Android APK attached to the same release;
-- an iOS TestFlight build, with the public testing link added here when Apple approves the first external beta.
+1. Download the **v0.1.0-preview.1 daemon** for macOS, Linux, or Windows from [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1), then follow the [daemon installation guide](docs/release/daemon.md).
+2. Join the public [iOS TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm), then follow the [TestFlight guide](docs/release/ios-testflight.md).
+3. Put the daemon host and iPhone on the same trusted local network. Remote connections are not supported in this preview.
 
-No Go, Node.js, pnpm, or Expo environment is required to use those artifacts. See the [daemon installation guide](docs/release/daemon.md), [Android APK guide](docs/release/android-apk.md), and [iOS TestFlight release guide](docs/release/ios-testflight.md). Source-based setup below remains available for contributors.
+No Android APK has been published. Android packaging remains maintainer work in progress; do not rely on an Android download for this release.
+
+The downloadable daemon does not require Go, Node.js, pnpm, or Expo. Source-based setup below remains available for contributors.
 
 ## Architecture
 
@@ -141,7 +143,7 @@ Remote access is not part of the current release commitment. Roadmap items may c
 
 ## Security
 
-Do not report vulnerabilities, credentials, private prompts, Agent output, or sensitive paths in public issues. A private reporting channel will be documented before a production-capable release.
+Do not report vulnerabilities, credentials, private prompts, Agent output, or sensitive paths in public issues. Follow the private reporting instructions in [SECURITY.md](SECURITY.md).
 
 Until authentication and encryption are implemented, treat `demo-lan` as an unsafe development tool for controlled environments only.
 
@@ -149,7 +151,9 @@ Until authentication and encryption are implemented, treat `demo-lan` as an unsa
 
 The project is in an early scope-setting phase. Bug reports, reproducible discovery failures, documentation fixes, and design feedback are welcome through [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues).
 
-Before submitting code, open an issue to confirm that the change belongs to the current LAN discovery milestone. Please read [AGENTS.md](AGENTS.md) for repository conventions.
+Before submitting code, open an issue to confirm that the change belongs to the current LAN discovery milestone. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the repository conventions in [AGENTS.md](AGENTS.md).
+
+Community policies: [Code of Conduct](CODE_OF_CONDUCT.md), [Security Policy](SECURITY.md), and [Privacy Policy](PRIVACY.md).
 
 ## Relationship to Herdr
 

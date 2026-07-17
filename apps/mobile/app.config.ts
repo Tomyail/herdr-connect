@@ -3,13 +3,14 @@ import type { ExpoConfig } from "expo/config";
 const config: ExpoConfig = {
   name: "Herdr Connect",
   slug: "herdr-connect",
+  icon: "./assets/icon.png",
   version: "0.1.0",
   orientation: "portrait",
   platforms: ["ios", "android"],
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
-    buildNumber: "1",
+    buildNumber: "2",
     supportsTablet: false,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,

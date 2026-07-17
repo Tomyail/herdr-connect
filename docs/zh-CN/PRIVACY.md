@@ -1,5 +1,7 @@
 # 隐私政策
 
+[English](../../PRIVACY.md)
+
 最后更新：2026 年 7 月 17 日
 
 Herdr Connect 是一个开源配套应用，用于发现并连接同一局域网内的 Herdr daemon。

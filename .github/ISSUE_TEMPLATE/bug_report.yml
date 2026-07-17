@@ -1,0 +1,78 @@
+name: Bug report / 缺陷报告
+description: Report a reproducible Herdr Connect problem. / 报告可复现的 Herdr Connect 问题。
+title: "[Bug]: "
+labels:
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the LAN preview. Do not include credentials, private prompts, Agent output, sensitive paths, or vulnerability details. Security reports must use the private link in SECURITY.md.
+
+        感谢你帮助改进局域网预览版。不要包含凭据、私有 prompt、Agent 输出、敏感路径或漏洞细节；安全问题请使用 SECURITY.md 中的私密渠道。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched existing issues. / 我已搜索现有 Issues。
+          required: true
+        - label: I removed sensitive or private data. / 我已删除敏感或私有数据。
+          required: true
+        - label: This is not a security vulnerability. / 这不是安全漏洞。
+          required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component / 组件
+      options:
+        - Daemon
+        - iOS app
+        - Android app (not publicly released)
+        - LAN discovery or network
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / 版本
+      description: For example, daemon v0.1.0-preview.1 or the TestFlight build number. / 例如 daemon v0.1.0-preview.1 或 TestFlight build number。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: Include OS/device versions and a non-sensitive summary of the LAN, VPN, firewall, or client-isolation setup. / 请提供系统与设备版本，以及不含敏感信息的局域网、VPN、防火墙或客户端隔离配置摘要。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps / 复现步骤
+      placeholder: |
+        1. Start ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior / 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / 实际行为
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics / 已脱敏的诊断信息
+      description: Optional. Remove prompts, Agent output, credentials, hostnames, usernames, and private paths. / 可选。请删除 prompt、Agent 输出、凭据、主机名、用户名和私有路径。
+      render: shell
