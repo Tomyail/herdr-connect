@@ -4,6 +4,49 @@
 
 Herdr Connect is an experimental, local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). Its first public milestone is intentionally small: reliably discover a Herdr Connect daemon from a mobile device on the same local network.
 
+## Try it in 5 minutes
+
+You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an iPhone, and both devices on the same trusted Wi-Fi network. Android and remote connections are not available in this preview.
+
+1. Confirm that Herdr is installed and has at least one Agent:
+
+   ```sh
+   herdr agent list
+   ```
+
+2. Install the **v0.1.0-preview.1 daemon**. The downloaded daemon does not require Go, Node.js, pnpm, Expo, or Xcode.
+
+   On macOS or Linux:
+
+   ```sh
+   curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
+   ```
+
+   On Windows, download and extract the matching zip from [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1).
+3. Start the daemon and keep the terminal open while using the app.
+
+   On macOS or Linux:
+
+   ```sh
+   ~/.local/bin/herdr-connect doctor
+   ~/.local/bin/herdr-connect service install
+   ~/.local/bin/herdr-connect service status
+   ```
+
+   On Windows PowerShell, run these commands in the extracted folder:
+
+   ```powershell
+   .\herdr-connect.exe doctor
+   .\herdr-connect.exe --source herdr demo-lan
+   ```
+
+4. On your iPhone, join the public **[Herdr Connect TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm)**, install the app, and allow Local Network access when prompted.
+5. Open Herdr Connect. It should discover the daemon automatically and show your Agents. Tap an Agent to view recent output, switch focus, or send text.
+
+If discovery does not succeed, confirm that both devices use the same Wi-Fi, temporarily disable VPNs, and check firewall or guest-network isolation settings. See the [daemon guide](docs/release/daemon.md) and [TestFlight troubleshooting guide](docs/release/ios-testflight.md) for details.
+
+For all commands, diagnostics output, exit codes, and examples, see the [CLI guide](docs/cli.md).
+
 > [!WARNING]
 > The current LAN demo has no pairing, device authentication, or end-to-end encryption. It exposes recent terminal output and text input over unencrypted HTTP. Run it only on a trusted, controlled network, never enter secrets, and stop the daemon after testing.
 
@@ -32,18 +75,6 @@ The current public milestone is **LAN Discovery Preview**:
 
 Discovery proves reachability only. It does not establish trust or grant permission to read or control an Agent.
 
-## Get the preview
-
-To try Herdr Connect, install both sides of the LAN connection:
-
-1. Download the **v0.1.0-preview.1 daemon** for macOS, Linux, or Windows from [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1), then follow the [daemon installation guide](docs/release/daemon.md).
-2. Join the public [iOS TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm), then follow the [TestFlight guide](docs/release/ios-testflight.md).
-3. Put the daemon host and iPhone on the same trusted local network. Remote connections are not supported in this preview.
-
-No Android APK has been published. Android packaging remains maintainer work in progress; do not rely on an Android download for this release.
-
-The downloadable daemon does not require Go, Node.js, pnpm, or Expo. Source-based setup below remains available for contributors.
-
 ## Architecture
 
 ```text
@@ -58,7 +89,11 @@ Expo / React Native mobile client
 
 Herdr runs as a separate program and must be installed independently. Herdr Connect communicates with it through its CLI rather than embedding or linking Herdr source code.
 
-## Requirements
+## Develop from source
+
+The steps below are for contributors working on Herdr Connect itself. To use the downloadable preview, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
+
+### Development requirements
 
 For the currently validated iOS demo:
 
@@ -72,7 +107,7 @@ For the currently validated iOS demo:
 
 The mobile client uses a native Bonjour module and therefore requires an Expo development build. Expo Go is not sufficient.
 
-## Quick start
+### Source development setup
 
 Install JavaScript dependencies:
 
@@ -120,6 +155,7 @@ Allow local-network access when iOS prompts for it. See the [controlled LAN demo
 | `pnpm test:go` | Run Go tests |
 | `pnpm test:ts` | Run TypeScript protocol tests |
 | `pnpm test:conformance` | Run Go/TypeScript protocol conformance tests |
+| `pnpm test:install` | Test the macOS/Linux installer behavior |
 | `pnpm test` | Run the complete test suite |
 
 Repository layout:

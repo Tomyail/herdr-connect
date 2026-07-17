@@ -10,17 +10,23 @@ import (
 	"github.com/Tomyail/herdr-connect/internal/herdrsource"
 )
 
+var version = daemoncli.DevelopmentVersion
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	os.Exit(daemoncli.Execute(ctx, os.Args[1:], os.Stdout, os.Stderr, sourceFactory))
+	os.Exit(daemoncli.ExecuteVersion(ctx, os.Args[1:], os.Stdout, os.Stderr, sourceFactory, version))
 }
 
 func sourceFactory(name string) (herdrsource.Source, error) {
 	switch name {
 	case "herdr":
-		return herdrsource.NewHerdrCLIAdapter(herdrsource.ExecRunner{}), nil
+		binary := os.Getenv("HERDR_CONNECT_HERDR_PATH")
+		if binary == "" {
+			binary = "herdr"
+		}
+		return herdrsource.NewHerdrCLIAdapterWithBinary(herdrsource.ExecRunner{}, binary), nil
 	case "fake":
 		return herdrsource.NewFake("fake", herdrsource.Capabilities{
 			ObserveAgents:           true,

@@ -75,7 +75,10 @@ jobs:
           fi
 
           mkdir -p "dist/$archive"
-          go build -trimpath -ldflags="-s -w" -o "dist/$archive/$binary" ./cmd/herdr-connect
+          go build -trimpath -ldflags="-s -w -X main.version=$version" -o "dist/$archive/$binary" ./cmd/herdr-connect
+          if [[ "$GOOS" == "linux" && "$GOARCH" == "amd64" ]]; then
+            "dist/$archive/$binary" --version | grep -Fx "herdr-connect $version"
+          fi
           cp LICENSE "dist/$archive/LICENSE"
           cp docs/release/daemon.md "dist/$archive/README.md"
 

@@ -24,10 +24,11 @@ go run ./cmd/herdr-connect --source herdr status
 go run ./cmd/herdr-connect --source herdr agents
 go run ./cmd/herdr-connect --source herdr capabilities
 go run ./cmd/herdr-connect --source herdr diagnostics
+go run ./cmd/herdr-connect --source herdr doctor
 go run ./cmd/herdr-connect migrations
 ```
 
-`status` 同时显示来源在线状态、能力矩阵、当前 Agent 投影和 `through_event_seq`。`daemon --once` 可用于脚本化健康检查；不带 `--once` 时每两秒重新取得公开快照，并在 Herdr 暂时不可用时继续低频重试。
+`doctor` 面向普通安装诊断，默认检查数据库、Herdr 来源、Agent 数和 LAN preview 的 TCP `9808`，再提供可执行的下一步；兼容脚本继续使用默认输出为 JSON 的 `diagnostics`。`status` 同时显示来源在线状态、能力矩阵、当前 Agent 投影和 `through_event_seq`。`daemon --once` 可用于脚本化健康检查；不带 `--once` 时每两秒重新取得公开快照，并在 Herdr 暂时不可用时继续低频重试。完整公开用法见英文 canonical [CLI 指南](cli.md)及其[中文翻译](zh-CN/cli.md)。
 
 根目录的 fake 开发命令使用被 Git 忽略的 `.data/fake-daemon.db`，不会污染默认的真实安装实例数据库。
 

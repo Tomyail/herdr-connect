@@ -25,7 +25,11 @@ type HerdrCLIAdapter struct {
 }
 
 func NewHerdrCLIAdapter(runner CommandRunner) *HerdrCLIAdapter {
-	return &HerdrCLIAdapter{runner: runner, binary: "herdr"}
+	return NewHerdrCLIAdapterWithBinary(runner, "herdr")
+}
+
+func NewHerdrCLIAdapterWithBinary(runner CommandRunner, binary string) *HerdrCLIAdapter {
+	return &HerdrCLIAdapter{runner: runner, binary: binary}
 }
 
 func (a *HerdrCLIAdapter) Name() string { return "herdr-cli-v0.7" }

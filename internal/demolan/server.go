@@ -80,6 +80,7 @@ func NewHandler(source herdrsource.Source) http.Handler {
 func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Cache-Control", "no-store")
 	response.Header().Set("Content-Type", "application/json; charset=utf-8")
+	response.Header().Set("X-Herdr-Connect-Demo-Version", fmt.Sprintf("%d", DemoVersion))
 
 	if sourceID, action, ok := agentAction(request.URL.Path); ok {
 		switch action {
