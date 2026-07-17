@@ -23,6 +23,8 @@ import {
 } from "./demo-contract";
 import { devServerFallbackService, fetchDemoAgents, focusDemoAgent, serviceKey } from "./network";
 import { AgentDetail } from "./AgentDetail";
+import { Settings } from "./Settings";
+import { SlideOver } from "./SlideOver";
 
 const SERVICE_TYPE = "herdr-connect";
 const DISCOVERY_WAIT_MS = 6_000;
@@ -59,6 +61,31 @@ function formatTime(value: string): string {
 }
 
 type FocusPhase = "switching" | "switched" | "failed";
+type Tab = "agents" | "settings";
+
+const TABS: readonly { key: Tab; label: string }[] = [
+  { key: "agents", label: "Agents" },
+  { key: "settings", label: "设置" },
+];
+
+function TabBar({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
+  return (
+    <View style={styles.tabBar}>
+      {TABS.map(({ key, label }) => (
+        <Pressable
+          key={key}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: tab === key }}
+          accessibilityLabel={`切换到${label}页`}
+          onPress={() => onChange(key)}
+          style={styles.tabItem}
+        >
+          <Text style={[styles.tabLabel, tab === key && styles.tabLabelActive]}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
   const title = agent.workspace_label || agent.display_name || "未命名 Agent";
@@ -97,6 +124,7 @@ export default function App() {
   const mountedRef = useRef(true);
   const [focusResult, setFocusResult] = useState<{ sourceID: string; phase: FocusPhase }>();
   const [selectedAgent, setSelectedAgent] = useState<DemoAgent>();
+  const [tab, setTab] = useState<Tab>("agents");
 
   const switchAgent = useCallback(async (service: Service, agent: DemoAgent) => {
     setFocusResult({ sourceID: agent.source_id, phase: "switching" });
@@ -226,90 +254,104 @@ export default function App() {
           ? state.message
           : `${state.data.source_name} · ${state.service.name}`;
 
-  if (connected && selectedAgent) {
-    return (
+  return (
+    <View style={styles.root}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" />
-        <AgentDetail
-          agent={selectedAgent}
-          service={connected.service}
-          onBack={() => setSelectedAgent(undefined)}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <View style={styles.screen}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>HERDR CONNECT</Text>
-            <Text style={styles.title}>Agent 概览</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="刷新 daemon 与 Agent 列表"
-            onPress={() => void refresh()}
-            style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
-          >
-            <Text style={styles.refreshText}>刷新</Text>
-          </Pressable>
-        </View>
-
-        <View style={[styles.statusCard, connected && styles.statusConnected]}>
-          <View style={[styles.statusDot, connected && styles.statusDotConnected]} />
-          <View style={styles.statusCopy}>
-            <Text style={styles.statusTitle}>{statusTitle}</Text>
-            <Text style={styles.statusDetail}>{statusDetail}</Text>
-          </View>
-          {state.phase === "discovering" ? <ActivityIndicator color="#646B61" /> : null}
-        </View>
-
-        {connected ? (
-          <>
-            <View style={styles.summaryRow}>
-              <Text style={styles.sectionTitle}>Agents</Text>
-              <Text style={styles.summaryText}>
-                {connected.data.source_online ? "来源在线" : "来源离线"} · {connected.data.agents.length} 个 · {formatTime(connected.data.refreshed_at)}
-              </Text>
+        <View style={styles.screen}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.eyebrow}>HERDR CONNECT</Text>
+              <Text style={styles.title}>{tab === "agents" ? "Agent 概览" : "设置"}</Text>
             </View>
-            <FlatList
-              data={connected.data.agents}
-              keyExtractor={(agent) => agent.source_id}
-              renderItem={({ item }) => (
-                <AgentRow
-                  agent={item}
-                  focusPhase={focusResult?.sourceID === item.source_id ? focusResult.phase : undefined}
-                  onPress={() => {
-                    setSelectedAgent(item);
-                    void switchAgent(connected.service, item);
-                  }}
-                />
-              )}
-              contentContainerStyle={
-                connected.data.agents.length === 0 ? styles.emptyList : styles.list
-              }
-              ListEmptyComponent={<Text style={styles.emptyText}>当前没有 Agent</Text>}
-              showsVerticalScrollIndicator={false}
-            />
-          </>
-        ) : (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderTitle}>等待本地连接</Text>
-            <Text style={styles.placeholderText}>
-              发现服务后会自动选择一个 daemon，并读取最新的 Agent 状态。
-            </Text>
+            {tab === "agents" ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="刷新 daemon 与 Agent 列表"
+                onPress={() => void refresh()}
+                style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
+              >
+                <Text style={styles.refreshText}>刷新</Text>
+              </Pressable>
+            ) : null}
           </View>
-        )}
-      </View>
-    </SafeAreaView>
+
+          {tab === "settings" ? (
+            <Settings service={connected?.service} data={connected?.data} />
+          ) : (
+            <>
+              <View style={[styles.statusCard, connected && styles.statusConnected]}>
+                <View style={[styles.statusDot, connected && styles.statusDotConnected]} />
+                <View style={styles.statusCopy}>
+                  <Text style={styles.statusTitle}>{statusTitle}</Text>
+                  <Text style={styles.statusDetail}>{statusDetail}</Text>
+                </View>
+                {state.phase === "discovering" ? <ActivityIndicator color="#646B61" /> : null}
+              </View>
+
+              {connected ? (
+                <>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.sectionTitle}>Agents</Text>
+                    <Text style={styles.summaryText}>
+                      {connected.data.source_online ? "来源在线" : "来源离线"} · {connected.data.agents.length} 个 · {formatTime(connected.data.refreshed_at)}
+                    </Text>
+                  </View>
+                  <FlatList
+                    data={connected.data.agents}
+                    keyExtractor={(agent) => agent.source_id}
+                    renderItem={({ item }) => (
+                      <AgentRow
+                        agent={item}
+                        focusPhase={focusResult?.sourceID === item.source_id ? focusResult.phase : undefined}
+                        onPress={() => {
+                          setSelectedAgent(item);
+                          void switchAgent(connected.service, item);
+                        }}
+                      />
+                    )}
+                    contentContainerStyle={
+                      connected.data.agents.length === 0 ? styles.emptyList : styles.list
+                    }
+                    ListEmptyComponent={<Text style={styles.emptyText}>当前没有 Agent</Text>}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </>
+              ) : (
+                <View style={styles.placeholder}>
+                  <Text style={styles.placeholderTitle}>等待本地连接</Text>
+                  <Text style={styles.placeholderText}>
+                    发现服务后会自动选择一个 daemon，并读取最新的 Agent 状态。
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+        <TabBar tab={tab} onChange={setTab} />
+      </SafeAreaView>
+
+      {connected && selectedAgent ? (
+        <SlideOver onClosed={() => setSelectedAgent(undefined)}>
+          {(close) => (
+            <SafeAreaView style={styles.detailSafeArea}>
+              <AgentDetail
+                agent={selectedAgent}
+                service={connected.service}
+                onBack={close}
+              />
+            </SafeAreaView>
+          )}
+        </SlideOver>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#F3F1EA" },
   safeArea: { flex: 1, backgroundColor: "#F3F1EA" },
+  detailSafeArea: { flex: 1 },
   screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
   eyebrow: { color: "#73776E", fontSize: 11, fontWeight: "700", letterSpacing: 1.7, marginBottom: 5 },
@@ -341,6 +383,10 @@ const styles = StyleSheet.create({
   agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
   factLabel: { color: "#858981", fontSize: 12 },
   factValue: { color: "#32362F", fontSize: 12, fontWeight: "600", marginRight: 8 },
+  tabBar: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#DAD8D0", backgroundColor: "#F3F1EA" },
+  tabItem: { flex: 1, alignItems: "center", paddingVertical: 12 },
+  tabLabel: { color: "#8A8E86", fontSize: 14, fontWeight: "600" },
+  tabLabelActive: { color: "#1E211D" },
   placeholder: { marginTop: 62, paddingHorizontal: 25, alignItems: "center" },
   placeholderTitle: { color: "#343831", fontSize: 18, fontWeight: "700", marginBottom: 8 },
   placeholderText: { color: "#777B72", fontSize: 14, lineHeight: 21, textAlign: "center" },
