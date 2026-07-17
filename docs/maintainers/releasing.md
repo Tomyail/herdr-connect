@@ -10,7 +10,7 @@
 
 ## daemon
 
-`v*` tag 会触发 `.github/workflows/daemon-release.yml`，运行测试并为 macOS、Linux 和 Windows 构建压缩包与 `SHA256SUMS`。工作流通过 Go `ldflags` 把去掉 `v` 前缀的 tag 注入 CLI，并在 Linux AMD64 build 上核对 `herdr-connect --version`；本地未注入 build 显示 `development`。带连字符的 tag 会创建 prerelease。当前公开版本为 `v0.1.0-preview.1`。
+`v*` tag 会触发 `.github/workflows/daemon-release.yml`，运行测试并为 macOS、Linux 和 Windows 构建压缩包与 `SHA256SUMS`。工作流通过 Go `ldflags` 把去掉 `v` 前缀的 tag 注入 CLI，并在 Linux AMD64 build 上核对 `herdr-connect --version`；本地未注入 build 显示 `development`。带连字符的 tag 会创建 prerelease。当前公开版本为 `v0.1.0-preview.2`。
 
 工作流目前不执行 Apple notarization 或 Windows code signing。创建后应核对 Release 的 tag、prerelease 状态、五个平台资产、`SHA256SUMS`，并确认压缩包中的 `README.md` 可独立使用。
 

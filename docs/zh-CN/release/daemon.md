@@ -2,7 +2,7 @@
 
 [English](../../../docs/release/daemon.md)
 
-Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包。当前公开 build 是 [v0.1.0-preview.1](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1)。这是用于可信局域网的早期预览，不是生产级远程访问服务。
+Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包。当前公开 build 是 [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2)。这是用于可信局域网的早期预览，不是生产级远程访问服务。
 
 ## 在 macOS 或 Linux 上快速安装
 
@@ -26,7 +26,7 @@ sh install.sh
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh \
-  | HERDR_CONNECT_VERSION=v0.1.0-preview.1 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
+  | HERDR_CONNECT_VERSION=v0.1.0-preview.2 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
 ```
 
 Windows 用户继续使用下方的 zip 下载方式。

@@ -11,7 +11,7 @@ iOS 预览版通过 Apple TestFlight 分发：
 ## 安装前准备
 
 - 在 iPhone 上安装 Apple TestFlight App。
-- 在电脑上安装并启动 [v0.1.0-preview.1 daemon](daemon.md)。
+- 在电脑上安装并启动 [v0.1.0-preview.2 daemon](daemon.md)。
 - 确保 iPhone 与 daemon 主机位于同一个可信 Wi-Fi，且没有客户端隔离。
 - 确保 VPN 与防火墙没有阻止本地 multicast 或 TCP `9808`。
 

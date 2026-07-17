@@ -10,7 +10,7 @@ import test from "node:test";
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, "..");
 const installerPath = join(repositoryRoot, "install.sh");
-const version = "0.1.0-preview.1";
+const version = "0.1.0-preview.2";
 const archiveName = `herdr-connect_${version}_linux_amd64`;
 const assetName = `${archiveName}.tar.gz`;
 
@@ -69,7 +69,7 @@ test("installer downloads, verifies, and installs the matching daemon", async ()
   });
 
   assert.equal(await readFile(join(paths.installDir, "herdr-connect"), "utf8"), "fixture daemon\n");
-  assert.match(stdout, /Installed Herdr Connect v0\.1\.0-preview\.1/);
+  assert.match(stdout, /Installed Herdr Connect v0\.1\.0-preview\.2/);
   assert.match(stdout, /herdr-connect doctor/);
   assert.match(stdout, /herdr-connect service install/);
   assert.match(stdout, /herdr-connect service status/);

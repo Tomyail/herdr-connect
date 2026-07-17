@@ -2,7 +2,7 @@
 
 [简体中文](https://github.com/Tomyail/herdr-connect/blob/main/docs/zh-CN/release/daemon.md)
 
-Herdr Connect provides precompiled daemon archives for macOS, Linux, and Windows. The current public build is [v0.1.0-preview.1](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.1). It is an early preview for trusted local networks, not a production remote-access service.
+Herdr Connect provides precompiled daemon archives for macOS, Linux, and Windows. The current public build is [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2). It is an early preview for trusted local networks, not a production remote-access service.
 
 ## Quick install on macOS or Linux
 
@@ -26,7 +26,7 @@ Override the version or installation directory when needed:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh \
-  | HERDR_CONNECT_VERSION=v0.1.0-preview.1 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
+  | HERDR_CONNECT_VERSION=v0.1.0-preview.2 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
 ```
 
 Windows users should continue with the zip download below.

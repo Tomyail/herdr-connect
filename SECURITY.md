@@ -8,7 +8,7 @@ Herdr Connect is an experimental preview. Only the latest published preview is c
 
 | Version | Supported |
 | --- | --- |
-| `v0.1.0-preview.1` | Best-effort fixes |
+| `v0.1.0-preview.2` | Best-effort fixes |
 | Older or unreleased builds | No |
 
 ## Report a vulnerability
