@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -10,6 +10,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useHeaderHeight } from "@react-navigation/elements";
 import type { Service } from "@inthepocket/react-native-service-discovery";
 
 import type { DemoAgent } from "./demo-contract";
@@ -18,23 +20,41 @@ import {
   sendDemoAgentMessage,
   type DemoAgentHistory,
 } from "./network";
+import { useConnection } from "./connection";
+import type { RootStackParamList } from "./navigation";
 
 const HISTORY_REFRESH_MS = 2_000;
 
 type LoadPhase = "loading" | "ready" | "failed";
 type SendPhase = "idle" | "sending" | "sent" | "failed";
 
-interface AgentDetailProps {
-  agent: DemoAgent;
-  service: Service;
-  onBack: () => void;
-}
+type Props = NativeStackScreenProps<RootStackParamList, "AgentDetail">;
 
 function message(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
-export function AgentDetail({ agent, service, onBack }: AgentDetailProps) {
+export function AgentDetailScreen({ route, navigation }: Props) {
+  const { state } = useConnection();
+  const service = state.phase === "connected" ? state.service : undefined;
+
+  useEffect(() => {
+    if (!service && navigation.canGoBack()) navigation.goBack();
+  }, [navigation, service]);
+
+  if (!service) return null;
+  return <AgentDetail agent={route.params.agent} service={service} navigation={navigation} />;
+}
+
+function AgentDetail({
+  agent,
+  service,
+  navigation,
+}: {
+  agent: DemoAgent;
+  service: Service;
+  navigation: Props["navigation"];
+}) {
   const [history, setHistory] = useState<DemoAgentHistory>();
   const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
   const [loadError, setLoadError] = useState("");
@@ -43,6 +63,7 @@ export function AgentDetail({ agent, service, onBack }: AgentDetailProps) {
   const [sendError, setSendError] = useState("");
   const scrollRef = useRef<ScrollView>(null);
   const mountedRef = useRef(true);
+  const headerHeight = useHeaderHeight();
 
   const loadHistory = useCallback(async (showLoading = false) => {
     if (showLoading) setLoadPhase("loading");
@@ -69,6 +90,31 @@ export function AgentDetail({ agent, service, onBack }: AgentDetailProps) {
     };
   }, [loadHistory]);
 
+  const title = agent.workspace_label || agent.display_name || "Agent";
+  const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={styles.identity}>
+          <Text numberOfLines={1} style={styles.title}>{title}</Text>
+          {subtitle ? <Text numberOfLines={1} style={styles.subtitle}>{subtitle}</Text> : null}
+        </View>
+      ),
+      headerRight: () => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="刷新历史"
+          hitSlop={10}
+          onPress={() => void loadHistory(true)}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Text style={styles.refreshText}>刷新</Text>
+        </Pressable>
+      ),
+    });
+  }, [loadHistory, navigation, subtitle, title]);
+
   const send = useCallback(async () => {
     const text = draft.trim();
     if (!text || sendPhase === "sending") return;
@@ -87,40 +133,14 @@ export function AgentDetail({ agent, service, onBack }: AgentDetailProps) {
     }
   }, [agent.source_id, draft, loadHistory, sendPhase, service]);
 
-  const title = agent.workspace_label || agent.display_name || "Agent";
-  const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
   const canSend = draft.trim().length > 0 && sendPhase !== "sending";
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={headerHeight}
       style={styles.screen}
     >
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="返回 Agent 列表"
-          hitSlop={10}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.backText}>‹ Agents</Text>
-        </Pressable>
-        <View style={styles.identity}>
-          <Text numberOfLines={1} style={styles.title}>{title}</Text>
-          {subtitle ? <Text numberOfLines={1} style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="刷新历史"
-          hitSlop={10}
-          onPress={() => void loadHistory(true)}
-          style={({ pressed }) => [styles.refreshButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.refreshText}>刷新</Text>
-        </Pressable>
-      </View>
-
       <View style={styles.historyHeader}>
         <Text style={styles.historyTitle}>历史消息</Text>
         <Text style={styles.historyMeta}>
@@ -194,14 +214,10 @@ export function AgentDetail({ agent, service, onBack }: AgentDetailProps) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F3F1EA", paddingTop: 8 },
-  header: { minHeight: 62, flexDirection: "row", alignItems: "center", paddingHorizontal: 18 },
-  backButton: { minWidth: 72, paddingVertical: 9 },
-  backText: { color: "#466447", fontSize: 16, fontWeight: "600" },
-  identity: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
+  screen: { flex: 1, backgroundColor: "#F3F1EA" },
+  identity: { alignItems: "center", maxWidth: 220 },
   title: { color: "#191C18", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
   subtitle: { color: "#777B72", fontSize: 11, marginTop: 2 },
-  refreshButton: { minWidth: 72, alignItems: "flex-end", paddingVertical: 9 },
   refreshText: { color: "#466447", fontSize: 15, fontWeight: "600" },
   pressed: { opacity: 0.55 },
   historyHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
