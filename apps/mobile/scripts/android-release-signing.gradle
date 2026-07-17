@@ -1,0 +1,30 @@
+def requiredEnvironment = { String name ->
+    def value = System.getenv(name)
+    if (value == null || value.trim().isEmpty()) {
+        throw new GradleException("缺少 Android release 签名环境变量：${name}")
+    }
+    value
+}
+
+def releaseKeystore = new File(requiredEnvironment("ANDROID_KEYSTORE_PATH"))
+if (!releaseKeystore.isFile()) {
+    throw new GradleException("Android release keystore 不存在：${releaseKeystore}")
+}
+
+android {
+    signingConfigs {
+        herdrConnectRelease {
+            storeFile releaseKeystore
+            storePassword requiredEnvironment("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias requiredEnvironment("ANDROID_KEY_ALIAS")
+            keyPassword requiredEnvironment("ANDROID_KEY_PASSWORD")
+        }
+    }
+
+    buildTypes {
+        release {
+            // Expo 生成工程默认可能沿用 debug signing；公开产物必须显式覆盖。
+            signingConfig signingConfigs.herdrConnectRelease
+        }
+    }
+}

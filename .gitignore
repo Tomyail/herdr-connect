@@ -3,3 +3,10 @@ dist/
 *.log
 .DS_Store
 .data/
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/build/
+apps/mobile/.bundle/
+*.jks
+*.keystore
+*.p8

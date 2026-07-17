@@ -32,6 +32,16 @@ The current public milestone is **LAN Discovery Preview**:
 
 Discovery proves reachability only. It does not establish trust or grant permission to read or control an Agent.
 
+## Install the preview
+
+The first downloadable preview will be published through three channels:
+
+- precompiled Go daemon archives for macOS, Linux, and Windows on [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases);
+- a signed Android APK attached to the same release;
+- an iOS TestFlight build, with the public testing link added here when Apple approves the first external beta.
+
+No Go, Node.js, pnpm, or Expo environment is required to use those artifacts. See the [daemon installation guide](docs/release/daemon.md), [Android APK guide](docs/release/android-apk.md), and [iOS TestFlight release guide](docs/release/ios-testflight.md). Source-based setup below remains available for contributors.
+
 ## Architecture
 
 ```text

@@ -1,0 +1,5 @@
+app_identifier("com.tomyail.herdrconnect")
+
+# 本地构建和 App Store Connect 可能使用不同的团队标识，因此都从环境变量读取。
+team_id(ENV["APPLE_DEVELOPMENT_TEAM"]) if ENV["APPLE_DEVELOPMENT_TEAM"]
+itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"]) if ENV["FASTLANE_ITC_TEAM_ID"]

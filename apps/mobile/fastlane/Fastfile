@@ -1,0 +1,128 @@
+require "json"
+require "open3"
+
+default_platform(:ios)
+opt_out_usage
+
+APP_IDENTIFIER = "com.tomyail.herdrconnect"
+PROJECT_ROOT = File.expand_path("..", __dir__)
+WORKSPACE_PATH = File.join(PROJECT_ROOT, "ios/HerdrConnect.xcworkspace")
+SCHEME_NAME = "HerdrConnect"
+BUILD_OUTPUT_DIRECTORY = File.join(PROJECT_ROOT, "build/ios")
+IPA_OUTPUT_NAME = "HerdrConnect.ipa"
+
+def required_env!(name)
+  value = ENV[name].to_s.strip
+  UI.user_error!("缺少环境变量 #{name}。请参阅 docs/release/ios-testflight.md。") if value.empty?
+  value
+end
+
+def development_team!
+  team = required_env!("APPLE_DEVELOPMENT_TEAM")
+  UI.user_error!("APPLE_DEVELOPMENT_TEAM 应为 10 位 Apple Team ID。") unless team.match?(/\A[A-Z0-9]{10}\z/)
+  team
+end
+
+def app_store_connect_api_key!
+  key_path = required_env!("APP_STORE_CONNECT_API_KEY_KEY_FILEPATH")
+  UI.user_error!("找不到 App Store Connect API key 文件：#{key_path}") unless File.file?(key_path)
+
+  app_store_connect_api_key(
+    key_id: required_env!("APP_STORE_CONNECT_API_KEY_KEY_ID"),
+    issuer_id: required_env!("APP_STORE_CONNECT_API_KEY_ISSUER_ID"),
+    key_filepath: key_path,
+    duration: 1_200,
+    in_house: false
+  )
+end
+
+def expo_config
+  return @expo_config if @expo_config
+
+  stdout, stderr, status = Open3.capture3("pnpm", "exec", "expo", "config", "--json", chdir: PROJECT_ROOT)
+  UI.user_error!("无法读取 Expo 配置：#{stderr.strip}") unless status.success?
+  @expo_config = JSON.parse(stdout)
+rescue JSON::ParserError => error
+  UI.user_error!("Expo 配置不是有效 JSON：#{error.message}")
+end
+
+def app_version
+  expo_config.fetch("version")
+end
+
+def build_number
+  expo_config.fetch("ios").fetch("buildNumber").to_s
+end
+
+def truthy_env?(name, default: false)
+  value = ENV[name]
+  return default if value.nil? || value.empty?
+
+  %w[1 true yes y].include?(value.downcase)
+end
+
+def testflight_groups!
+  groups = required_env!("TESTFLIGHT_GROUPS").split(",").map(&:strip).reject(&:empty?)
+  UI.user_error!("TESTFLIGHT_GROUPS 至少需要一个测试组名称。") if groups.empty?
+  groups
+end
+
+platform :ios do
+  desc "在本机生成用于 TestFlight 的 App Store IPA，不上传"
+  lane :testflight_build do |options|
+    team = development_team!
+    UI.user_error!("缺少 iOS workspace，请先运行 pnpm release:ios:prepare。") unless File.exist?(WORKSPACE_PATH)
+
+    build_app(
+      workspace: WORKSPACE_PATH,
+      scheme: SCHEME_NAME,
+      configuration: "Release",
+      clean: true,
+      output_directory: options[:output_directory] || ENV["IPA_OUTPUT_DIR"] || BUILD_OUTPUT_DIRECTORY,
+      output_name: options[:output_name] || ENV["IPA_OUTPUT_NAME"] || IPA_OUTPUT_NAME,
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "automatic",
+        teamID: team,
+        stripSwiftSymbols: true,
+        uploadSymbols: true
+      },
+      xcargs: "DEVELOPMENT_TEAM=#{team} CODE_SIGN_STYLE=Automatic"
+    )
+  end
+
+  desc "上传已生成的 IPA 到 TestFlight，但不分发给测试组"
+  lane :testflight_upload do |options|
+    ipa = options[:ipa] || ENV["IPA_PATH"] || File.join(BUILD_OUTPUT_DIRECTORY, IPA_OUTPUT_NAME)
+    UI.user_error!("找不到 IPA：#{ipa}。请先运行 pnpm release:ios:build，或设置 IPA_PATH。") unless File.file?(ipa)
+
+    upload_to_testflight(
+      ipa: ipa,
+      app_identifier: APP_IDENTIFIER,
+      api_key: app_store_connect_api_key!,
+      skip_submission: true,
+      skip_waiting_for_build_processing: false,
+      uses_non_exempt_encryption: false
+    )
+  end
+
+  desc "把 App Store Connect 中已处理完成的 build 分发给指定 TestFlight 测试组"
+  lane :testflight_distribute do |options|
+    changelog = options[:changelog] || ENV["TESTFLIGHT_CHANGELOG"]
+    UI.user_error!("缺少 TESTFLIGHT_CHANGELOG，请提供面向测试用户的本次测试说明。") if changelog.to_s.strip.empty?
+
+    upload_to_testflight(
+      app_identifier: APP_IDENTIFIER,
+      api_key: app_store_connect_api_key!,
+      app_platform: "ios",
+      distribute_only: true,
+      app_version: options[:app_version] || ENV["TESTFLIGHT_VERSION"] || app_version,
+      build_number: options[:build_number] || ENV["TESTFLIGHT_BUILD_NUMBER"] || build_number,
+      changelog: changelog,
+      distribute_external: truthy_env?("TESTFLIGHT_EXTERNAL", default: false),
+      groups: testflight_groups!,
+      notify_external_testers: truthy_env?("TESTFLIGHT_NOTIFY", default: false),
+      uses_non_exempt_encryption: false
+    )
+  end
+end

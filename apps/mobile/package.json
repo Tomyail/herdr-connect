@@ -6,6 +6,11 @@
   "scripts": {
     "start": "expo start --dev-client",
     "ios": "expo run:ios --device",
+    "release:ios:prepare": "node scripts/ios-release.mjs prepare",
+    "release:ios:build": "node scripts/ios-release.mjs build",
+    "release:ios:upload": "node scripts/ios-release.mjs upload",
+    "release:ios:distribute": "node scripts/ios-release.mjs distribute",
+    "release:android": "scripts/android-release.sh",
     "typecheck": "tsc --noEmit",
     "config": "expo config --type public"
   },

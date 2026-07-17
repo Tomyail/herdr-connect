@@ -1,0 +1,169 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "已经存在的 GitHub Release tag"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: 构建并发布 APK/AAB
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/herdr-connect-release.jks
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_SIGNING_CERT_SHA256: ${{ secrets.ANDROID_SIGNING_CERT_SHA256 }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: 确定发布 tag
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          case "${EVENT_NAME}" in
+            workflow_dispatch) tag="${DISPATCH_TAG}" ;;
+            push) tag="${REF_NAME}" ;;
+            *) echo "不支持的事件：${EVENT_NAME}" >&2; exit 1 ;;
+          esac
+          if [[ ! "${tag}" =~ ^v[0-9A-Za-z._-]+$ ]]; then
+            echo "无效的发布 tag：${tag}" >&2
+            exit 1
+          fi
+          echo "tag=${tag}" >>"${GITHUB_OUTPUT}"
+          echo "basename=herdr-connect-${tag}-android" >>"${GITHUB_OUTPUT}"
+
+      - name: 检查现有发布产物
+        id: existing
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          APK_NAME: ${{ steps.release.outputs.basename }}.apk
+        run: |
+          set -euo pipefail
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json assets \
+            --jq '.assets[].name' 2>/dev/null | grep -Fxq "${APK_NAME}"; then
+            echo "skip=true" >>"${GITHUB_OUTPUT}"
+            echo "${APK_NAME} 已存在，本次事件无需重复构建。"
+          else
+            echo "skip=false" >>"${GITHUB_OUTPUT}"
+          fi
+
+      - name: 检出源码
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: 配置 pnpm
+        if: steps.existing.outputs.skip != 'true'
+        uses: pnpm/action-setup@v4
+
+      - name: 配置 Node.js
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: 配置 Java
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: 配置 Android SDK
+        if: steps.existing.outputs.skip != 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: 安装依赖
+        if: steps.existing.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: 载入 release keystore
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          required=(
+            ANDROID_KEYSTORE_BASE64
+            ANDROID_KEYSTORE_PASSWORD
+            ANDROID_KEY_ALIAS
+            ANDROID_KEY_PASSWORD
+            ANDROID_SIGNING_CERT_SHA256
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "缺少 GitHub Actions secret：${name}" >&2
+              exit 1
+            fi
+          done
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode >"${ANDROID_KEYSTORE_PATH}"
+          chmod 600 "${ANDROID_KEYSTORE_PATH}"
+          test -s "${ANDROID_KEYSTORE_PATH}"
+
+      - name: 构建并验证 release APK/AAB
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          ANDROID_ARTIFACT_BASENAME: ${{ steps.release.outputs.basename }}
+        run: apps/mobile/scripts/android-release.sh
+
+      - name: 保存工作流产物
+        if: steps.existing.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.release.outputs.basename }}
+          path: dist/android/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: 等待 daemon workflow 创建 GitHub Release
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              break
+            fi
+            if [[ "${attempt}" == "30" ]]; then
+              echo "等待 GitHub Release ${TAG} 超时；请检查 Daemon Release workflow。" >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: 上传 Android 产物
+        if: steps.existing.outputs.skip != 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "${TAG}" dist/android/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+
+      - name: 清理 release keystore
+        if: always()
+        run: rm -f "${ANDROID_KEYSTORE_PATH}"

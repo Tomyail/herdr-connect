@@ -32,6 +32,16 @@ Herdr Connect 目前是早期预览，不是可用于生产环境的远程访问
 
 发现只能证明实例可达，不建立信任，也不授予读取或操作 Agent 的权限。
 
+## 安装预览版
+
+首个可下载预览版通过三个渠道提供：
+
+- 在 [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases) 下载 macOS、Linux 和 Windows 的预编译 Go daemon；
+- 在同一个 Release 下载已经签名的 Android APK；
+- iOS 通过 TestFlight 分发，首个外部测试版本通过 Apple 审核后会在这里补充公开测试链接。
+
+使用这些产物不需要安装 Go、Node.js、pnpm 或 Expo。具体参见 [daemon 安装说明](../release/daemon.md)、[Android APK 说明](../release/android-apk.md)和 [iOS TestFlight 发布说明](../release/ios-testflight.md)。下面的源码运行方式继续供贡献者使用。
+
 ## 架构
 
 ```text
