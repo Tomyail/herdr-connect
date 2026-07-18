@@ -2,17 +2,19 @@ import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useConnection } from "./connection";
+import { useI18n } from "./i18n/I18nContext";
 import { ScreenHeader } from "./ScreenHeader";
 import { Settings } from "./Settings";
 
 export function SettingsScreen() {
   const { state } = useConnection();
+  const { t } = useI18n();
   const connected = state.phase === "connected" ? state : undefined;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.screen}>
-        <ScreenHeader title="设置" />
+        <ScreenHeader title={t("settings.screenTitle")} />
         <Settings service={connected?.service} data={connected?.data} />
       </View>
     </SafeAreaView>

@@ -1,6 +1,7 @@
 import type { Service } from "@inthepocket/react-native-service-discovery";
 
 import { parseDemoAgentsResponse, type DemoAgentsResponse } from "./demo-contract";
+import { NetworkError } from "./i18n/errors";
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const DEMO_DAEMON_PORT = 9_808;
@@ -46,7 +47,7 @@ export function devServerFallbackService(scriptURL: string | undefined): Service
       return undefined;
     }
     return {
-      name: "Metro 开发机直连",
+      name: "Metro dev direct",
       type: "_herdr-connect._tcp.",
       domain: "local.",
       hostName: host,
@@ -64,7 +65,7 @@ export async function fetchDemoAgents(
   outerSignal?: AbortSignal,
 ): Promise<DemoAgentsResponse> {
   const address = preferredAddress(service.addresses);
-  if (!address) throw new Error("服务没有可用网络地址");
+  if (!address) throw new NetworkError("no_address");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -76,11 +77,11 @@ export async function fetchDemoAgents(
       headers: { Accept: "application/json" },
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`daemon 返回 HTTP ${response.status}`);
+    if (!response.ok) throw new NetworkError("daemon_http", response.status);
     return parseDemoAgentsResponse(await response.json());
   } catch (error) {
     if (controller.signal.aborted && !outerSignal?.aborted) {
-      throw new Error("连接 daemon 超时");
+      throw new NetworkError("daemon_timeout");
     }
     throw error;
   } finally {
@@ -94,7 +95,7 @@ export async function focusDemoAgent(
   sourceID: string,
 ): Promise<void> {
   const address = preferredAddress(service.addresses);
-  if (!address) throw new Error("服务没有可用网络地址");
+  if (!address) throw new NetworkError("no_address");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -105,9 +106,9 @@ export async function focusDemoAgent(
       headers: { Accept: "application/json" },
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`切换 Agent 失败（HTTP ${response.status}）`);
+    if (!response.ok) throw new NetworkError("focus_http", response.status);
   } catch (error) {
-    if (controller.signal.aborted) throw new Error("切换 Agent 超时");
+    if (controller.signal.aborted) throw new NetworkError("focus_timeout");
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -119,7 +120,7 @@ export async function fetchDemoAgentHistory(
   sourceID: string,
 ): Promise<DemoAgentHistory> {
   const address = preferredAddress(service.addresses);
-  if (!address) throw new Error("服务没有可用网络地址");
+  if (!address) throw new NetworkError("no_address");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -129,7 +130,7 @@ export async function fetchDemoAgentHistory(
       headers: { Accept: "application/json" },
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`读取历史失败（HTTP ${response.status}）`);
+    if (!response.ok) throw new NetworkError("history_http", response.status);
     const value: unknown = await response.json();
     if (
       typeof value !== "object" || value === null ||
@@ -140,11 +141,11 @@ export async function fetchDemoAgentHistory(
       typeof (value as Record<string, unknown>).truncated !== "boolean" ||
       typeof (value as Record<string, unknown>).refreshed_at !== "string"
     ) {
-      throw new Error("历史响应格式无效");
+      throw new NetworkError("history_invalid");
     }
     return value as DemoAgentHistory;
   } catch (error) {
-    if (controller.signal.aborted) throw new Error("读取历史超时");
+    if (controller.signal.aborted) throw new NetworkError("history_timeout");
     throw error;
   } finally {
     clearTimeout(timeout);
@@ -157,7 +158,7 @@ export async function sendDemoAgentMessage(
   text: string,
 ): Promise<void> {
   const address = preferredAddress(service.addresses);
-  if (!address) throw new Error("服务没有可用网络地址");
+  if (!address) throw new NetworkError("no_address");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -169,9 +170,9 @@ export async function sendDemoAgentMessage(
       body: JSON.stringify({ text }),
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`发送失败（HTTP ${response.status}）`);
+    if (!response.ok) throw new NetworkError("send_http", response.status);
   } catch (error) {
-    if (controller.signal.aborted) throw new Error("发送消息超时");
+    if (controller.signal.aborted) throw new NetworkError("send_timeout");
     throw error;
   } finally {
     clearTimeout(timeout);

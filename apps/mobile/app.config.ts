@@ -16,7 +16,8 @@ const config: ExpoConfig = {
       ITSAppUsesNonExemptEncryption: false,
       NSBonjourServices: ["_herdr-connect._tcp"],
       NSLocalNetworkUsageDescription:
-        "Herdr Connect 需要访问本地网络，以发现并连接附近的 Herdr daemon。",
+        "Herdr Connect needs access to your local network to discover and connect to nearby Herdr daemons.",
+      CFBundleAllowMixedLocalizations: true,
       NSAppTransportSecurity: {
         NSAllowsLocalNetworking: true,
       },
@@ -31,7 +32,11 @@ const config: ExpoConfig = {
       "android.permission.CHANGE_WIFI_MULTICAST_STATE",
     ],
   },
-  plugins: ["expo-dev-client", "./plugins/withAndroidCleartextTraffic.cjs"],
+  locales: {
+    en: "./locales/en.json",
+    "zh-Hans": "./locales/zh-Hans.json",
+  },
+  plugins: ["expo-localization", "expo-dev-client", "./plugins/withAndroidCleartextTraffic.cjs"],
 };
 
 export default config;

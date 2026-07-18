@@ -1,0 +1,5 @@
+{
+  "ios": {
+    "NSLocalNetworkUsageDescription": "Herdr Connect needs access to your local network to discover and connect to nearby Herdr daemons."
+  }
+}

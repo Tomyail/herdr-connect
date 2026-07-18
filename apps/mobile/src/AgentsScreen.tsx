@@ -3,31 +3,56 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { interactionStateLabel, turnOutcomeLabel, type DemoAgent } from "./demo-contract";
+import { type DemoAgent, type InteractionState, type TurnOutcome } from "./demo-contract";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
+import { useI18n } from "./i18n/I18nContext";
+import type { MessageKey } from "./i18n/messages";
 import { ScreenHeader } from "./ScreenHeader";
 import type { RootStackParamList } from "./navigation";
 
-function formatTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "未知";
-  return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+function interactionKey(state: InteractionState): MessageKey {
+  switch (state) {
+    case "working":
+      return "interaction.working";
+    case "blocked":
+      return "interaction.blocked";
+    case "ready_input":
+      return "interaction.ready_input";
+    case "unknown":
+      return "interaction.unknown";
+  }
 }
 
-const FOCUS_FEEDBACK: Record<FocusPhase, { text: string; icon?: "checkmark-circle" | "alert-circle"; color?: string }> = {
-  switching: { text: "切换中…" },
-  switched: { text: "已切换", icon: "checkmark-circle", color: "#4F744D" },
-  failed: { text: "切换失败", icon: "alert-circle", color: "#A34B43" },
+function turnOutcomeKey(outcome: TurnOutcome | null | undefined): MessageKey {
+  switch (outcome) {
+    case "succeeded":
+      return "turn.succeeded";
+    case "failed":
+      return "turn.failed";
+    case "cancelled":
+      return "turn.cancelled";
+    case null:
+    case undefined:
+      return "turn.unknown";
+  }
+}
+
+const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmark-circle" | "alert-circle"; color?: string }> = {
+  switching: { textKey: "agents.focus.switching" },
+  switched: { textKey: "agents.focus.switched", icon: "checkmark-circle", color: "#4F744D" },
+  failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "#A34B43" },
 };
 
 function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
-  const title = agent.workspace_label || agent.display_name || "未命名 Agent";
+  const { t } = useI18n();
+  const title = agent.workspace_label || agent.display_name || t("agents.row.unnamed");
   const feedback = focusPhase ? FOCUS_FEEDBACK[focusPhase] : undefined;
+  const switchA11y = t("agents.row.switchA11y", { title, tab: agent.tab_label ?? "" });
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`切换到 ${title}${agent.tab_label ? ` ${agent.tab_label}` : ""}`}
+      accessibilityLabel={switchA11y}
       onPress={onPress}
       style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, focusPhase === "switched" && styles.agentCardSelected]}
     >
@@ -40,14 +65,14 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
           {agent.agent_name ? <Text style={styles.agentKind}>{agent.agent_name}</Text> : null}
           {agent.agent_name && feedback ? <Text style={styles.agentKind}> · </Text> : null}
           {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedback.color} style={styles.feedbackIcon} /> : null}
-          {feedback ? <Text style={[styles.agentKind, feedback.color != null && { color: feedback.color }]}>{feedback.text}</Text> : null}
+          {feedback ? <Text style={[styles.agentKind, feedback.color != null && { color: feedback.color }]}>{t(feedback.textKey)}</Text> : null}
         </View>
       ) : null}
       <View style={styles.agentFacts}>
-        <Text style={styles.factLabel}>交互状态</Text>
-        <Text style={styles.factValue}>{interactionStateLabel(agent.interaction_state)}</Text>
-        <Text style={styles.factLabel}>回合结果</Text>
-        <Text style={styles.factValue}>{turnOutcomeLabel(agent.turn_outcome)}</Text>
+        <Text style={styles.factLabel}>{t("agents.fact.interaction")}</Text>
+        <Text style={styles.factValue}>{t(interactionKey(agent.interaction_state))}</Text>
+        <Text style={styles.factLabel}>{t("agents.fact.turnOutcome")}</Text>
+        <Text style={styles.factValue}>{t(turnOutcomeKey(agent.turn_outcome))}</Text>
       </View>
     </Pressable>
   );
@@ -55,35 +80,36 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
 
 export function AgentsScreen() {
   const { state, focusResult, refresh, switchAgent } = useConnection();
+  const { t, tError, formatTime } = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const connected = state.phase === "connected" ? state : undefined;
-  const statusTitle =
+  const statusTitleKey: MessageKey =
     state.phase === "discovering"
-      ? "正在发现 daemon"
+      ? "agents.status.discovering"
       : state.phase === "not_found"
-        ? "未发现 daemon"
+        ? "agents.status.notFound"
         : state.phase === "failed"
-          ? "连接失败"
-          : "已连接";
+          ? "agents.status.failed"
+          : "agents.status.connected";
   const statusDetail =
     state.phase === "discovering"
-      ? "请确保 iPhone 与 daemon 位于同一局域网"
+      ? t("agents.detail.discovering")
       : state.phase === "not_found"
-        ? "检查 daemon 是否已启动并广播服务"
+        ? t("agents.detail.notFound")
         : state.phase === "failed"
-          ? state.message
+          ? tError(state.code, { status: state.status })
           : `${state.data.source_name} · ${state.service.name}`;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.screen}>
         <ScreenHeader
-          title="Agent 概览"
+          title={t("agents.screenTitle")}
           right={
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="刷新 daemon 与 Agent 列表"
+              accessibilityLabel={t("agents.refreshA11y")}
               onPress={() => void refresh()}
               style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
             >
@@ -95,7 +121,7 @@ export function AgentsScreen() {
         <View style={[styles.statusCard, connected && styles.statusConnected]}>
           <View style={[styles.statusDot, connected && styles.statusDotConnected]} />
           <View style={styles.statusCopy}>
-            <Text style={styles.statusTitle}>{statusTitle}</Text>
+            <Text style={styles.statusTitle}>{t(statusTitleKey)}</Text>
             <Text style={styles.statusDetail}>{statusDetail}</Text>
           </View>
           {state.phase === "discovering" ? <ActivityIndicator color="#646B61" /> : null}
@@ -104,9 +130,9 @@ export function AgentsScreen() {
         {connected ? (
           <>
             <View style={styles.summaryRow}>
-              <Text style={styles.sectionTitle}>Agents</Text>
+              <Text style={styles.sectionTitle}>{t("tab.agents")}</Text>
               <Text style={styles.summaryText}>
-                {connected.data.source_online ? "来源在线" : "来源离线"} · {connected.data.agents.length} 个 · {formatTime(connected.data.refreshed_at)}
+                {connected.data.source_online ? t("agents.summary.sourceOnline") : t("agents.summary.sourceOffline")} · {t("agents.summary.count", { count: connected.data.agents.length })} · {formatTime(connected.data.refreshed_at)}
               </Text>
             </View>
             <FlatList
@@ -125,16 +151,14 @@ export function AgentsScreen() {
               contentContainerStyle={
                 connected.data.agents.length === 0 ? styles.emptyList : styles.list
               }
-              ListEmptyComponent={<Text style={styles.emptyText}>当前没有 Agent</Text>}
+              ListEmptyComponent={<Text style={styles.emptyText}>{t("agents.empty")}</Text>}
               showsVerticalScrollIndicator={false}
             />
           </>
         ) : (
           <View style={styles.placeholder}>
-            <Text style={styles.placeholderTitle}>等待本地连接</Text>
-            <Text style={styles.placeholderText}>
-              发现服务后会自动选择一个 daemon，并读取最新的 Agent 状态。
-            </Text>
+            <Text style={styles.placeholderTitle}>{t("agents.placeholder.title")}</Text>
+            <Text style={styles.placeholderText}>{t("agents.placeholder.text")}</Text>
           </View>
         )}
       </View>

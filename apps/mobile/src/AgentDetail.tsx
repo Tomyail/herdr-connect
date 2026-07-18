@@ -21,6 +21,8 @@ import {
   type DemoAgentHistory,
 } from "./network";
 import { useConnection } from "./connection";
+import { useI18n } from "./i18n/I18nContext";
+import { toErrorCode, toErrorStatus, type NetworkErrorCode } from "./i18n/errors";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 
@@ -31,8 +33,9 @@ type SendPhase = "idle" | "sending" | "sent" | "failed";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AgentDetail">;
 
-function message(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
+interface Failure {
+  code: NetworkErrorCode;
+  status?: number;
 }
 
 export function AgentDetailScreen({ route, navigation }: Props) {
@@ -56,12 +59,13 @@ function AgentDetail({
   service: Service;
   navigation: Props["navigation"];
 }) {
+  const { t, tError } = useI18n();
   const [history, setHistory] = useState<DemoAgentHistory>();
   const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
-  const [loadError, setLoadError] = useState("");
+  const [loadError, setLoadError] = useState<Failure>();
   const [draft, setDraft] = useState("");
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
-  const [sendError, setSendError] = useState("");
+  const [sendError, setSendError] = useState<Failure>();
   const scrollRef = useRef<ScrollView>(null);
   const mountedRef = useRef(true);
   const headerHeight = useHeaderHeight();
@@ -73,11 +77,11 @@ function AgentDetail({
       if (!mountedRef.current) return;
       setHistory(next);
       setLoadPhase("ready");
-      setLoadError("");
+      setLoadError(undefined);
     } catch (error) {
       if (!mountedRef.current) return;
       setLoadPhase("failed");
-      setLoadError(message(error, "无法读取历史"));
+      setLoadError({ code: toErrorCode(error, "history_read"), status: toErrorStatus(error) });
     }
   }, [agent.source_id, service]);
 
@@ -96,6 +100,7 @@ function AgentDetail({
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerBackTitle: t("detail.back"),
       headerTitle: () => (
         <View style={styles.identity}>
           <Text numberOfLines={1} style={styles.title}>{title}</Text>
@@ -105,7 +110,7 @@ function AgentDetail({
       headerRight: () => (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="刷新历史"
+          accessibilityLabel={t("detail.refreshA11y")}
           hitSlop={10}
           onPress={() => void loadHistory(true)}
           style={({ pressed }) => pressed && styles.pressed}
@@ -114,13 +119,13 @@ function AgentDetail({
         </Pressable>
       ),
     });
-  }, [loadHistory, navigation, subtitle, title]);
+  }, [loadHistory, navigation, subtitle, t, title]);
 
   const send = useCallback(async () => {
     const text = draft.trim();
     if (!text || sendPhase === "sending") return;
     setSendPhase("sending");
-    setSendError("");
+    setSendError(undefined);
     try {
       await sendDemoAgentMessage(service, agent.source_id, text);
       if (!mountedRef.current) return;
@@ -130,7 +135,7 @@ function AgentDetail({
     } catch (error) {
       if (!mountedRef.current) return;
       setSendPhase("failed");
-      setSendError(message(error, "发送失败"));
+      setSendError({ code: toErrorCode(error, "send_failed"), status: toErrorStatus(error) });
     }
   }, [agent.source_id, draft, loadHistory, sendPhase, service]);
 
@@ -143,9 +148,9 @@ function AgentDetail({
       style={styles.screen}
     >
       <View style={styles.historyHeader}>
-        <Text style={styles.historyTitle}>历史消息</Text>
+        <Text style={styles.historyTitle}>{t("detail.historyTitle")}</Text>
         <Text style={styles.historyMeta}>
-          {history?.truncated ? "近期截面" : "近期记录"}
+          {history?.truncated ? t("detail.historyMeta.truncated") : t("detail.historyMeta.recent")}
         </Text>
       </View>
 
@@ -160,25 +165,25 @@ function AgentDetail({
         {loadPhase === "loading" && !history ? (
           <View style={styles.centerState}>
             <ActivityIndicator color="#646B61" />
-            <Text style={styles.stateText}>正在读取近期记录</Text>
+            <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
           </View>
         ) : loadPhase === "failed" && !history ? (
           <View style={styles.centerState}>
-            <Text style={styles.errorText}>{loadError}</Text>
+            <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
           </View>
         ) : (
           <Text selectable style={styles.transcript}>
-            {history?.text || "当前没有可显示的历史记录。"}
+            {history?.text || t("detail.emptyHistory")}
           </Text>
         )}
       </ScrollView>
 
       <View style={styles.composerArea}>
-        {sendPhase === "failed" ? <Text style={styles.sendError}>{sendError}</Text> : null}
-        {sendPhase === "sent" ? <Text style={styles.sentText}>已发送到桌面端</Text> : null}
+        {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
+        {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
         <View style={styles.composer}>
           <TextInput
-            accessibilityLabel="发送给 Agent 的消息"
+            accessibilityLabel={t("detail.inputA11y")}
             blurOnSubmit={false}
             maxLength={4000}
             multiline
@@ -186,14 +191,14 @@ function AgentDetail({
               setDraft(value);
               if (sendPhase !== "sending") setSendPhase("idle");
             }}
-            placeholder="输入内容发送到桌面端…"
+            placeholder={t("detail.inputPlaceholder")}
             placeholderTextColor="#8A8E86"
             style={styles.input}
             value={draft}
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="发送消息"
+            accessibilityLabel={t("detail.sendA11y")}
             disabled={!canSend}
             onPress={() => void send()}
             style={({ pressed }) => [
@@ -205,7 +210,7 @@ function AgentDetail({
             {sendPhase === "sending" ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.sendButtonText}>发送</Text>
+              <Text style={styles.sendButtonText}>{t("detail.send")}</Text>
             )}
           </Pressable>
         </View>

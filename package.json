@@ -10,10 +10,11 @@
     "trace:daemon": "go run ./cmd/herdr-connect --db ./.data/fake-daemon.db --source fake trace",
     "test:conformance": "pnpm --filter @herdr-connect/protocol build && node --test test/conformance.test.mjs",
     "test:install": "node --test test/install-script.test.mjs",
+    "test:mobile": "pnpm --filter @herdr-connect/mobile test",
     "test:go": "go test ./...",
     "test:ts": "pnpm --filter @herdr-connect/protocol test",
     "typecheck": "pnpm --filter @herdr-connect/protocol typecheck && pnpm --filter @herdr-connect/mobile typecheck",
-    "test": "pnpm test:go && pnpm test:ts && pnpm test:conformance && pnpm test:install"
+    "test": "pnpm test:go && pnpm test:ts && pnpm test:mobile && pnpm test:conformance && pnpm test:install"
   },
   "devDependencies": {
     "@types/node": "26.1.1",

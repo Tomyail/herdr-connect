@@ -1,3 +1,5 @@
+import { NetworkError } from "./i18n/errors";
+
 export type InteractionState = "working" | "blocked" | "ready_input" | "unknown";
 export type TurnOutcome = "succeeded" | "failed" | "cancelled";
 
@@ -51,13 +53,13 @@ function asTurnOutcome(value: unknown): TurnOutcome | null | undefined {
 }
 
 function parseAgent(value: unknown): DemoAgent {
-  if (!isRecord(value)) throw new Error("Agent 数据格式无效");
+  if (!isRecord(value)) throw new NetworkError("agent_invalid");
   if (
     typeof value.source_id !== "string" ||
     typeof value.display_name !== "string" ||
     typeof value.revision !== "number"
   ) {
-    throw new Error("Agent 缺少必要字段");
+    throw new NetworkError("agent_missing");
   }
 
   return {
@@ -73,7 +75,7 @@ function parseAgent(value: unknown): DemoAgent {
 }
 
 export function parseDemoAgentsResponse(value: unknown): DemoAgentsResponse {
-  if (!isRecord(value)) throw new Error("daemon 响应格式无效");
+  if (!isRecord(value)) throw new NetworkError("response_invalid");
   if (
     typeof value.demo_version !== "number" ||
     typeof value.source_name !== "string" ||
@@ -81,7 +83,7 @@ export function parseDemoAgentsResponse(value: unknown): DemoAgentsResponse {
     typeof value.refreshed_at !== "string" ||
     !Array.isArray(value.agents)
   ) {
-    throw new Error("daemon 响应缺少必要字段");
+    throw new NetworkError("response_missing");
   }
 
   return {
@@ -91,31 +93,4 @@ export function parseDemoAgentsResponse(value: unknown): DemoAgentsResponse {
     refreshed_at: value.refreshed_at,
     agents: value.agents.map(parseAgent),
   };
-}
-
-export function interactionStateLabel(state: InteractionState): string {
-  switch (state) {
-    case "working":
-      return "工作中";
-    case "blocked":
-      return "已阻塞";
-    case "ready_input":
-      return "等待输入";
-    case "unknown":
-      return "未知";
-  }
-}
-
-export function turnOutcomeLabel(outcome?: TurnOutcome | null): string {
-  switch (outcome) {
-    case "succeeded":
-      return "成功";
-    case "failed":
-      return "失败";
-    case "cancelled":
-      return "已取消";
-    case null:
-    case undefined:
-      return "未知";
-  }
 }
