@@ -3,7 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { type DemoAgent, type InteractionState, type TurnOutcome } from "./demo-contract";
+import { type DemoAgent, type InteractionState } from "./demo-contract";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
 import { useI18n } from "./i18n/I18nContext";
@@ -21,20 +21,6 @@ function interactionKey(state: InteractionState): MessageKey {
       return "interaction.ready_input";
     case "unknown":
       return "interaction.unknown";
-  }
-}
-
-function turnOutcomeKey(outcome: TurnOutcome | null | undefined): MessageKey {
-  switch (outcome) {
-    case "succeeded":
-      return "turn.succeeded";
-    case "failed":
-      return "turn.failed";
-    case "cancelled":
-      return "turn.cancelled";
-    case null:
-    case undefined:
-      return "turn.unknown";
   }
 }
 
@@ -71,8 +57,6 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
       <View style={styles.agentFacts}>
         <Text style={styles.factLabel}>{t("agents.fact.interaction")}</Text>
         <Text style={styles.factValue}>{t(interactionKey(agent.interaction_state))}</Text>
-        <Text style={styles.factLabel}>{t("agents.fact.turnOutcome")}</Text>
-        <Text style={styles.factValue}>{t(turnOutcomeKey(agent.turn_outcome))}</Text>
       </View>
     </Pressable>
   );

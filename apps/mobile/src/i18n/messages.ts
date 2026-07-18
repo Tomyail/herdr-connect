@@ -34,7 +34,6 @@ const en = {
   "agents.row.unnamed": "Unnamed agent",
   "agents.row.switchA11y": "Switch to {title} {tab}",
   "agents.fact.interaction": "Interaction",
-  "agents.fact.turnOutcome": "Turn outcome",
   "agents.focus.switching": "Switching\u2026",
   "agents.focus.switched": "Switched",
   "agents.focus.failed": "Switch failed",
@@ -43,11 +42,6 @@ const en = {
   "interaction.blocked": "Blocked",
   "interaction.ready_input": "Awaiting input",
   "interaction.unknown": "Unknown",
-
-  "turn.succeeded": "Succeeded",
-  "turn.failed": "Failed",
-  "turn.cancelled": "Cancelled",
-  "turn.unknown": "Unknown",
 
   "detail.historyTitle": "History",
   "detail.historyMeta.truncated": "Recent excerpt",
@@ -125,7 +119,6 @@ const zhHans: Record<MessageKey, string> = {
   "agents.row.unnamed": "\u672A\u547D\u540D Agent",
   "agents.row.switchA11y": "\u5207\u6362\u5230 {title} {tab}",
   "agents.fact.interaction": "\u4EA4\u4E92\u72B6\u6001",
-  "agents.fact.turnOutcome": "\u56DE\u5408\u7ED3\u679C",
   "agents.focus.switching": "\u5207\u6362\u4E2D\u2026",
   "agents.focus.switched": "\u5DF2\u5207\u6362",
   "agents.focus.failed": "\u5207\u6362\u5931\u8D25",
@@ -134,11 +127,6 @@ const zhHans: Record<MessageKey, string> = {
   "interaction.blocked": "\u5DF2\u963B\u585E",
   "interaction.ready_input": "\u7B49\u5F85\u8F93\u5165",
   "interaction.unknown": "\u672A\u77E5",
-
-  "turn.succeeded": "\u6210\u529F",
-  "turn.failed": "\u5931\u8D25",
-  "turn.cancelled": "\u5DF2\u53D6\u6D88",
-  "turn.unknown": "\u672A\u77E5",
 
   "detail.historyTitle": "\u5386\u53F2\u6D88\u606F",
   "detail.historyMeta.truncated": "\u8FD1\u671F\u622A\u9762",
