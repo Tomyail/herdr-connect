@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { type DemoAgent } from "./demo-contract";
+import { agentStatus } from "./agent-status";
 import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
@@ -15,36 +16,7 @@ import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
 import type { RootStackParamList } from "./navigation";
 
-type PillTone = "statusDotConnected" | "statusDot" | "danger" | "textMuted";
-
-/**
- * What the status pill says for an agent. Active states speak for themselves;
- * `unknown` means the pane went back to a plain shell, so we substitute the
- * most accurate thing we know: a completion we just observed live, then the
- * reported turn outcome, then plain "idle" — never the technical "unknown".
- */
-function statusPill(agent: DemoAgent, justCompleted: boolean): { textKey: MessageKey; tone: PillTone } {
-  switch (agent.interaction_state) {
-    case "working":
-      return { textKey: "interaction.working", tone: "statusDotConnected" };
-    case "blocked":
-      return { textKey: "interaction.blocked", tone: "danger" };
-    case "ready_input":
-      return { textKey: "interaction.ready_input", tone: "statusDot" };
-    case "unknown":
-      if (justCompleted) return { textKey: "agents.row.justCompleted", tone: "statusDotConnected" };
-      switch (agent.turn_outcome) {
-        case "succeeded":
-          return { textKey: "interaction.succeeded", tone: "statusDotConnected" };
-        case "failed":
-          return { textKey: "interaction.failed", tone: "danger" };
-        case "cancelled":
-          return { textKey: "interaction.cancelled", tone: "textMuted" };
-        default:
-          return { textKey: "interaction.idle", tone: "textMuted" };
-      }
-  }
-}
+// Status text/tone mapping lives in agent-status.ts, shared with AgentDetail's switcher.
 
 const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmark-circle" | "alert-circle"; color?: "success" | "danger" }> = {
   switching: { textKey: "agents.focus.switching" },
@@ -56,7 +28,7 @@ function StatusPill({ agent, justCompleted }: { agent: DemoAgent; justCompleted:
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const { textKey, tone } = statusPill(agent, justCompleted);
+  const { textKey, tone } = agentStatus(agent, justCompleted);
   const color = colors[tone];
   return (
     <View style={[styles.statusPill, { backgroundColor: `${color}1F` }]}>

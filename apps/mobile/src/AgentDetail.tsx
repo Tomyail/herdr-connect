@@ -21,8 +21,11 @@ import {
   type DemoAgentHistory,
 } from "./network";
 import { useConnection } from "./connection";
+import { useRecentCompletions } from "./notifications/RecentCompletions";
 import { useI18n } from "./i18n/I18nContext";
 import { toErrorCode, toErrorStatus, type NetworkErrorCode } from "./i18n/errors";
+import { agentStatus } from "./agent-status";
+import { AgentBrandIcon } from "./AgentBrandIcon";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
@@ -41,25 +44,144 @@ interface Failure {
 }
 
 export function AgentDetailScreen({ route, navigation }: Props) {
-  const { state } = useConnection();
+  const { state, switchAgent } = useConnection();
+  const { clearCompleted } = useRecentCompletions();
+  const styles = useThemedStyles(createStyles);
   const service = state.phase === "connected" ? state.service : undefined;
+  const agents = state.phase === "connected" ? state.data.agents : [];
+  // Prefer the live snapshot of the routed agent so the header and switcher
+  // reflect fresh state; fall back to the route param until the next poll.
+  const paramAgent = route.params.agent;
+  const agent = agents.find((candidate) => candidate.source_id === paramAgent.source_id) ?? paramAgent;
+  const [switcherHeight, setSwitcherHeight] = useState(0);
 
   useEffect(() => {
     if (!service && navigation.canGoBack()) navigation.goBack();
   }, [navigation, service]);
 
+  // Switching in place: update the route param (keeps notify-while-viewing
+  // accurate), focus the desktop, and let the key-remount reset local state.
+  const selectAgent = useCallback(
+    (next: DemoAgent) => {
+      if (!service || next.source_id === agent.source_id) return;
+      clearCompleted([next.source_id]);
+      navigation.setParams({ agent: next });
+      void switchAgent(service, next);
+    },
+    [agent.source_id, clearCompleted, navigation, service, switchAgent],
+  );
+
   if (!service) return null;
-  return <AgentDetail agent={route.params.agent} service={service} navigation={navigation} />;
+  // The switcher lives outside the keyed subtree so it survives switches
+  // without flicker; only the history/composer state below it resets.
+  return (
+    <View style={styles.screen}>
+      {agents.length > 1 ? (
+        <View onLayout={(event) => setSwitcherHeight(event.nativeEvent.layout.height)}>
+          <AgentSwitcher agents={agents} currentId={agent.source_id} onSelect={selectAgent} />
+        </View>
+      ) : null}
+      <AgentDetail
+        key={agent.source_id}
+        agent={agent}
+        service={service}
+        navigation={navigation}
+        keyboardOffsetExtra={switcherHeight}
+      />
+    </View>
+  );
+}
+
+function AgentSwitcher({
+  agents,
+  currentId,
+  onSelect,
+}: {
+  agents: readonly DemoAgent[];
+  currentId: string;
+  onSelect: (agent: DemoAgent) => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const { completedIds } = useRecentCompletions();
+  const scrollRef = useRef<ScrollView>(null);
+  const viewportWidth = useRef(0);
+  const chipLayouts = useRef(new Map<string, { x: number; width: number }>());
+  const positioned = useRef(false);
+
+  const centerChip = useCallback((id: string, animated: boolean) => {
+    const layout = chipLayouts.current.get(id);
+    if (!layout || viewportWidth.current === 0) return;
+    const target = Math.max(0, layout.x - (viewportWidth.current - layout.width) / 2);
+    scrollRef.current?.scrollTo({ x: target, animated });
+  }, []);
+
+  // Smoothly follow selection changes; the initial position is set from the
+  // selected chip's first onLayout below (layouts aren't known yet on mount).
+  useEffect(() => {
+    if (positioned.current) centerChip(currentId, true);
+  }, [centerChip, currentId]);
+
+  return (
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.switcher}
+      contentContainerStyle={styles.switcherContent}
+      onLayout={(event) => {
+        viewportWidth.current = event.nativeEvent.layout.width;
+      }}
+    >
+      {agents.map((candidate) => {
+        const selected = candidate.source_id === currentId;
+        const { tone } = agentStatus(candidate, completedIds.has(candidate.source_id));
+        const title = candidate.workspace_label || candidate.display_name;
+        const label = candidate.tab_label || title;
+        return (
+          <Pressable
+            key={candidate.source_id}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            accessibilityLabel={t("agents.row.switchA11y", { title, tab: candidate.tab_label ?? "" })}
+            onPress={() => onSelect(candidate)}
+            onLayout={(event) => {
+              chipLayouts.current.set(candidate.source_id, event.nativeEvent.layout);
+              if (selected && !positioned.current) {
+                positioned.current = true;
+                centerChip(candidate.source_id, false);
+              }
+            }}
+            style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.chipPressed]}
+          >
+            <View style={[styles.chipDot, { backgroundColor: colors[tone] }]} />
+            <AgentBrandIcon
+              name={candidate.agent_name}
+              size={14}
+              color={selected ? colors.textPrimary : colors.textSecondary}
+            />
+            <Text numberOfLines={1} style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
 }
 
 function AgentDetail({
   agent,
   service,
   navigation,
+  keyboardOffsetExtra,
 }: {
   agent: DemoAgent;
   service: Service;
   navigation: Props["navigation"];
+  /** Height of the persistent switcher strip above this subtree. */
+  keyboardOffsetExtra: number;
 }) {
   const { t, tError } = useI18n();
   const { colors } = useTheme();
@@ -148,7 +270,7 @@ function AgentDetail({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={headerHeight}
+      keyboardVerticalOffset={headerHeight + keyboardOffsetExtra}
       style={styles.screen}
     >
       <View style={styles.historyHeader}>
@@ -226,6 +348,24 @@ function AgentDetail({
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: colors.background },
+    switcher: { flexGrow: 0 },
+    switcherContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 2, gap: 8 },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 11,
+      paddingVertical: 7,
+      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+    },
+    chipSelected: { borderWidth: 1, borderColor: colors.selectedCardBorder, backgroundColor: colors.selectedCard },
+    chipPressed: { opacity: 0.7 },
+    chipDot: { width: 7, height: 7, borderRadius: 3.5 },
+    chipLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: "600", maxWidth: 110 },
+    chipLabelSelected: { color: colors.textPrimary },
     identity: { alignItems: "center", maxWidth: 220 },
     title: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
     subtitle: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
