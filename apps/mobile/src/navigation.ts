@@ -4,6 +4,7 @@ export type RootStackParamList = {
   Tabs: undefined;
   AgentDetail: { agent: DemoAgent };
   Language: undefined;
+  Appearance: undefined;
 };
 
 export type TabParamList = {

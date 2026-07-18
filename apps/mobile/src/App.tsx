@@ -1,4 +1,10 @@
-import { DefaultTheme, NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
+import { useMemo } from "react";
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  useNavigationContainerRef,
+} from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -6,11 +12,13 @@ import { StatusBar } from "expo-status-bar";
 
 import { ConnectionProvider } from "./connection";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
+import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { DoneSoundProvider } from "./notifications/DoneSoundProvider";
 import { AgentsScreen } from "./AgentsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
 import { LanguageScreen } from "./LanguageScreen";
+import { AppearanceScreen } from "./AppearanceScreen";
 import { Ionicons, type IoniconName } from "./icons";
 import type { RootStackParamList, TabParamList } from "./navigation";
 
@@ -22,33 +30,22 @@ const tabIcons: Record<keyof TabParamList, { active: IoniconName; inactive: Ioni
   Settings: { active: "settings", inactive: "settings-outline" },
 };
 
-const theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: "#F3F1EA",
-    card: "#F3F1EA",
-    border: "#DAD8D0",
-    primary: "#466447",
-    text: "#171A16",
-  },
-};
-
 function Tabs() {
   const { t } = useI18n();
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#1E211D",
-        tabBarInactiveTintColor: "#8A8E86",
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginTop: 2 },
         tabBarIcon: ({ color, focused, size }) => {
           const iconName = focused ? tabIcons[route.name].active : tabIcons[route.name].inactive;
           return <Ionicons name={iconName} size={focused ? size + 1 : size} color={color} />;
         },
-        tabBarStyle: { backgroundColor: "#F3F1EA", borderTopColor: "#DAD8D0" },
+        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.cardBorder },
       })}
     >
       <Tab.Screen name="Agents" component={AgentsScreen} options={{ title: t("tab.agents") }} />
@@ -57,30 +54,56 @@ function Tabs() {
   );
 }
 
-export default function App() {
+function ThemedNavigation() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  const { theme, colors } = useTheme();
+
+  const navigationTheme = useMemo(() => {
+    const base = theme === "dark" ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.background,
+        card: colors.background,
+        border: colors.cardBorder,
+        primary: colors.accent,
+        text: colors.textPrimary,
+      },
+    };
+  }, [theme, colors]);
+
+  return (
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+      <DoneSoundProvider navigationRef={navigationRef} />
+      <Stack.Navigator
+        screenOptions={{
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.accent,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        <Stack.Screen name="AgentDetail" component={AgentDetailScreen} />
+        <Stack.Screen name="Language" component={LanguageScreen} />
+        <Stack.Screen name="Appearance" component={AppearanceScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
   return (
     <SafeAreaProvider>
-      <I18nProvider>
-        <ConnectionProvider>
-          <NavigationContainer ref={navigationRef} theme={theme}>
-            <StatusBar style="dark" />
-            <DoneSoundProvider navigationRef={navigationRef} />
-            <Stack.Navigator
-              screenOptions={{
-                headerShadowVisible: false,
-                headerStyle: { backgroundColor: "#F3F1EA" },
-                headerTintColor: "#466447",
-                contentStyle: { backgroundColor: "#F3F1EA" },
-              }}
-            >
-              <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
-              <Stack.Screen name="AgentDetail" component={AgentDetailScreen} />
-              <Stack.Screen name="Language" component={LanguageScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </ConnectionProvider>
-      </I18nProvider>
+      <ThemeProvider>
+        <I18nProvider>
+          <ConnectionProvider>
+            <ThemedNavigation />
+          </ConnectionProvider>
+        </I18nProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

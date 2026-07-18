@@ -86,6 +86,12 @@ const en = {
   "language.option.zhHans": "\u7B80\u4F53\u4E2D\u6587",
   "language.option.en": "English",
 
+  "settings.row.appearance": "Appearance",
+  "appearance.title": "Appearance",
+  "appearance.option.system": "System default",
+  "appearance.option.light": "Light",
+  "appearance.option.dark": "Dark",
+
   "permission.android.title": "Allow discovering nearby Herdr daemons",
   "permission.android.message":
     "Herdr Connect needs access to nearby devices to discover and connect to a Mac on the same local network.",
@@ -170,6 +176,12 @@ const zhHans: Record<MessageKey, string> = {
   "language.option.system": "\u8DDF\u968F\u7CFB\u7EDF",
   "language.option.zhHans": "\u7B80\u4F53\u4E2D\u6587",
   "language.option.en": "English",
+
+  "settings.row.appearance": "\u5916\u89C2",
+  "appearance.title": "\u5916\u89C2",
+  "appearance.option.system": "\u8DDF\u968F\u7CFB\u7EDF",
+  "appearance.option.light": "\u6D45\u8272",
+  "appearance.option.dark": "\u6DF1\u8272",
 
   "permission.android.title": "\u5141\u8BB8\u53D1\u73B0\u9644\u8FD1\u7684 Herdr daemon",
   "permission.android.message":

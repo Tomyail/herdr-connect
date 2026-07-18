@@ -3,12 +3,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useConnection } from "./connection";
 import { useI18n } from "./i18n/I18nContext";
+import { useThemedStyles } from "./theme/ThemeContext";
+import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
 import { Settings } from "./Settings";
 
 export function SettingsScreen() {
   const { state } = useConnection();
   const { t } = useI18n();
+  const styles = useThemedStyles(createStyles);
   const connected = state.phase === "connected" ? state : undefined;
 
   return (
@@ -21,7 +24,8 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F3F1EA" },
-  screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
+  });

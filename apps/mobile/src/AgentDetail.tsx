@@ -23,6 +23,8 @@ import {
 import { useConnection } from "./connection";
 import { useI18n } from "./i18n/I18nContext";
 import { toErrorCode, toErrorStatus, type NetworkErrorCode } from "./i18n/errors";
+import { useTheme, useThemedStyles } from "./theme/ThemeContext";
+import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 
@@ -60,6 +62,8 @@ function AgentDetail({
   navigation: Props["navigation"];
 }) {
   const { t, tError } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [history, setHistory] = useState<DemoAgentHistory>();
   const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
   const [loadError, setLoadError] = useState<Failure>();
@@ -115,11 +119,11 @@ function AgentDetail({
           onPress={() => void loadHistory(true)}
           style={({ pressed }) => pressed && styles.pressed}
         >
-          <Ionicons name="refresh" size={ICON_SIZE} color="#466447" />
+          <Ionicons name="refresh" size={ICON_SIZE} color={colors.accent} />
         </Pressable>
       ),
     });
-  }, [loadHistory, navigation, subtitle, t, title]);
+  }, [colors, loadHistory, navigation, styles, subtitle, t, title]);
 
   const send = useCallback(async () => {
     const text = draft.trim();
@@ -164,7 +168,7 @@ function AgentDetail({
       >
         {loadPhase === "loading" && !history ? (
           <View style={styles.centerState}>
-            <ActivityIndicator color="#646B61" />
+            <ActivityIndicator color={colors.spinner} />
             <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
           </View>
         ) : loadPhase === "failed" && !history ? (
@@ -192,7 +196,7 @@ function AgentDetail({
               if (sendPhase !== "sending") setSendPhase("idle");
             }}
             placeholder={t("detail.inputPlaceholder")}
-            placeholderTextColor="#8A8E86"
+            placeholderTextColor={colors.textMuted}
             style={styles.input}
             value={draft}
           />
@@ -208,9 +212,9 @@ function AgentDetail({
             ]}
           >
             {sendPhase === "sending" ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.onAction} size="small" />
             ) : (
-              <Text style={styles.sendButtonText}>{t("detail.send")}</Text>
+              <Text style={[styles.sendButtonText, !canSend && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
             )}
           </Pressable>
         </View>
@@ -219,28 +223,30 @@ function AgentDetail({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F3F1EA" },
-  identity: { alignItems: "center", maxWidth: 220 },
-  title: { color: "#191C18", fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
-  subtitle: { color: "#777B72", fontSize: 11, marginTop: 2 },
-  pressed: { opacity: 0.55 },
-  historyHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
-  historyTitle: { color: "#1B1E1A", fontSize: 21, fontWeight: "700", letterSpacing: -0.35 },
-  historyMeta: { color: "#7A7E75", fontSize: 12 },
-  history: { flex: 1, marginHorizontal: 16, backgroundColor: "#FFFFFF", borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: "#DAD8D0" },
-  historyContent: { flexGrow: 1, padding: 17, justifyContent: "flex-end" },
-  transcript: { color: "#30342E", fontSize: 12, lineHeight: 18, fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) },
-  centerState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 36 },
-  stateText: { color: "#777B72", fontSize: 13 },
-  errorText: { color: "#A34B43", fontSize: 13, textAlign: "center" },
-  composerArea: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
-  composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: "#D6D4CC", padding: 8 },
-  input: { flex: 1, minHeight: 40, maxHeight: 112, color: "#1D201C", fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
-  sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: "#1E211D", alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
-  sendButtonDisabled: { backgroundColor: "#C7C9C3" },
-  sendButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
-  sendButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  sendError: { color: "#A34B43", fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
-  sentText: { color: "#4F744D", fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
+    identity: { alignItems: "center", maxWidth: 220 },
+    title: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", letterSpacing: -0.2 },
+    subtitle: { color: colors.textSecondary, fontSize: 11, marginTop: 2 },
+    pressed: { opacity: 0.55 },
+    historyHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
+    historyTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700", letterSpacing: -0.35 },
+    historyMeta: { color: colors.textSecondary, fontSize: 12 },
+    history: { flex: 1, marginHorizontal: 16, backgroundColor: colors.card, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    historyContent: { flexGrow: 1, padding: 17, justifyContent: "flex-end" },
+    transcript: { color: colors.transcript, fontSize: 12, lineHeight: 18, fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) },
+    centerState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 36 },
+    stateText: { color: colors.textSecondary, fontSize: 13 },
+    errorText: { color: colors.danger, fontSize: 13, textAlign: "center" },
+    composerArea: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+    composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 8 },
+    input: { flex: 1, minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
+    sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
+    sendButtonDisabled: { backgroundColor: colors.actionDisabledBg },
+    sendButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+    sendButtonText: { color: colors.onAction, fontSize: 14, fontWeight: "700" },
+    sendButtonTextDisabled: { color: colors.onActionDisabled },
+    sendError: { color: colors.danger, fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
+    sentText: { color: colors.success, fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
+  });

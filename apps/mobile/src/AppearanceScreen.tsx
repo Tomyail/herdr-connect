@@ -5,53 +5,51 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useI18n } from "./i18n/I18nContext";
-import type { AppLanguage } from "./i18n/locale";
 import type { MessageKey } from "./i18n/messages";
 import { Ionicons } from "./icons";
+import { APPEARANCE_CHOICES, type AppearanceChoice } from "./theme/appearance";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import type { RootStackParamList } from "./navigation";
 
-type Navigation = NativeStackNavigationProp<RootStackParamList, "Language">;
+type Navigation = NativeStackNavigationProp<RootStackParamList, "Appearance">;
 
-const OPTIONS: AppLanguage[] = ["system", "zh-Hans", "en"];
-
-/** Message key for a language option's display label. zh-Hans/English keep their own script. */
-function optionLabelKey(language: AppLanguage): MessageKey {
-  switch (language) {
+/** Message key for an appearance option's display label. */
+export function appearanceLabelKey(choice: AppearanceChoice): MessageKey {
+  switch (choice) {
     case "system":
-      return "language.option.system";
-    case "zh-Hans":
-      return "language.option.zhHans";
-    case "en":
-      return "language.option.en";
+      return "appearance.option.system";
+    case "light":
+      return "appearance.option.light";
+    case "dark":
+      return "appearance.option.dark";
   }
 }
 
-export function LanguageScreen() {
-  const { t, language, setLanguage } = useI18n();
-  const { colors } = useTheme();
+export function AppearanceScreen() {
+  const { t } = useI18n();
+  const { appearance, colors, setAppearance } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Navigation>();
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: t("language.title"),
+      title: t("appearance.title"),
       headerBackTitle: t("settings.screenTitle"),
     });
   }, [navigation, t]);
 
-  const choose = (next: AppLanguage) => {
-    setLanguage(next);
+  const choose = (next: AppearanceChoice) => {
+    setAppearance(next);
     if (navigation.canGoBack()) navigation.goBack();
   };
 
   return (
     <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
       <View style={styles.list}>
-        {OPTIONS.map((value, index) => {
-          const selected = language === value;
-          const label = t(optionLabelKey(value));
+        {APPEARANCE_CHOICES.map((value, index) => {
+          const selected = appearance === value;
+          const label = t(appearanceLabelKey(value));
           return (
             <Pressable
               key={value}
@@ -61,7 +59,7 @@ export function LanguageScreen() {
               onPress={() => choose(value)}
               style={({ pressed }) => [
                 styles.row,
-                index === OPTIONS.length - 1 && styles.rowLast,
+                index === APPEARANCE_CHOICES.length - 1 && styles.rowLast,
                 pressed && styles.rowPressed,
               ]}
             >

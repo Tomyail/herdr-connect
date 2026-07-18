@@ -8,6 +8,8 @@ import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
 import { useI18n } from "./i18n/I18nContext";
 import type { MessageKey } from "./i18n/messages";
+import { useTheme, useThemedStyles } from "./theme/ThemeContext";
+import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
 import type { RootStackParamList } from "./navigation";
 
@@ -24,16 +26,19 @@ function interactionKey(state: InteractionState): MessageKey {
   }
 }
 
-const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmark-circle" | "alert-circle"; color?: string }> = {
+const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmark-circle" | "alert-circle"; color?: "success" | "danger" }> = {
   switching: { textKey: "agents.focus.switching" },
-  switched: { textKey: "agents.focus.switched", icon: "checkmark-circle", color: "#4F744D" },
-  failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "#A34B43" },
+  switched: { textKey: "agents.focus.switched", icon: "checkmark-circle", color: "success" },
+  failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "danger" },
 };
 
 function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
   const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const title = agent.workspace_label || agent.display_name || t("agents.row.unnamed");
   const feedback = focusPhase ? FOCUS_FEEDBACK[focusPhase] : undefined;
+  const feedbackColor = feedback?.color ? colors[feedback.color] : undefined;
   const switchA11y = t("agents.row.switchA11y", { title, tab: agent.tab_label ?? "" });
   return (
     <Pressable
@@ -50,8 +55,8 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
         <View style={styles.agentKindRow}>
           {agent.agent_name ? <Text style={styles.agentKind}>{agent.agent_name}</Text> : null}
           {agent.agent_name && feedback ? <Text style={styles.agentKind}> · </Text> : null}
-          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedback.color} style={styles.feedbackIcon} /> : null}
-          {feedback ? <Text style={[styles.agentKind, feedback.color != null && { color: feedback.color }]}>{t(feedback.textKey)}</Text> : null}
+          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedbackColor} style={styles.feedbackIcon} /> : null}
+          {feedback ? <Text style={[styles.agentKind, feedbackColor != null && { color: feedbackColor }]}>{t(feedback.textKey)}</Text> : null}
         </View>
       ) : null}
       <View style={styles.agentFacts}>
@@ -65,6 +70,8 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
 export function AgentsScreen() {
   const { state, focusResult, refresh, switchAgent } = useConnection();
   const { t, tError, formatTime } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const connected = state.phase === "connected" ? state : undefined;
@@ -97,7 +104,7 @@ export function AgentsScreen() {
               onPress={() => void refresh()}
               style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
             >
-              <Ionicons name="refresh" size={20} color="#FFFFFF" />
+              <Ionicons name="refresh" size={20} color={colors.onAction} />
             </Pressable>
           }
         />
@@ -108,7 +115,7 @@ export function AgentsScreen() {
             <Text style={styles.statusTitle}>{t(statusTitleKey)}</Text>
             <Text style={styles.statusDetail}>{statusDetail}</Text>
           </View>
-          {state.phase === "discovering" ? <ActivityIndicator color="#646B61" /> : null}
+          {state.phase === "discovering" ? <ActivityIndicator color={colors.spinner} /> : null}
         </View>
 
         {connected ? (
@@ -150,37 +157,38 @@ export function AgentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F3F1EA" },
-  screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
-  refreshButton: { backgroundColor: "#1E211D", borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  buttonPressed: { opacity: 0.72 },
-  statusCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#E8E5DC", borderRadius: 18, padding: 16, marginBottom: 28 },
-  statusConnected: { backgroundColor: "#DFE9DA" },
-  statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#9A7B57", marginRight: 12 },
-  statusDotConnected: { backgroundColor: "#467347" },
-  statusCopy: { flex: 1 },
-  statusTitle: { color: "#20231F", fontSize: 16, fontWeight: "700", marginBottom: 3 },
-  statusDetail: { color: "#666B62", fontSize: 13, lineHeight: 18 },
-  summaryRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
-  sectionTitle: { color: "#1B1E1A", fontSize: 21, fontWeight: "700" },
-  summaryText: { color: "#74786F", fontSize: 12 },
-  list: { paddingBottom: 28, gap: 10 },
-  emptyList: { flexGrow: 1, alignItems: "center", justifyContent: "center" },
-  emptyText: { color: "#777B73", fontSize: 15 },
-  agentCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 17, borderWidth: StyleSheet.hairlineWidth, borderColor: "#DAD8D0" },
-  agentCardPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
-  agentCardSelected: { borderColor: "#6F916B", backgroundColor: "#F4F8F1" },
-  agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  agentName: { color: "#191C18", fontSize: 17, fontWeight: "700", flex: 1 },
-  tabName: { color: "#666B62", fontSize: 12, fontWeight: "600", marginLeft: 14, maxWidth: "46%" },
-  agentKindRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
-  agentKind: { color: "#777B72", fontSize: 13 },
-  feedbackIcon: { marginRight: 3 },
-  agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
-  factLabel: { color: "#858981", fontSize: 12 },
-  factValue: { color: "#32362F", fontSize: 12, fontWeight: "600", marginRight: 8 },
-  placeholder: { marginTop: 62, paddingHorizontal: 25, alignItems: "center" },
-  placeholderTitle: { color: "#343831", fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  placeholderText: { color: "#777B72", fontSize: 14, lineHeight: 21, textAlign: "center" },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
+    refreshButton: { backgroundColor: colors.actionBg, borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+    buttonPressed: { opacity: 0.72 },
+    statusCard: { flexDirection: "row", alignItems: "center", backgroundColor: colors.statusCard, borderRadius: 18, padding: 16, marginBottom: 28 },
+    statusConnected: { backgroundColor: colors.statusCardConnected },
+    statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.statusDot, marginRight: 12 },
+    statusDotConnected: { backgroundColor: colors.statusDotConnected },
+    statusCopy: { flex: 1 },
+    statusTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 3 },
+    statusDetail: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
+    summaryRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
+    sectionTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700" },
+    summaryText: { color: colors.textSecondary, fontSize: 12 },
+    list: { paddingBottom: 28, gap: 10 },
+    emptyList: { flexGrow: 1, alignItems: "center", justifyContent: "center" },
+    emptyText: { color: colors.textSecondary, fontSize: 15 },
+    agentCard: { backgroundColor: colors.card, borderRadius: 18, padding: 17, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    agentCardPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
+    agentCardSelected: { borderColor: colors.selectedCardBorder, backgroundColor: colors.selectedCard },
+    agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    agentName: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", flex: 1 },
+    tabName: { color: colors.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 14, maxWidth: "46%" },
+    agentKindRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+    agentKind: { color: colors.textSecondary, fontSize: 13 },
+    feedbackIcon: { marginRight: 3 },
+    agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
+    factLabel: { color: colors.textMuted, fontSize: 12 },
+    factValue: { color: colors.textPrimary, fontSize: 12, fontWeight: "600", marginRight: 8 },
+    placeholder: { marginTop: 62, paddingHorizontal: 25, alignItems: "center" },
+    placeholderTitle: { color: colors.textPrimary, fontSize: 18, fontWeight: "700", marginBottom: 8 },
+    placeholderText: { color: colors.textSecondary, fontSize: 14, lineHeight: 21, textAlign: "center" },
+  });

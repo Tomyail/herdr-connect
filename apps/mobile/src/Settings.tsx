@@ -18,6 +18,9 @@ import {
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
 import { preferredAddress } from "./network";
+import { useTheme, useThemedStyles } from "./theme/ThemeContext";
+import type { ThemeColors } from "./theme/tokens";
+import { appearanceLabelKey } from "./AppearanceScreen";
 import type { RootStackParamList } from "./navigation";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -46,6 +49,8 @@ function languageValueKey(language: AppLanguage): MessageKey {
 }
 
 function SettingsCard({ title, rows }: { title: string; rows: SettingsRow[] }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -54,13 +59,13 @@ function SettingsCard({ title, rows }: { title: string; rows: SettingsRow[] }) {
           const content = (
             <>
               <View style={styles.rowLeading}>
-                <Ionicons name={row.icon} size={17} color="#8A8E86" />
+                <Ionicons name={row.icon} size={17} color={colors.textMuted} />
                 <Text style={styles.rowLabel}>{row.label}</Text>
               </View>
               <View style={styles.rowTrailing}>
                 <Text numberOfLines={1} style={styles.rowValue}>{row.value}</Text>
                 {row.onPress ? (
-                  <Ionicons name="chevron-forward" size={15} color="#B4B7B0" style={styles.chevron} />
+                  <Ionicons name="chevron-forward" size={15} color={colors.textFaint} style={styles.chevron} />
                 ) : null}
               </View>
             </>
@@ -99,18 +104,20 @@ function SwitchRow({
   onChange: (value: boolean) => void;
   last: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.row, last && styles.rowLast]}>
       <View style={styles.rowLeading}>
-        <Ionicons name={icon} size={17} color="#8A8E86" />
+        <Ionicons name={icon} size={17} color={colors.textMuted} />
         <Text style={styles.rowLabel}>{label}</Text>
       </View>
       <Switch
         accessibilityRole="switch"
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: "#D6D4CC", true: "#6F916B" }}
-        thumbColor="#FFFFFF"
+        trackColor={{ false: colors.switchTrackOff, true: colors.switchTrackOn }}
+        thumbColor={colors.switchThumb}
       />
     </View>
   );
@@ -118,6 +125,7 @@ function SwitchRow({
 
 function NotificationsCard() {
   const { t } = useI18n();
+  const styles = useThemedStyles(createStyles);
   const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
   const [whileViewing, setWhileViewing] = useMMKVBoolean(NOTIFY_WHILE_VIEWING_KEY, notificationStorage);
   return (
@@ -145,6 +153,8 @@ function NotificationsCard() {
 
 export function Settings({ service, data }: SettingsProps) {
   const { t, language } = useI18n();
+  const { appearance } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Navigation>();
 
   const connectionRows: SettingsRow[] = [
@@ -178,6 +188,12 @@ export function Settings({ service, data }: SettingsProps) {
             value: t(languageValueKey(language)),
             onPress: () => navigation.navigate("Language"),
           },
+          {
+            icon: "contrast-outline",
+            label: t("settings.row.appearance"),
+            value: t(appearanceLabelKey(appearance)),
+            onPress: () => navigation.navigate("Appearance"),
+          },
         ]}
       />
       <NotificationsCard />
@@ -200,32 +216,33 @@ export function Settings({ service, data }: SettingsProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  content: { paddingBottom: 28 },
-  sectionTitle: { color: "#1B1E1A", fontSize: 21, fontWeight: "700", marginBottom: 12 },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#DAD8D0",
-    paddingHorizontal: 17,
-    marginBottom: 26,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ECEAE3",
-  },
-  rowLast: { borderBottomWidth: 0 },
-  rowLeading: { flexDirection: "row", alignItems: "center", gap: 9 },
-  rowLabel: { color: "#777B72", fontSize: 14 },
-  rowTrailing: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
-  rowValue: { color: "#1D201C", fontSize: 14, fontWeight: "600", flexShrink: 1 },
-  chevron: { marginLeft: 2 },
-  rowPressed: { opacity: 0.6 },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    screen: { flex: 1 },
+    content: { paddingBottom: 28 },
+    sectionTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700", marginBottom: 12 },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+      paddingHorizontal: 17,
+      marginBottom: 26,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 16,
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.separator,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    rowLeading: { flexDirection: "row", alignItems: "center", gap: 9 },
+    rowLabel: { color: colors.textSecondary, fontSize: 14 },
+    rowTrailing: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
+    rowValue: { color: colors.textPrimary, fontSize: 14, fontWeight: "600", flexShrink: 1 },
+    chevron: { marginLeft: 2 },
+    rowPressed: { opacity: 0.6 },
+  });
