@@ -30,6 +30,7 @@ import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
+import { isHistoryNearBottom } from "./history-scroll";
 
 const HISTORY_REFRESH_MS = 2_000;
 
@@ -192,7 +193,11 @@ function AgentDetail({
   const [draft, setDraft] = useState("");
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
   const [sendError, setSendError] = useState<Failure>();
+  const [hasNewContent, setHasNewContent] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const isNearBottomRef = useRef(true);
+  const positionedHistoryRef = useRef(false);
+  const historyRevisionRef = useRef<number | undefined>(undefined);
   const mountedRef = useRef(true);
   const headerHeight = useHeaderHeight();
 
@@ -201,7 +206,7 @@ function AgentDetail({
     try {
       const next = await fetchDemoAgentHistory(service, agent.source_id);
       if (!mountedRef.current) return;
-      setHistory(next);
+      setHistory((current) => current?.revision === next.revision ? current : next);
       setLoadPhase("ready");
       setLoadError(undefined);
     } catch (error) {
@@ -220,6 +225,13 @@ function AgentDetail({
       clearInterval(timer);
     };
   }, [loadHistory]);
+
+  useEffect(() => {
+    if (!history || historyRevisionRef.current === history.revision) return;
+    const hadHistory = historyRevisionRef.current !== undefined;
+    historyRevisionRef.current = history.revision;
+    if (hadHistory && !isNearBottomRef.current) setHasNewContent(true);
+  }, [history]);
 
   const title = agent.workspace_label || agent.display_name || "Agent";
   const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
@@ -257,6 +269,8 @@ function AgentDetail({
       if (!mountedRef.current) return;
       setDraft("");
       setSendPhase("sent");
+      isNearBottomRef.current = true;
+      setHasNewContent(false);
       await loadHistory();
     } catch (error) {
       if (!mountedRef.current) return;
@@ -280,29 +294,64 @@ function AgentDetail({
         </Text>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={styles.historyContent}
-        keyboardDismissMode="interactive"
-        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
-        showsVerticalScrollIndicator={false}
-        style={styles.history}
-      >
-        {loadPhase === "loading" && !history ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator color={colors.spinner} />
-            <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
-          </View>
-        ) : loadPhase === "failed" && !history ? (
-          <View style={styles.centerState}>
-            <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
-          </View>
-        ) : (
-          <Text selectable style={styles.transcript}>
-            {history?.text || t("detail.emptyHistory")}
-          </Text>
-        )}
-      </ScrollView>
+      <View style={styles.historyFrame}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.historyContent}
+          keyboardDismissMode="interactive"
+          onContentSizeChange={() => {
+            if (!history) return;
+            if (!positionedHistoryRef.current) {
+              positionedHistoryRef.current = true;
+              scrollRef.current?.scrollToEnd({ animated: false });
+            } else if (isNearBottomRef.current) {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          onScroll={(event) => {
+            const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+            const nearBottom = isHistoryNearBottom({
+              contentHeight: contentSize.height,
+              offsetY: contentOffset.y,
+              viewportHeight: layoutMeasurement.height,
+            });
+            isNearBottomRef.current = nearBottom;
+            if (nearBottom) setHasNewContent(false);
+          }}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          style={styles.history}
+        >
+          {loadPhase === "loading" && !history ? (
+            <View style={styles.centerState}>
+              <ActivityIndicator color={colors.spinner} />
+              <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
+            </View>
+          ) : loadPhase === "failed" && !history ? (
+            <View style={styles.centerState}>
+              <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
+            </View>
+          ) : (
+            <Text selectable style={styles.transcript}>
+              {history?.text || t("detail.emptyHistory")}
+            </Text>
+          )}
+        </ScrollView>
+        {hasNewContent ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("detail.newContent")}
+            onPress={() => {
+              isNearBottomRef.current = true;
+              setHasNewContent(false);
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }}
+            style={({ pressed }) => [styles.newContentButton, pressed && styles.newContentButtonPressed]}
+          >
+            <Text style={styles.newContentText}>{t("detail.newContent")}</Text>
+          </Pressable>
+        ) : null}
+      </View>
 
       <View style={styles.composerArea}>
         {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
@@ -373,9 +422,13 @@ const createStyles = (colors: ThemeColors) =>
     historyHeader: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 },
     historyTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700", letterSpacing: -0.35 },
     historyMeta: { color: colors.textSecondary, fontSize: 12 },
-    history: { flex: 1, marginHorizontal: 16, backgroundColor: colors.card, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    historyFrame: { flex: 1, marginHorizontal: 16 },
+    history: { flex: 1, backgroundColor: colors.card, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
     historyContent: { flexGrow: 1, padding: 17, justifyContent: "flex-end" },
     transcript: { color: colors.transcript, fontSize: 12, lineHeight: 18, fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) },
+    newContentButton: { position: "absolute", alignSelf: "center", bottom: 12, minHeight: 34, justifyContent: "center", borderRadius: 17, backgroundColor: colors.actionBg, paddingHorizontal: 15 },
+    newContentButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+    newContentText: { color: colors.onAction, fontSize: 12, fontWeight: "700" },
     centerState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 36 },
     stateText: { color: colors.textSecondary, fontSize: 13 },
     errorText: { color: colors.danger, fontSize: 13, textAlign: "center" },
