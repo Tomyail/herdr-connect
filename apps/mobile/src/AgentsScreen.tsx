@@ -33,6 +33,27 @@ const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmar
   failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "danger" },
 };
 
+/** Which semantic color carries each interaction state (mirrors the icon's traffic-light dots). */
+const INTERACTION_COLOR: Record<InteractionState, "statusDotConnected" | "statusDot" | "danger" | "textMuted"> = {
+  working: "statusDotConnected",
+  ready_input: "statusDot",
+  blocked: "danger",
+  unknown: "textMuted",
+};
+
+function StatusPill({ state }: { state: InteractionState }) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const color = colors[INTERACTION_COLOR[state]];
+  return (
+    <View style={[styles.statusPill, { backgroundColor: `${color}1F` }]}>
+      <View style={[styles.statusPillDot, { backgroundColor: color }]} />
+      <Text style={[styles.statusPillText, { color }]}>{t(interactionKey(state))}</Text>
+    </View>
+  );
+}
+
 function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -48,22 +69,21 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
       onPress={onPress}
       style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, focusPhase === "switched" && styles.agentCardSelected]}
     >
-      <View style={styles.agentHeading}>
-        <Text numberOfLines={1} style={styles.agentName}>{title}</Text>
-        {agent.tab_label ? <Text numberOfLines={1} style={styles.tabName}>{agent.tab_label}</Text> : null}
+      <View style={styles.agentAvatar}>
+        <AgentBrandIcon name={agent.agent_name} size={20} color={colors.textPrimary} />
       </View>
-      {agent.agent_name || feedback ? (
-        <View style={styles.agentKindRow}>
-          {agent.agent_name ? (
-            <AgentBrandIcon name={agent.agent_name} size={14} color={colors.textSecondary} />
-          ) : null}
-          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedbackColor} /> : null}
-          {feedback ? <Text style={[styles.agentKind, feedbackColor != null && { color: feedbackColor }]}>{t(feedback.textKey)}</Text> : null}
+      <View style={styles.agentBody}>
+        <View style={styles.agentHeading}>
+          <Text numberOfLines={1} style={styles.agentName}>{title}</Text>
+          <StatusPill state={agent.interaction_state} />
         </View>
-      ) : null}
-      <View style={styles.agentFacts}>
-        <Text style={styles.factLabel}>{t("agents.fact.interaction")}</Text>
-        <Text style={styles.factValue}>{t(interactionKey(agent.interaction_state))}</Text>
+        {agent.tab_label || feedback ? (
+          <View style={styles.agentSubtitleRow}>
+            {agent.tab_label ? <Text numberOfLines={1} style={styles.tabName}>{agent.tab_label}</Text> : null}
+            {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedbackColor} /> : null}
+            {feedback ? <Text style={[styles.feedbackText, feedbackColor != null && { color: feedbackColor }]}>{t(feedback.textKey)}</Text> : null}
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -178,17 +198,19 @@ const createStyles = (colors: ThemeColors) =>
     list: { paddingBottom: 28, gap: 10 },
     emptyList: { flexGrow: 1, alignItems: "center", justifyContent: "center" },
     emptyText: { color: colors.textSecondary, fontSize: 15 },
-    agentCard: { backgroundColor: colors.card, borderRadius: 18, padding: 17, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    agentCard: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.card, borderRadius: 18, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
     agentCardPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
     agentCardSelected: { borderColor: colors.selectedCardBorder, backgroundColor: colors.selectedCard },
-    agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    agentName: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", flex: 1 },
-    tabName: { color: colors.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 14, maxWidth: "46%" },
-    agentKindRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
-    agentKind: { color: colors.textSecondary, fontSize: 13 },
-    agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
-    factLabel: { color: colors.textMuted, fontSize: 12 },
-    factValue: { color: colors.textPrimary, fontSize: 12, fontWeight: "600", marginRight: 8 },
+    agentAvatar: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.separator, alignItems: "center", justifyContent: "center" },
+    agentBody: { flex: 1 },
+    agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+    agentName: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", flexShrink: 1 },
+    agentSubtitleRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
+    tabName: { color: colors.textSecondary, fontSize: 13, flexShrink: 1 },
+    feedbackText: { color: colors.textSecondary, fontSize: 12 },
+    statusPill: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3.5 },
+    statusPillDot: { width: 6, height: 6, borderRadius: 3 },
+    statusPillText: { fontSize: 11, fontWeight: "600" },
     placeholder: { marginTop: 62, paddingHorizontal: 25, alignItems: "center" },
     placeholderTitle: { color: colors.textPrimary, fontSize: 18, fontWeight: "700", marginBottom: 8 },
     placeholderText: { color: colors.textSecondary, fontSize: 14, lineHeight: 21, textAlign: "center" },
