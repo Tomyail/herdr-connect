@@ -12,7 +12,7 @@
     "release:ios:distribute": "node scripts/ios-release.mjs distribute",
     "release:android": "scripts/android-release.sh",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/i18n/*.test.ts src/notifications/*.test.ts src/theme/*.test.ts",
+    "test": "node --import tsx --test src/*.test.ts src/i18n/*.test.ts src/notifications/*.test.ts src/theme/*.test.ts",
     "config": "expo config --type public"
   },
   "dependencies": {
@@ -32,7 +32,8 @@
     "react-native-mmkv": "^4.3.2",
     "react-native-nitro-modules": "^0.36.1",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "4.25.2"
+    "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4"
   },
   "devDependencies": {
     "@types/node": "26.1.1",

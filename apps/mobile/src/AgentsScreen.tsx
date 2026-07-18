@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { type DemoAgent, type InteractionState } from "./demo-contract";
+import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
 import { useI18n } from "./i18n/I18nContext";
@@ -53,9 +54,10 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
       </View>
       {agent.agent_name || feedback ? (
         <View style={styles.agentKindRow}>
-          {agent.agent_name ? <Text style={styles.agentKind}>{agent.agent_name}</Text> : null}
-          {agent.agent_name && feedback ? <Text style={styles.agentKind}> · </Text> : null}
-          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedbackColor} style={styles.feedbackIcon} /> : null}
+          {agent.agent_name ? (
+            <AgentBrandIcon name={agent.agent_name} size={14} color={colors.textSecondary} />
+          ) : null}
+          {feedback?.icon ? <Ionicons name={feedback.icon} size={13} color={feedbackColor} /> : null}
           {feedback ? <Text style={[styles.agentKind, feedbackColor != null && { color: feedbackColor }]}>{t(feedback.textKey)}</Text> : null}
         </View>
       ) : null}
@@ -182,9 +184,8 @@ const createStyles = (colors: ThemeColors) =>
     agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     agentName: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", flex: 1 },
     tabName: { color: colors.textSecondary, fontSize: 12, fontWeight: "600", marginLeft: 14, maxWidth: "46%" },
-    agentKindRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
+    agentKindRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
     agentKind: { color: colors.textSecondary, fontSize: 13 },
-    feedbackIcon: { marginRight: 3 },
     agentFacts: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 15 },
     factLabel: { color: colors.textMuted, fontSize: 12 },
     factValue: { color: colors.textPrimary, fontSize: 12, fontWeight: "600", marginRight: 8 },
