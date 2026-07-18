@@ -43,3 +43,23 @@ export function detectNewlyCompleted(
   }
   return result;
 }
+
+/**
+ * Return agents that transitioned back into an active state. Used to clear
+ * their unseen-completion badge: once an agent is working again, "it just
+ * finished" is no longer news.
+ */
+export function detectNewlyActive(
+  prev: ReadonlyMap<string, DemoAgent>,
+  curr: readonly DemoAgent[],
+): DemoAgent[] {
+  const result: DemoAgent[] = [];
+  for (const agent of curr) {
+    const previous = prev.get(agent.source_id);
+    if (!previous) continue;
+    if (!isActive(previous) && isActive(agent)) {
+      result.push(agent);
+    }
+  }
+  return result;
+}

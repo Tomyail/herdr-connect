@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { DemoAgent } from "../demo-contract";
-import { detectNewlyCompleted, indexAgents, isActive } from "./doneDetection";
+import { detectNewlyActive, detectNewlyCompleted, indexAgents, isActive } from "./doneDetection";
 
 function agent(source_id: string, overrides: Partial<DemoAgent> = {}): DemoAgent {
   return {
@@ -99,4 +99,25 @@ test("detectNewlyCompleted: a fresh working turn allows re-chiming on the next c
 
   const prev3 = indexAgents([agent("a", { interaction_state: "working" })]);
   assert.equal(detectNewlyCompleted(prev3, [agent("a", { interaction_state: "unknown" })]).length, 1);
+});
+
+test("detectNewlyActive: inactive -> working reactivates; baseline and steady states do not", () => {
+  const prev = indexAgents([
+    agent("a", { interaction_state: "ready_input" }),
+    agent("b", { interaction_state: "working" }),
+  ]);
+  const curr = [
+    agent("a", { interaction_state: "working" }), // reactivated
+    agent("b", { interaction_state: "working" }), // stayed active
+    agent("c", { interaction_state: "working" }), // first sight -> baseline
+  ];
+  const result = detectNewlyActive(prev, curr);
+  assert.equal(result.length, 1);
+  assert.equal(result[0]?.source_id, "a");
+});
+
+test("detectNewlyActive: unknown -> blocked also counts as reactivation", () => {
+  const prev = indexAgents([agent("a", { interaction_state: "unknown" })]);
+  const curr = [agent("a", { interaction_state: "blocked" })];
+  assert.equal(detectNewlyActive(prev, curr).length, 1);
 });

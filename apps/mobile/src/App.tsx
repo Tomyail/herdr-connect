@@ -14,6 +14,7 @@ import { ConnectionProvider } from "./connection";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
 import { DoneSoundProvider } from "./notifications/DoneSoundProvider";
+import { RecentCompletionsProvider } from "./notifications/RecentCompletions";
 import { AgentsScreen } from "./AgentsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
@@ -100,7 +101,9 @@ export default function App() {
       <ThemeProvider>
         <I18nProvider>
           <ConnectionProvider>
-            <ThemedNavigation />
+            <RecentCompletionsProvider>
+              <ThemedNavigation />
+            </RecentCompletionsProvider>
           </ConnectionProvider>
         </I18nProvider>
       </ThemeProvider>

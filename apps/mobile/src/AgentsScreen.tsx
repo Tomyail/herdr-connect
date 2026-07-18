@@ -3,10 +3,11 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { type DemoAgent, type InteractionState } from "./demo-contract";
+import { type DemoAgent } from "./demo-contract";
 import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
+import { useRecentCompletions } from "./notifications/RecentCompletions";
 import { useI18n } from "./i18n/I18nContext";
 import type { MessageKey } from "./i18n/messages";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
@@ -14,16 +15,34 @@ import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
 import type { RootStackParamList } from "./navigation";
 
-function interactionKey(state: InteractionState): MessageKey {
-  switch (state) {
+type PillTone = "statusDotConnected" | "statusDot" | "danger" | "textMuted";
+
+/**
+ * What the status pill says for an agent. Active states speak for themselves;
+ * `unknown` means the pane went back to a plain shell, so we substitute the
+ * most accurate thing we know: a completion we just observed live, then the
+ * reported turn outcome, then plain "idle" — never the technical "unknown".
+ */
+function statusPill(agent: DemoAgent, justCompleted: boolean): { textKey: MessageKey; tone: PillTone } {
+  switch (agent.interaction_state) {
     case "working":
-      return "interaction.working";
+      return { textKey: "interaction.working", tone: "statusDotConnected" };
     case "blocked":
-      return "interaction.blocked";
+      return { textKey: "interaction.blocked", tone: "danger" };
     case "ready_input":
-      return "interaction.ready_input";
+      return { textKey: "interaction.ready_input", tone: "statusDot" };
     case "unknown":
-      return "interaction.unknown";
+      if (justCompleted) return { textKey: "agents.row.justCompleted", tone: "statusDotConnected" };
+      switch (agent.turn_outcome) {
+        case "succeeded":
+          return { textKey: "interaction.succeeded", tone: "statusDotConnected" };
+        case "failed":
+          return { textKey: "interaction.failed", tone: "danger" };
+        case "cancelled":
+          return { textKey: "interaction.cancelled", tone: "textMuted" };
+        default:
+          return { textKey: "interaction.idle", tone: "textMuted" };
+      }
   }
 }
 
@@ -33,28 +52,31 @@ const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmar
   failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "danger" },
 };
 
-/** Which semantic color carries each interaction state (mirrors the icon's traffic-light dots). */
-const INTERACTION_COLOR: Record<InteractionState, "statusDotConnected" | "statusDot" | "danger" | "textMuted"> = {
-  working: "statusDotConnected",
-  ready_input: "statusDot",
-  blocked: "danger",
-  unknown: "textMuted",
-};
-
-function StatusPill({ state }: { state: InteractionState }) {
+function StatusPill({ agent, justCompleted }: { agent: DemoAgent; justCompleted: boolean }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const color = colors[INTERACTION_COLOR[state]];
+  const { textKey, tone } = statusPill(agent, justCompleted);
+  const color = colors[tone];
   return (
     <View style={[styles.statusPill, { backgroundColor: `${color}1F` }]}>
       <View style={[styles.statusPillDot, { backgroundColor: color }]} />
-      <Text style={[styles.statusPillText, { color }]}>{t(interactionKey(state))}</Text>
+      <Text style={[styles.statusPillText, { color }]}>{t(textKey)}</Text>
     </View>
   );
 }
 
-function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase?: FocusPhase; onPress: () => void }) {
+function AgentRow({
+  agent,
+  focusPhase,
+  justCompleted,
+  onPress,
+}: {
+  agent: DemoAgent;
+  focusPhase?: FocusPhase;
+  justCompleted: boolean;
+  onPress: () => void;
+}) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -62,20 +84,22 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
   const feedback = focusPhase ? FOCUS_FEEDBACK[focusPhase] : undefined;
   const feedbackColor = feedback?.color ? colors[feedback.color] : undefined;
   const switchA11y = t("agents.row.switchA11y", { title, tab: agent.tab_label ?? "" });
+  const a11yLabel = justCompleted ? `${switchA11y}, ${t("agents.row.justCompleted")}` : switchA11y;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={switchA11y}
+      accessibilityLabel={a11yLabel}
       onPress={onPress}
       style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, focusPhase === "switched" && styles.agentCardSelected]}
     >
       <View style={styles.agentAvatar}>
         <AgentBrandIcon name={agent.agent_name} size={20} color={colors.textPrimary} />
+        {justCompleted ? <View style={styles.completedBadge} /> : null}
       </View>
       <View style={styles.agentBody}>
         <View style={styles.agentHeading}>
           <Text numberOfLines={1} style={styles.agentName}>{title}</Text>
-          <StatusPill state={agent.interaction_state} />
+          <StatusPill agent={agent} justCompleted={justCompleted} />
         </View>
         {agent.tab_label || feedback ? (
           <View style={styles.agentSubtitleRow}>
@@ -91,6 +115,7 @@ function AgentRow({ agent, focusPhase, onPress }: { agent: DemoAgent; focusPhase
 
 export function AgentsScreen() {
   const { state, focusResult, refresh, switchAgent } = useConnection();
+  const { completedIds, clearCompleted } = useRecentCompletions();
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -155,7 +180,9 @@ export function AgentsScreen() {
                 <AgentRow
                   agent={item}
                   focusPhase={focusResult?.sourceID === item.source_id ? focusResult.phase : undefined}
+                  justCompleted={completedIds.has(item.source_id)}
                   onPress={() => {
+                    clearCompleted([item.source_id]);
                     navigation.navigate("AgentDetail", { agent: item });
                     void switchAgent(connected.service, item);
                   }}
@@ -202,6 +229,7 @@ const createStyles = (colors: ThemeColors) =>
     agentCardPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
     agentCardSelected: { borderColor: colors.selectedCardBorder, backgroundColor: colors.selectedCard },
     agentAvatar: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.separator, alignItems: "center", justifyContent: "center" },
+    completedBadge: { position: "absolute", top: -3, right: -3, width: 11, height: 11, borderRadius: 5.5, backgroundColor: colors.statusDotConnected, borderWidth: 2, borderColor: colors.card },
     agentBody: { flex: 1 },
     agentHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
     agentName: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", flexShrink: 1 },

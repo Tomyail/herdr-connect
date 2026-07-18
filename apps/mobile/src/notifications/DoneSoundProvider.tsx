@@ -6,7 +6,8 @@ import { useMMKVBoolean } from "react-native-mmkv";
 import doneSound from "../../assets/sounds/done.mp3";
 import type { DemoAgent } from "../demo-contract";
 import { useConnection } from "../connection";
-import { detectNewlyCompleted, indexAgents } from "./doneDetection";
+import { detectNewlyActive, detectNewlyCompleted, indexAgents } from "./doneDetection";
+import { useRecentCompletions } from "./RecentCompletions";
 import {
   DEFAULT_DONE_SOUND_ENABLED,
   DEFAULT_NOTIFY_WHILE_VIEWING,
@@ -42,6 +43,7 @@ export function DoneSoundProvider({
   const enabled = enabledRaw ?? DEFAULT_DONE_SOUND_ENABLED;
   const notifyWhileViewing = notifyWhileViewingRaw ?? DEFAULT_NOTIFY_WHILE_VIEWING;
   const player = useAudioPlayer(doneSound);
+  const { markCompleted, clearCompleted } = useRecentCompletions();
   const prevMapRef = useRef<Map<string, DemoAgent>>(new Map());
 
   // Configure global audio so the chime is audible even under the iOS silent
@@ -58,8 +60,14 @@ export function DoneSoundProvider({
   useEffect(() => {
     const agents = state.phase === "connected" ? state.data.agents : [];
     const newlyDone = detectNewlyCompleted(prevMapRef.current, agents);
+    const newlyActive = detectNewlyActive(prevMapRef.current, agents);
     // Always advance the baseline so toggling the switch never backfills old transitions.
     prevMapRef.current = indexAgents(agents);
+
+    // The visual badge is independent of the sound switch: mark completions
+    // unconditionally, and drop the badge once an agent is working again.
+    clearCompleted(newlyActive.map((agent) => agent.source_id));
+    markCompleted(newlyDone.map((agent) => agent.source_id));
 
     if (!enabled || newlyDone.length === 0) return;
 
@@ -77,7 +85,7 @@ export function DoneSoundProvider({
 
     player.seekTo(0);
     player.play();
-  }, [state, enabled, notifyWhileViewing, player, navigationRef]);
+  }, [state, enabled, notifyWhileViewing, player, navigationRef, markCompleted, clearCompleted]);
 
   return null;
 }
