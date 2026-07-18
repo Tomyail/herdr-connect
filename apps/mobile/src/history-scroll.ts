@@ -6,6 +6,19 @@ export interface HistoryScrollMetrics {
   viewportHeight: number;
 }
 
+export interface HistoryContent {
+  text: string;
+  truncated: boolean;
+}
+
+/** Herdr pane revisions do not reliably change with the returned text. */
+export function isSameHistoryContent(
+  current: HistoryContent | undefined,
+  next: HistoryContent,
+): boolean {
+  return current !== undefined && current.text === next.text && current.truncated === next.truncated;
+}
+
 /** Whether a history viewport is close enough to the bottom to follow new output. */
 export function isHistoryNearBottom(
   { contentHeight, offsetY, viewportHeight }: HistoryScrollMetrics,

@@ -30,7 +30,7 @@ import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
-import { isHistoryNearBottom } from "./history-scroll";
+import { isHistoryNearBottom, isSameHistoryContent } from "./history-scroll";
 
 const HISTORY_REFRESH_MS = 2_000;
 
@@ -197,7 +197,7 @@ function AgentDetail({
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const positionedHistoryRef = useRef(false);
-  const historyRevisionRef = useRef<number | undefined>(undefined);
+  const displayedHistoryRef = useRef(false);
   const mountedRef = useRef(true);
   const headerHeight = useHeaderHeight();
 
@@ -206,7 +206,7 @@ function AgentDetail({
     try {
       const next = await fetchDemoAgentHistory(service, agent.source_id);
       if (!mountedRef.current) return;
-      setHistory((current) => current?.revision === next.revision ? current : next);
+      setHistory((current) => isSameHistoryContent(current, next) ? current : next);
       setLoadPhase("ready");
       setLoadError(undefined);
     } catch (error) {
@@ -227,9 +227,9 @@ function AgentDetail({
   }, [loadHistory]);
 
   useEffect(() => {
-    if (!history || historyRevisionRef.current === history.revision) return;
-    const hadHistory = historyRevisionRef.current !== undefined;
-    historyRevisionRef.current = history.revision;
+    if (!history) return;
+    const hadHistory = displayedHistoryRef.current;
+    displayedHistoryRef.current = true;
     if (hadHistory && !isNearBottomRef.current) setHasNewContent(true);
   }, [history]);
 
