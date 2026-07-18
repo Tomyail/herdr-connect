@@ -1,4 +1,4 @@
-import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
+import { DefaultTheme, NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { ConnectionProvider } from "./connection";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
+import { DoneSoundProvider } from "./notifications/DoneSoundProvider";
 import { AgentsScreen } from "./AgentsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
@@ -57,12 +58,14 @@ function Tabs() {
 }
 
 export default function App() {
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
   return (
     <SafeAreaProvider>
       <I18nProvider>
         <ConnectionProvider>
-          <NavigationContainer theme={theme}>
+          <NavigationContainer ref={navigationRef} theme={theme}>
             <StatusBar style="dark" />
+            <DoneSoundProvider navigationRef={navigationRef} />
             <Stack.Navigator
               screenOptions={{
                 headerShadowVisible: false,

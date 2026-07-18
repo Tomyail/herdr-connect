@@ -1,6 +1,7 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMMKVBoolean } from "react-native-mmkv";
 import type { Service } from "@inthepocket/react-native-service-discovery";
 
 import appConfig from "../app.config";
@@ -8,6 +9,13 @@ import { useI18n } from "./i18n/I18nContext";
 import type { AppLanguage } from "./i18n/locale";
 import type { MessageKey } from "./i18n/messages";
 import type { DemoAgentsResponse } from "./demo-contract";
+import {
+  DEFAULT_DONE_SOUND_ENABLED,
+  DEFAULT_NOTIFY_WHILE_VIEWING,
+  DONE_SOUND_ENABLED_KEY,
+  NOTIFY_WHILE_VIEWING_KEY,
+  notificationStorage,
+} from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
 import { preferredAddress } from "./network";
 import type { RootStackParamList } from "./navigation";
@@ -57,22 +65,79 @@ function SettingsCard({ title, rows }: { title: string; rows: SettingsRow[] }) {
               </View>
             </>
           );
-          const rowStyle = [styles.row, index === rows.length - 1 && styles.rowLast];
-          return row.onPress ? (
-            <Pressable
-              key={row.label}
-              accessibilityRole="button"
-              onPress={row.onPress}
-              style={({ pressed }) => [rowStyle, pressed && styles.rowPressed]}
-            >
-              {content}
-            </Pressable>
-          ) : (
-            <View key={row.label} style={rowStyle}>
-              {content}
+          return (
+            <View key={row.label} style={[styles.row, index === rows.length - 1 && styles.rowLast]}>
+              {row.onPress ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={row.onPress}
+                  style={({ pressed }) => pressed && styles.rowPressed}
+                >
+                  {content}
+                </Pressable>
+              ) : (
+                content
+              )}
             </View>
           );
         })}
+      </View>
+    </>
+  );
+}
+
+function SwitchRow({
+  icon,
+  label,
+  value,
+  onChange,
+  last,
+}: {
+  icon: IoniconName;
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  last: boolean;
+}) {
+  return (
+    <View style={[styles.row, last && styles.rowLast]}>
+      <View style={styles.rowLeading}>
+        <Ionicons name={icon} size={17} color="#8A8E86" />
+        <Text style={styles.rowLabel}>{label}</Text>
+      </View>
+      <Switch
+        accessibilityRole="switch"
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: "#D6D4CC", true: "#6F916B" }}
+        thumbColor="#FFFFFF"
+      />
+    </View>
+  );
+}
+
+function NotificationsCard() {
+  const { t } = useI18n();
+  const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
+  const [whileViewing, setWhileViewing] = useMMKVBoolean(NOTIFY_WHILE_VIEWING_KEY, notificationStorage);
+  return (
+    <>
+      <Text style={styles.sectionTitle}>{t("settings.section.notifications")}</Text>
+      <View style={styles.card}>
+        <SwitchRow
+          icon="volume-high-outline"
+          label={t("settings.row.doneSound")}
+          value={enabled ?? DEFAULT_DONE_SOUND_ENABLED}
+          onChange={setEnabled}
+          last={false}
+        />
+        <SwitchRow
+          icon="eye-outline"
+          label={t("settings.row.notifyWhileViewing")}
+          value={whileViewing ?? DEFAULT_NOTIFY_WHILE_VIEWING}
+          onChange={setWhileViewing}
+          last={true}
+        />
       </View>
     </>
   );
@@ -115,6 +180,7 @@ export function Settings({ service, data }: SettingsProps) {
           },
         ]}
       />
+      <NotificationsCard />
       <SettingsCard title={t("settings.section.connection")} rows={connectionRows} />
       <SettingsCard
         title={t("settings.section.discovery")}

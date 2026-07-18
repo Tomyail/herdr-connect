@@ -67,6 +67,7 @@ const en = {
   "settings.section.connection": "Connection",
   "settings.section.discovery": "Discovery",
   "settings.section.about": "About",
+  "settings.section.notifications": "Notifications",
   "settings.row.status": "Status",
   "settings.value.connected": "Connected",
   "settings.value.notConnected": "Not connected",
@@ -82,6 +83,8 @@ const en = {
   "settings.row.app": "App",
   "settings.row.version": "Version",
   "settings.row.language": "Language",
+  "settings.row.doneSound": "Completion sound",
+  "settings.row.notifyWhileViewing": "Also notify while viewing",
   "settings.value.languageSystem": "System default",
 
   "language.title": "Language",
@@ -155,6 +158,7 @@ const zhHans: Record<MessageKey, string> = {
   "settings.section.connection": "\u8FDE\u63A5",
   "settings.section.discovery": "\u53D1\u73B0",
   "settings.section.about": "\u5173\u4E8E",
+  "settings.section.notifications": "\u901A\u77E5",
   "settings.row.status": "\u72B6\u6001",
   "settings.value.connected": "\u5DF2\u8FDE\u63A5",
   "settings.value.notConnected": "\u672A\u8FDE\u63A5",
@@ -170,6 +174,8 @@ const zhHans: Record<MessageKey, string> = {
   "settings.row.app": "\u5E94\u7528",
   "settings.row.version": "\u7248\u672C",
   "settings.row.language": "\u8BED\u8A00",
+  "settings.row.doneSound": "\u5B8C\u6210\u63D0\u793A\u97F3",
+  "settings.row.notifyWhileViewing": "\u67E5\u770B\u65F6\u4E5F\u63D0\u793A",
   "settings.value.languageSystem": "\u8DDF\u968F\u7CFB\u7EDF",
 
   "language.title": "\u8BED\u8A00",

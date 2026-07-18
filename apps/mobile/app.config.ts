@@ -36,7 +36,7 @@ const config: ExpoConfig = {
     en: "./locales/en.json",
     "zh-Hans": "./locales/zh-Hans.json",
   },
-  plugins: ["expo-localization", "expo-dev-client", "./plugins/withAndroidCleartextTraffic.cjs"],
+  plugins: ["expo-localization", "expo-audio", "expo-dev-client", "./plugins/withAndroidCleartextTraffic.cjs"],
 };
 
 export default config;

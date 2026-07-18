@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { NativeModules, PermissionsAndroid, Platform } from "react-native";
+import { AppState, NativeModules, PermissionsAndroid, Platform, type AppStateStatus } from "react-native";
 import * as ServiceDiscovery from "@inthepocket/react-native-service-discovery";
 import type { Service } from "@inthepocket/react-native-service-discovery";
 
@@ -24,6 +24,7 @@ import {
 
 const SERVICE_TYPE = "herdr-connect";
 const DISCOVERY_WAIT_MS = 6_000;
+const AGENT_POLL_INTERVAL_MS = 3_000;
 
 /** Rationale shown by Android on the second (already-denied) permission prompt. */
 interface PermissionRationale {
@@ -81,6 +82,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const requestRef = useRef<AbortController | undefined>(undefined);
   const discoveryTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mountedRef = useRef(true);
+  const pollingInflightRef = useRef(false);
   const [focusResult, setFocusResult] = useState<{ sourceID: string; phase: FocusPhase }>();
 
   // Keep the latest permission rationale without retriggering the discovery effect.
@@ -167,6 +169,57 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
     }
   }, [beginNotFoundCountdown]);
+
+  // Refresh the connected snapshot on a foreground-only interval so the UI stays
+  // live and the done-chime can observe working -> done transitions. Polling is
+  // paused off-foreground; transient fetch errors are silent to avoid disturbing
+  // discovery (the last snapshot is kept).
+  const connectedService = state.phase === "connected" ? state.service : undefined;
+  useEffect(() => {
+    if (!connectedService) return;
+    const service = connectedService;
+    const key = serviceKey(service);
+
+    const tick = async () => {
+      if (pollingInflightRef.current) return;
+      pollingInflightRef.current = true;
+      try {
+        const data = await fetchDemoAgents(service);
+        if (mountedRef.current && selectedKeyRef.current === key) {
+          setState({ phase: "connected", service, data });
+        }
+      } catch {
+        // Silent: keep the last snapshot on transient errors.
+      } finally {
+        pollingInflightRef.current = false;
+      }
+    };
+
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => {
+        void tick();
+      }, AGENT_POLL_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", (next: AppStateStatus) => {
+      if (next === "active") start();
+      else stop();
+    });
+    if (AppState.currentState === "active") start();
+
+    return () => {
+      stop();
+      subscription.remove();
+    };
+  }, [connectedService]);
 
   useEffect(() => {
     mountedRef.current = true;
