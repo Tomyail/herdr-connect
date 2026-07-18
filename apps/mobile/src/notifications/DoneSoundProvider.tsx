@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import type { NavigationContainerRef } from "@react-navigation/native";
-import { useAudioPlayer } from "expo-audio";
+import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import { useMMKVBoolean } from "react-native-mmkv";
 
 import doneSound from "../../assets/sounds/done.mp3";
@@ -44,6 +44,17 @@ export function DoneSoundProvider({
   const player = useAudioPlayer(doneSound);
   const prevMapRef = useRef<Map<string, DemoAgent>>(new Map());
 
+  // Configure global audio so the chime is audible even under the iOS silent
+  // switch (default ambient session is muted by it). Duck other audio briefly;
+  // keep background playback off since we only chime in the foreground.
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "duckOthers",
+      shouldPlayInBackground: false,
+    }).catch((error) => console.warn("[done-sound] setAudioModeAsync failed:", error));
+  }, []);
+
   useEffect(() => {
     const agents = state.phase === "connected" ? state.data.agents : [];
     const newlyDone = detectNewlyCompleted(prevMapRef.current, agents);
@@ -65,7 +76,7 @@ export function DoneSoundProvider({
     }
 
     player.seekTo(0);
-    void player.play();
+    player.play();
   }, [state, enabled, notifyWhileViewing, player, navigationRef]);
 
   return null;

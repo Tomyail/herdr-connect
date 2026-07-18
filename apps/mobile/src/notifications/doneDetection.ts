@@ -1,23 +1,19 @@
 import type { DemoAgent } from "../demo-contract";
 
 /**
- * Completion detection for the done-chime, mirroring herdr's
- * `Working/Blocked -> Idle` semantics through the connect data model.
+ * An agent is "active" — busy, or blocked waiting on input. These are the
+ * states we chime *away from* when the agent leaves them.
  *
- * An agent counts as "completed" right now when either:
- *  - `interaction_state` is `ready_input` (herdr reports `idle`), or
- *  - it carries a concrete `turn_outcome` (herdr reports `done`/`failed`/`cancelled`).
- *
- * `blocked` is intentionally NOT completed — that is herdr's "needs input"
- * case, which this app does not chime for (product decision: done only).
+ * `unknown` is intentionally NOT active. herdr's CLI `agent_status` is
+ * screen-detected and explicitly untrusted (see docs/daemon.md), and a
+ * finished agent frequently reports back as `unknown` (e.g. the pane leaves
+ * the agent viewer and becomes a plain shell — herdr's own `AgentState::Unknown`
+ * is "Plain shell or unrecognized program"). So treating `working/blocked ->
+ * anything else` as a completion is what matches herdr's desktop Done chime
+ * in practice, instead of only the narrow `ready_input` / `turn_outcome` case.
  */
-export function isCompleted(agent: DemoAgent): boolean {
-  if (agent.interaction_state === "ready_input") return true;
-  return (
-    agent.turn_outcome === "succeeded" ||
-    agent.turn_outcome === "failed" ||
-    agent.turn_outcome === "cancelled"
-  );
+export function isActive(agent: DemoAgent): boolean {
+  return agent.interaction_state === "working" || agent.interaction_state === "blocked";
 }
 
 /** Index agents by `source_id` to diff snapshots cheaply. */
@@ -28,10 +24,10 @@ export function indexAgents(agents: readonly DemoAgent[]): Map<string, DemoAgent
 }
 
 /**
- * Return agents that transitioned from not-completed -> completed between two
- * snapshots. Agents absent from `prev` are treated as a baseline (no chime on
- * first sight), so the app only chimes on a transition observed live — never
- * for an agent that was already done when we first connected.
+ * Return agents that transitioned out of an active state (working/blocked)
+ * into a non-active one. Agents absent from `prev` are a baseline (no chime on
+ * first sight), so we only chime on a transition observed live — never for an
+ * agent that was already inactive when we first connected.
  */
 export function detectNewlyCompleted(
   prev: ReadonlyMap<string, DemoAgent>,
@@ -41,7 +37,7 @@ export function detectNewlyCompleted(
   for (const agent of curr) {
     const previous = prev.get(agent.source_id);
     if (!previous) continue; // first sight → baseline, no chime
-    if (!isCompleted(previous) && isCompleted(agent)) {
+    if (isActive(previous) && !isActive(agent)) {
       result.push(agent);
     }
   }
