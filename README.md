@@ -8,6 +8,11 @@
 
 Watch an iPhone discover the Herdr Connect daemon over local Wi-Fi and show the Agent list. See [Try it in 5 minutes](#try-it-in-5-minutes) to reproduce it yourself.
 
+<p>
+  <img src="assets/screenshot-1.png" alt="Herdr Connect iOS screenshot" width="180" />
+  <img src="assets/screenshot-2.png" alt="Herdr Connect iOS screenshot" width="180" />
+</p>
+
 Herdr Connect is an experimental, local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). Its first public milestone is intentionally small: reliably discover a Herdr Connect daemon from a mobile device on the same local network.
 
 ## Try it in 5 minutes
