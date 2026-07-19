@@ -70,19 +70,19 @@ function SettingsCard({ title, rows }: { title: string; rows: SettingsRow[] }) {
               </View>
             </>
           );
-          return (
-            <View key={row.label} style={[styles.row, index === rows.length - 1 && styles.rowLast]}>
-              {row.onPress ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={row.onPress}
-                  style={({ pressed }) => pressed && styles.rowPressed}
-                >
-                  {content}
-                </Pressable>
-              ) : (
-                content
-              )}
+          const rowStyle = [styles.row, index === rows.length - 1 && styles.rowLast];
+          return row.onPress ? (
+            <Pressable
+              accessibilityRole="button"
+              key={row.label}
+              onPress={row.onPress}
+              style={({ pressed }) => [rowStyle, pressed && styles.rowPressed]}
+            >
+              {content}
+            </Pressable>
+          ) : (
+            <View key={row.label} style={rowStyle}>
+              {content}
             </View>
           );
         })}
