@@ -2,6 +2,12 @@
 
 [简体中文](docs/zh-CN/README.md)
 
+## Demo
+
+[![Herdr Connect — LAN Discovery Demo](https://img.youtube.com/vi/BxX4ijalnzI/maxresdefault.jpg)](https://youtu.be/BxX4ijalnzI)
+
+Watch an iPhone discover the Herdr Connect daemon over local Wi-Fi and show the Agent list. See [Try it in 5 minutes](#try-it-in-5-minutes) to reproduce it yourself.
+
 Herdr Connect is an experimental, local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). Its first public milestone is intentionally small: reliably discover a Herdr Connect daemon from a mobile device on the same local network.
 
 ## Try it in 5 minutes
