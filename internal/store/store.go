@@ -12,7 +12,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-const currentSchemaVersion = 1
+const currentSchemaVersion = 2
+
+var migrations = []struct {
+	version int
+	script  string
+}{
+	{1, migrationV1},
+	{2, migrationV2},
+}
 
 type Store struct {
 	db            *sql.DB
@@ -97,33 +105,44 @@ func (s *Store) quickCheck(ctx context.Context) error {
 }
 
 func (s *Store) migrate(ctx context.Context) error {
-	if _, err := s.db.ExecContext(ctx, `PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;`); err != nil {
-		return fmt.Errorf("配置 SQLite: %w", err)
+	if _, err := s.db.ExecContext(ctx, `PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;`); err != nil {
+		return fmt.Errorf("configure SQLite: %w", err)
 	}
 	if err := s.db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&s.schemaVersion); err != nil {
-		return fmt.Errorf("读取 schema version: %w", err)
+		return fmt.Errorf("read schema version: %w", err)
 	}
 	if s.schemaVersion > currentSchemaVersion {
-		return fmt.Errorf("数据库 schema v%d 高于当前支持的 v%d", s.schemaVersion, currentSchemaVersion)
+		return fmt.Errorf("database schema v%d is newer than supported v%d", s.schemaVersion, currentSchemaVersion)
 	}
-	if s.schemaVersion == currentSchemaVersion {
-		return nil
+	for _, migration := range migrations {
+		if migration.version <= s.schemaVersion {
+			continue
+		}
+		if err := s.applyMigration(ctx, migration.version, migration.script); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
+func (s *Store) applyMigration(ctx context.Context, version int, script string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("开始迁移事务: %w", err)
+		return fmt.Errorf("begin schema v%d migration transaction: %w", version, err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.ExecContext(ctx, migrationV1); err != nil {
-		return fmt.Errorf("执行 schema v1 迁移: %w", err)
+	if _, err := tx.ExecContext(ctx, script); err != nil {
+		return fmt.Errorf("apply schema v%d migration: %w", version, err)
 	}
 	if err := tx.QueryRowContext(ctx, "PRAGMA user_version").Scan(&s.schemaVersion); err != nil {
-		return fmt.Errorf("读取 schema version: %w", err)
+		return fmt.Errorf("read schema version: %w", err)
+	}
+	if s.schemaVersion != version {
+		return fmt.Errorf("schema v%d migration left user_version at v%d", version, s.schemaVersion)
 	}
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("提交迁移: %w", err)
+		return fmt.Errorf("commit schema v%d migration: %w", version, err)
 	}
 	return nil
 }
@@ -477,4 +496,28 @@ CREATE TABLE IF NOT EXISTS device_cursors (
 );
 
 PRAGMA user_version = 1;
+`
+
+// migrationV2 引入 LAN 配对模型（issue #21）：paired_devices 存 bearer token 哈希，
+// pairing_secrets 存一次性配对 secret 哈希。与 v1 的 devices/device_cursors 表刻意隔离——
+// 那两张表是 protocol v1（HPKE/Ed25519 设备密钥对）的形状，留待未来 Relay 里程碑使用。
+const migrationV2 = `
+CREATE TABLE IF NOT EXISTS paired_devices (
+    device_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    token_hash BLOB NOT NULL UNIQUE,
+    paired_at_ms INTEGER NOT NULL,
+    last_seen_at_ms INTEGER,
+    revoked_at_ms INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS pairing_secrets (
+    secret_hash BLOB PRIMARY KEY,
+    created_at_ms INTEGER NOT NULL,
+    expires_at_ms INTEGER NOT NULL,
+    consumed_at_ms INTEGER,
+    device_id TEXT REFERENCES paired_devices(device_id)
+);
+
+PRAGMA user_version = 2;
 `

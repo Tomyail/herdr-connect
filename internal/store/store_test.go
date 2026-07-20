@@ -21,8 +21,8 @@ func Test空库迁移可重复执行且序列在重启后继续递增(t *testing
 	if err != nil {
 		t.Fatalf("首次打开数据库: %v", err)
 	}
-	if got := first.SchemaVersion(); got != 1 {
-		t.Fatalf("schema version = %d, want 1", got)
+	if got := first.SchemaVersion(); got != 2 {
+		t.Fatalf("schema version = %d, want 2", got)
 	}
 	err = first.ApplyProjectionBatch(ctx, store.ProjectionBatch{SourceName: "fake", Cursor: "1", Updates: []store.AgentUpdate{{
 		SourceRevision: 1, Record: store.AgentRecord{SourceID: "agent-1", InteractionState: "unknown"},
@@ -88,7 +88,7 @@ func Test不会打开高于当前版本的数据库(t *testing.T) {
 	if err != nil {
 		t.Fatalf("创建未来版本数据库: %v", err)
 	}
-	if _, err := db.ExecContext(ctx, `PRAGMA user_version = 2`); err != nil {
+	if _, err := db.ExecContext(ctx, `PRAGMA user_version = 3`); err != nil {
 		t.Fatalf("设置未来 schema version: %v", err)
 	}
 	if err := db.Close(); err != nil {
@@ -96,7 +96,7 @@ func Test不会打开高于当前版本的数据库(t *testing.T) {
 	}
 
 	_, err = store.Open(ctx, path)
-	if err == nil || !strings.Contains(err.Error(), "高于当前支持") {
+	if err == nil || !strings.Contains(err.Error(), "newer than supported") {
 		t.Fatalf("打开未来版本数据库 error = %v", err)
 	}
 }
