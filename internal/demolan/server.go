@@ -72,12 +72,21 @@ type MessageRequest struct {
 }
 
 type handler struct {
-	source herdrsource.Source
-	now    func() time.Time
+	source   herdrsource.Source
+	snapshot snapshotFunc // 取 Snapshot 的回调，默认 = source.Snapshot；Serve 会注入缓存版本
+	now      func() time.Time
 }
 
 func NewHandler(source herdrsource.Source) http.Handler {
-	return &handler{source: source, now: time.Now}
+	return &handler{source: source, snapshot: source.Snapshot, now: time.Now}
+}
+
+// newHandlerWithSnapshotter 把 "capability 判断用的原始 source" 与
+// "Snapshot 调用" 解耦：source 仍传原始值（保证 h.source.(AgentFocuser) 等
+// 类型断言反映底层真实能力），snapshot 传缓存版本（合并/降频）。
+// 生产入口 Serve 用这个构造函数。
+func newHandlerWithSnapshotter(source herdrsource.Source, snapshot snapshotFunc) http.Handler {
+	return &handler{source: source, snapshot: snapshot, now: time.Now}
 }
 
 // setCommonHeaders 统一响应头：鉴权中间件与 pair 端点的错误响应也必须携带
@@ -113,7 +122,7 @@ func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	snapshot, err := h.source.Snapshot(request.Context())
+	snapshot, err := h.snapshot(request.Context())
 	if err != nil || !snapshot.Online {
 		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return
@@ -165,7 +174,7 @@ func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request
 		return
 	}
 
-	snapshot, err := h.source.Snapshot(request.Context())
+	snapshot, err := h.snapshot(request.Context())
 	if err != nil || !snapshot.Online {
 		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return
@@ -252,7 +261,7 @@ func (h *handler) sendMessage(response http.ResponseWriter, request *http.Reques
 }
 
 func (h *handler) agentExists(response http.ResponseWriter, request *http.Request, sourceID string) bool {
-	snapshot, err := h.source.Snapshot(request.Context())
+	snapshot, err := h.snapshot(request.Context())
 	if err != nil || !snapshot.Online {
 		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return false
@@ -297,7 +306,7 @@ func Serve(ctx context.Context, address string, source herdrsource.Source, datab
 	}
 	defer bonjour.Shutdown()
 
-	server := &http.Server{Handler: secureHandler(NewHandler(source), database, cert), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Handler: secureHandler(newHandlerWithSnapshotter(source, newCachedSnapshot(source).Snapshot), database, cert), ReadHeaderTimeout: 5 * time.Second}
 	serveResult := make(chan error, 1)
 	go func() {
 		serveResult <- server.Serve(listener)

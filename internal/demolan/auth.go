@@ -29,11 +29,24 @@ type PairResponse struct {
 }
 
 // secureHandler 是 TLS 监听器背后的组合层：/v1/pair 免 bearer（凭一次性 secret），
-// 其余全部端点要求已配对设备的 bearer token。现有 agents handler 保持不变。
+// 其余全部端点要求已配对设备的 bearer token。所有路径都经过 rateLimiter：
+//   - /v1/pair 与未认证请求（401 路径）走 per-IP 限流；
+//   - 认证成功后的请求走 per-Device 限流（读 / 写分别设阈值）。
+// 现有 agents handler 保持不变。
 func secureHandler(agents http.Handler, database *store.Store, cert lanauth.Certificate) http.Handler {
+	return secureHandlerWithLimiter(agents, database, cert, newRateLimiter())
+}
+
+// secureHandlerWithLimiter 允许注入自定义 rateLimiter（测试用）。传入 nil
+// 表示完全不限流（保留给未来需要关闭限流的场景，目前 secureHandler 总会带上）。
+func secureHandlerWithLimiter(agents http.Handler, database *store.Store, cert lanauth.Certificate, limiter *rateLimiter) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		if request.URL.Path == PairPath {
 			setCommonHeaders(response)
+			if limiter != nil && !limiter.allowIP(clientIP(request)) {
+				writeRateLimited(response)
+				return
+			}
 			handlePair(response, request, database, cert)
 			return
 		}
@@ -46,12 +59,25 @@ func secureHandler(agents http.Handler, database *store.Store, cert lanauth.Cert
 		switch status {
 		case lanauth.AuthStatusMissing:
 			setCommonHeaders(response)
+			// 未认证请求不触发 Snapshot，但 per-IP 兜底防止鉴权失败循环吃 CPU。
+			if limiter != nil && !limiter.allowIP(clientIP(request)) {
+				writeRateLimited(response)
+				return
+			}
 			writeError(response, http.StatusUnauthorized, "unauthorized", "missing or unknown bearer token")
 		case lanauth.AuthStatusRevoked:
 			setCommonHeaders(response)
+			if limiter != nil && !limiter.allowIP(clientIP(request)) {
+				writeRateLimited(response)
+				return
+			}
 			writeError(response, http.StatusUnauthorized, "revoked", "device has been revoked; pair again to obtain a new token")
 		case lanauth.AuthStatusOK:
-			_ = deviceID
+			if limiter != nil && !limiter.allowDevice(deviceID, isWriteRequest(request)) {
+				setCommonHeaders(response)
+				writeRateLimited(response)
+				return
+			}
 			agents.ServeHTTP(response, request)
 		}
 	})
