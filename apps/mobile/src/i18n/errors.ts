@@ -24,6 +24,8 @@ export type NetworkErrorCode =
   | "send_http"
   | "send_timeout"
   | "send_failed"
+  | "discovery_search_failed"
+  | "discovery_resolve_failed"
   | "connect_failed"
   | "nearby_permission_denied";
 
@@ -45,6 +47,8 @@ export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
   "send_http",
   "send_timeout",
   "send_failed",
+  "discovery_search_failed",
+  "discovery_resolve_failed",
   "connect_failed",
   "nearby_permission_denied",
 ];

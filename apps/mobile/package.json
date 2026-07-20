@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
-    "@inthepocket/react-native-service-discovery": "0.2.9",
+    "@dawidzawada/bonjour-zeroconf": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.18.10",
     "@react-navigation/elements": "^2.9.32",
     "@react-navigation/native": "^7.3.10",

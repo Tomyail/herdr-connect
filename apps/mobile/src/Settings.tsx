@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-nat
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMMKVBoolean } from "react-native-mmkv";
-import type { Service } from "@inthepocket/react-native-service-discovery";
+import type { DiscoveredService } from "./discovery";
 
 import appConfig from "../app.config";
 import { useI18n } from "./i18n/I18nContext";
@@ -26,7 +26,7 @@ import type { RootStackParamList } from "./navigation";
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 interface SettingsProps {
-  service?: Service;
+  service?: DiscoveredService;
   data?: DemoAgentsResponse;
 }
 

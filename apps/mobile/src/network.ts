@@ -1,6 +1,5 @@
-import type { Service } from "@inthepocket/react-native-service-discovery";
-
 import { parseDemoAgentsResponse, type DemoAgentsResponse } from "./demo-contract";
+import type { DiscoveredService } from "./discovery";
 import { NetworkError } from "./i18n/errors";
 
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -34,11 +33,11 @@ export function demoAgentsUrl(address: string, port: number): string {
   return `http://${host}:${port}/v1/demo/agents`;
 }
 
-export function serviceKey(service: Service): string {
+export function serviceKey(service: DiscoveredService): string {
   return `${service.name}|${service.type}|${service.domain}`;
 }
 
-export function devServerFallbackService(scriptURL: string | undefined): Service | undefined {
+export function devServerFallbackService(scriptURL: string | undefined): DiscoveredService | undefined {
   if (!scriptURL) return undefined;
 
   try {
@@ -61,7 +60,7 @@ export function devServerFallbackService(scriptURL: string | undefined): Service
 }
 
 export async function fetchDemoAgents(
-  service: Service,
+  service: DiscoveredService,
   outerSignal?: AbortSignal,
 ): Promise<DemoAgentsResponse> {
   const address = preferredAddress(service.addresses);
@@ -91,7 +90,7 @@ export async function fetchDemoAgents(
 }
 
 export async function focusDemoAgent(
-  service: Service,
+  service: DiscoveredService,
   sourceID: string,
 ): Promise<void> {
   const address = preferredAddress(service.addresses);
@@ -116,7 +115,7 @@ export async function focusDemoAgent(
 }
 
 export async function fetchDemoAgentHistory(
-  service: Service,
+  service: DiscoveredService,
   sourceID: string,
 ): Promise<DemoAgentHistory> {
   const address = preferredAddress(service.addresses);
@@ -153,7 +152,7 @@ export async function fetchDemoAgentHistory(
 }
 
 export async function sendDemoAgentMessage(
-  service: Service,
+  service: DiscoveredService,
   sourceID: string,
   text: string,
 ): Promise<void> {

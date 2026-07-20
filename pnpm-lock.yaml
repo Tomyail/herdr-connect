@@ -17,12 +17,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@dawidzawada/bonjour-zeroconf':
+        specifier: 2.2.0
+        version: 2.2.0(react-native-nitro-modules@0.36.1(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
       '@expo/vector-icons':
         specifier: ^15.1.1
         version: 15.1.1(expo-font@56.0.7(expo@56.0.16)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
-      '@inthepocket/react-native-service-discovery':
-        specifier: 0.2.9
-        version: 0.2.9(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
       '@react-navigation/bottom-tabs':
         specifier: ^7.18.10
         version: 7.18.10(@react-navigation/native@7.3.10(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native-safe-area-context@5.7.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native-screens@4.25.2(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
@@ -454,6 +454,13 @@ packages:
     resolution: {integrity: sha512-4zBIxpPzowiZpusoFkyGVwakdRJUyuH5PxQ/PrqghfdFWWasvnCdPfQXHrenDai+gyLARulZjZowCOj6fjT4pA==}
     engines: {node: '>=6.9.0'}
 
+  '@dawidzawada/bonjour-zeroconf@2.2.0':
+    resolution: {integrity: sha512-CIpmDeyFjG96XhT3KnbCcbX8AIGI/GlpYZ0ObAGykWkyld3O/jBpe25K+HFokhPunQK2W99Fn/95HIEs6y+fcA==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+      react-native-nitro-modules: '>=0.35.0'
+
   '@esbuild/aix-ppc64@0.28.1':
     resolution: {integrity: sha512-Svl7tq8k/08+p6CXPpRjQ1fKX+1odH/BQbb48fV6fj3CWHhsoIOoY87w1oHXm0qEpkIK3ZfVgp0hed3XBXzXMQ==}
     engines: {node: '>=18'}
@@ -795,12 +802,6 @@ packages:
   '@hpke/dhkem-x25519@1.8.0':
     resolution: {integrity: sha512-S1MWWkAfu+TFxySgv5+2P3O4Mx/jk7BsoplzQaA1s3sfUJVJ2UsZsSzSsMc+FXJumLXncoJFlO6mK6mDGspfmA==}
     engines: {node: '>=16.0.0'}
-
-  '@inthepocket/react-native-service-discovery@0.2.9':
-    resolution: {integrity: sha512-HBDd0QEBV44h6XIDjHdsBi2kgdnyxS14if6yEN/Y5LnR5BDmqGYjeLVA8xvWimPi9Lr7i472ut1o3K2Ng1sveg==}
-    peerDependencies:
-      react: '*'
-      react-native: '*'
 
   '@isaacs/ttlcache@1.4.1':
     resolution: {integrity: sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA==}
@@ -3112,6 +3113,12 @@ snapshots:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@dawidzawada/bonjour-zeroconf@2.2.0(react-native-nitro-modules@0.36.1(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      react: 19.2.3
+      react-native: 0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3)
+      react-native-nitro-modules: 0.36.1(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+
   '@esbuild/aix-ppc64@0.28.1':
     optional: true
 
@@ -3568,11 +3575,6 @@ snapshots:
   '@hpke/dhkem-x25519@1.8.0':
     dependencies:
       '@hpke/common': 1.10.1
-
-  '@inthepocket/react-native-service-discovery@0.2.9(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
-    dependencies:
-      react: 19.2.3
-      react-native: 0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3)
 
   '@isaacs/ttlcache@1.4.1': {}
 

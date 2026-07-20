@@ -220,6 +220,8 @@ const errorEn: Record<NetworkErrorCode, string> = {
   send_http: "Failed to send (HTTP {status})",
   send_timeout: "Timed out sending message",
   send_failed: "Failed to send",
+  discovery_search_failed: "Bonjour search failed (code {status})",
+  discovery_resolve_failed: "Bonjour service resolution failed (code {status})",
   connect_failed: "Unable to connect to daemon",
   nearby_permission_denied: "Nearby devices permission not granted",
 };
@@ -241,6 +243,8 @@ const errorZhHans: Record<NetworkErrorCode, string> = {
   send_http: "\u53D1\u9001\u5931\u8D25\uFF08HTTP {status}\uFF09",
   send_timeout: "\u53D1\u9001\u6D88\u606F\u8D85\u65F6",
   send_failed: "\u53D1\u9001\u5931\u8D25",
+  discovery_search_failed: "Bonjour \u641C\u7D22\u5931\u8D25\uFF08\u9519\u8BEF\u7801 {status}\uFF09",
+  discovery_resolve_failed: "Bonjour \u670D\u52A1\u89E3\u6790\u5931\u8D25\uFF08\u9519\u8BEF\u7801 {status}\uFF09",
   connect_failed: "\u65E0\u6CD5\u8FDE\u63A5 daemon",
   nearby_permission_denied: "\u672A\u83B7\u5F97\u9644\u8FD1\u8BBE\u5907\u6743\u9650",
 };

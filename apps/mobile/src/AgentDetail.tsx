@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
-import type { Service } from "@inthepocket/react-native-service-discovery";
+import type { DiscoveredService } from "./discovery";
 
 import type { DemoAgent } from "./demo-contract";
 import {
@@ -179,7 +179,7 @@ function AgentDetail({
   keyboardOffsetExtra,
 }: {
   agent: DemoAgent;
-  service: Service;
+  service: DiscoveredService;
   navigation: Props["navigation"];
   /** Height of the persistent switcher strip above this subtree. */
   keyboardOffsetExtra: number;
