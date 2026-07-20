@@ -61,6 +61,7 @@ export type ConnectionState =
   | { phase: "discovering" }
   | { phase: "not_found" }
   | { phase: "not_paired" }
+  | { phase: "revoked" }
   | { phase: "fingerprint_mismatch" }
   | { phase: "failed"; code: NetworkErrorCode; status?: number }
   | { phase: "connected"; service: DiscoveredService; data: DemoAgentsResponse };
@@ -151,6 +152,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
             });
             return;
           }
+          if (error instanceof NetworkError && error.code === "revoked") {
+            void clearCredentials().then(() => {
+              if (mountedRef.current && selectedKeyRef.current === key) {
+                setState({ phase: "revoked" });
+              }
+            });
+            return;
+          }
           if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
             setState({ phase: "fingerprint_mismatch" });
             return;
@@ -220,13 +229,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [clearDiscoveryTimer]);
 
   // Retry: back off after non-terminal errors, but do NOT retry from
-  // not_paired / fingerprint_mismatch — those require user action (pair, or
+  // not_paired / revoked / fingerprint_mismatch — those require user action (pair, or
   // accept the new daemon identity).
   useEffect(() => {
     if (
       state.phase === "connected" ||
       state.phase === "discovering" ||
       state.phase === "not_paired" ||
+      state.phase === "revoked" ||
       state.phase === "fingerprint_mismatch"
     ) return;
 
@@ -270,6 +280,11 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
           await clearCredentials();
           if (mountedRef.current && selectedKeyRef.current === key) {
             setState({ phase: "not_paired" });
+          }
+        } else if (error instanceof NetworkError && error.code === "revoked") {
+          await clearCredentials();
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "revoked" });
           }
         } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
           if (mountedRef.current && selectedKeyRef.current === key) {

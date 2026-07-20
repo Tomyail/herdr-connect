@@ -120,6 +120,17 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
     });
 
     if (response.status === 401) {
+      // 401 时解析 body 中的 error.code 区分"已撤销"(revoked) 和
+      // 缺失/未知 token (unauthorized)。解析失败回退到 unauthorized。
+      try {
+        const errorBody = JSON.parse(response.body);
+        if (errorBody?.error?.code === "revoked") {
+          throw new NetworkError("revoked");
+        }
+      } catch (parseError) {
+        if (parseError instanceof NetworkError) throw parseError;
+        // JSON 解析失败或缺少 error.code，回退到 unauthorized。
+      }
       throw new NetworkError("unauthorized");
     }
     if (response.status < 200 || response.status >= 300) {

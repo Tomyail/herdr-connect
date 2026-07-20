@@ -34,6 +34,7 @@ export type NetworkErrorCode =
   | "nearby_permission_denied"
   | "fingerprint_mismatch"
   | "unauthorized"
+  | "revoked"
   | "pairing_failed"
   | "pairing_qr_invalid"
   | "not_credentials";
@@ -66,6 +67,7 @@ export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
   "nearby_permission_denied",
   "fingerprint_mismatch",
   "unauthorized",
+  "revoked",
   "pairing_failed",
   "pairing_qr_invalid",
   "not_credentials",
