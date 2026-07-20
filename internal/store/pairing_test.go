@@ -187,3 +187,89 @@ func TestTokenLookupAndRevocation(t *testing.T) {
 		t.Fatalf("last seen time not recorded: %+v", device)
 	}
 }
+
+func TestListPairedDevicesEmptyDatabaseReturnsEmptySlice(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "daemon.db"))
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	devices, err := db.ListPairedDevices(ctx)
+	if err != nil {
+		t.Fatalf("list paired devices: %v", err)
+	}
+	if devices == nil {
+		t.Fatal("ListPairedDevices returned nil, want empty slice")
+	}
+	if len(devices) != 0 {
+		t.Fatalf("ListPairedDevices len=%d, want 0", len(devices))
+	}
+}
+
+func TestListPairedDevicesReturnsSortedAndStatusAware(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "daemon.db"))
+	if err != nil {
+		t.Fatalf("open database: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+
+	pair := func(deviceID, name, token string, now time.Time) {
+		t.Helper()
+		secretHash := hashOf("secret-" + deviceID)
+		if err := db.InsertPairingSecret(ctx, secretHash, now, now.Add(5*time.Minute)); err != nil {
+			t.Fatalf("insert secret for %s: %v", deviceID, err)
+		}
+		ok, err := db.CompletePairing(ctx, secretHash, store.PairedDevice{
+			DeviceID: deviceID, Name: name, TokenHash: hashOf(token),
+		}, now)
+		if err != nil || !ok {
+			t.Fatalf("pair %s: ok=%v err=%v", deviceID, ok, err)
+		}
+	}
+
+	base := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	pair("dev_last", "Last", "tok-last", base.Add(30*time.Minute))
+	pair("dev_first", "First", "tok-first", base.Add(10*time.Minute))
+	pair("dev_revoked", "Revoked", "tok-revoked", base.Add(20*time.Minute))
+
+	if err := db.RevokeDevice(ctx, "dev_revoked", base.Add(40*time.Minute)); err != nil {
+		t.Fatalf("revoke device: %v", err)
+	}
+
+	devices, err := db.ListPairedDevices(ctx)
+	if err != nil {
+		t.Fatalf("list paired devices: %v", err)
+	}
+	if len(devices) != 3 {
+		t.Fatalf("ListPairedDevices len=%d, want 3", len(devices))
+	}
+
+	// 按 paired_at_ms 升序排序。
+	if devices[0].DeviceID != "dev_first" {
+		t.Fatalf("first device = %s, want dev_first", devices[0].DeviceID)
+	}
+	if devices[1].DeviceID != "dev_revoked" {
+		t.Fatalf("second device = %s, want dev_revoked", devices[1].DeviceID)
+	}
+	if devices[2].DeviceID != "dev_last" {
+		t.Fatalf("third device = %s, want dev_last", devices[2].DeviceID)
+	}
+
+	// 已撤销设备 RevokedAtMs 非 nil，活跃设备 RevokedAtMs 为 nil。
+	if devices[1].RevokedAtMs == nil {
+		t.Fatal("revoked device has nil RevokedAtMs")
+	}
+	if devices[0].RevokedAtMs != nil {
+		t.Fatal("active dev_first has non-nil RevokedAtMs")
+	}
+	if devices[2].RevokedAtMs != nil {
+		t.Fatal("active dev_last has non-nil RevokedAtMs")
+	}
+}

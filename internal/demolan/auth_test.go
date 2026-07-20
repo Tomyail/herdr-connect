@@ -155,7 +155,8 @@ func TestRevokedTokenIsRejected(t *testing.T) {
 	if response.Code != http.StatusUnauthorized {
 		t.Fatalf("revoked token status = %d, want 401", response.Code)
 	}
-	assertErrorCode(t, response, "unauthorized")
+	// 已撤销 token 应返回 "revoked"，区别于未知 token 的 "unauthorized"。
+	assertErrorCode(t, response, "revoked")
 }
 
 func TestPairEndpointValidatesMethodAndBody(t *testing.T) {

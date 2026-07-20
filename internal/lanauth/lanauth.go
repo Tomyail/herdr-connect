@@ -239,23 +239,36 @@ func CompletePairing(ctx context.Context, db *store.Store, secretPlaintext, devi
 	return IssuedDevice{DeviceID: deviceID, Token: token, Name: name}, true, nil
 }
 
-// Authenticate 校验 bearer token 并更新设备活跃时间。失败原因
-// （token 未知/已撤销/为空）统一返回 ok=false。
-func Authenticate(ctx context.Context, db *store.Store, bearerToken string) (deviceID string, ok bool, err error) {
+// AuthStatus 是 Authenticate 的三态结果：missing（token 为空或未知）、
+// ok（认证通过）、revoked（token 对应的设备已被撤销）。
+type AuthStatus int
+
+const (
+	AuthStatusMissing AuthStatus = iota
+	AuthStatusOK
+	AuthStatusRevoked
+)
+
+// Authenticate 校验 bearer token 并更新设备活跃时间。
+// 返回三态：AuthStatusOK / AuthStatusMissing / AuthStatusRevoked。
+func Authenticate(ctx context.Context, db *store.Store, bearerToken string) (deviceID string, status AuthStatus, err error) {
 	if bearerToken == "" {
-		return "", false, nil
+		return "", AuthStatusMissing, nil
 	}
 	device, found, err := db.FindPairedDeviceByTokenHash(ctx, hashString(bearerToken))
 	if err != nil {
-		return "", false, err
+		return "", AuthStatusMissing, err
 	}
-	if !found || device.RevokedAtMs != nil {
-		return "", false, nil
+	if !found {
+		return "", AuthStatusMissing, nil
+	}
+	if device.RevokedAtMs != nil {
+		return device.DeviceID, AuthStatusRevoked, nil
 	}
 	if err := db.TouchDeviceLastSeen(ctx, device.DeviceID, time.Now()); err != nil {
-		return "", false, err
+		return "", AuthStatusMissing, err
 	}
-	return device.DeviceID, true, nil
+	return device.DeviceID, AuthStatusOK, nil
 }
 
 func RevokeDevice(ctx context.Context, db *store.Store, deviceID string) error {

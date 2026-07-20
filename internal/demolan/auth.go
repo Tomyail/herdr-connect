@@ -37,20 +37,23 @@ func secureHandler(agents http.Handler, database *store.Store, cert lanauth.Cert
 			handlePair(response, request, database, cert)
 			return
 		}
-		deviceID, ok, err := authenticateRequest(request, database)
+		deviceID, status, err := authenticateRequest(request, database)
 		if err != nil {
 			setCommonHeaders(response)
 			writeError(response, http.StatusInternalServerError, "auth_failed", "authentication check failed")
 			return
 		}
-		if !ok {
-			// 失败原因（缺失/未知/已撤销）统一 401，不区分，避免形成探测 oracle。
+		switch status {
+		case lanauth.AuthStatusMissing:
 			setCommonHeaders(response)
-			writeError(response, http.StatusUnauthorized, "unauthorized", "missing, unknown, or revoked bearer token")
-			return
+			writeError(response, http.StatusUnauthorized, "unauthorized", "missing or unknown bearer token")
+		case lanauth.AuthStatusRevoked:
+			setCommonHeaders(response)
+			writeError(response, http.StatusUnauthorized, "revoked", "device has been revoked; pair again to obtain a new token")
+		case lanauth.AuthStatusOK:
+			_ = deviceID
+			agents.ServeHTTP(response, request)
 		}
-		_ = deviceID
-		agents.ServeHTTP(response, request)
 	})
 }
 
@@ -92,10 +95,10 @@ func handlePair(response http.ResponseWriter, request *http.Request, database *s
 	})
 }
 
-func authenticateRequest(request *http.Request, database *store.Store) (string, bool, error) {
+func authenticateRequest(request *http.Request, database *store.Store) (string, lanauth.AuthStatus, error) {
 	token, found := strings.CutPrefix(request.Header.Get("Authorization"), "Bearer ")
 	if !found {
-		return "", false, nil
+		return "", lanauth.AuthStatusMissing, nil
 	}
 	return lanauth.Authenticate(request.Context(), database, strings.TrimSpace(token))
 }

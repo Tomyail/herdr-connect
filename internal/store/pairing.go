@@ -133,6 +133,28 @@ UPDATE paired_devices SET revoked_at_ms = ? WHERE device_id = ? AND revoked_at_m
 	return nil
 }
 
+func (s *Store) ListPairedDevices(ctx context.Context) ([]PairedDevice, error) {
+	rows, err := s.db.QueryContext(ctx, `
+SELECT device_id, name, token_hash, paired_at_ms, last_seen_at_ms, revoked_at_ms
+FROM paired_devices ORDER BY paired_at_ms`)
+	if err != nil {
+		return nil, fmt.Errorf("list paired devices: %w", err)
+	}
+	defer rows.Close()
+	devices := make([]PairedDevice, 0)
+	for rows.Next() {
+		device, err := scanPairedDevice(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan paired device: %w", err)
+		}
+		devices = append(devices, device)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate paired devices: %w", err)
+	}
+	return devices, nil
+}
+
 func scanPairedDevice(row rowScanner) (PairedDevice, error) {
 	var device PairedDevice
 	var lastSeen, revoked sql.NullInt64

@@ -136,9 +136,9 @@ func TestPairingIssuesAuthenticatableTokenAndConsumesSecret(t *testing.T) {
 		t.Fatalf("second consume ok=%v err=%v, want false nil", ok, err)
 	}
 
-	deviceID, ok, err := lanauth.Authenticate(ctx, db, device.Token)
-	if err != nil || !ok || deviceID != device.DeviceID {
-		t.Fatalf("authenticate deviceID=%q ok=%v err=%v", deviceID, ok, err)
+	deviceID, status, err := lanauth.Authenticate(ctx, db, device.Token)
+	if err != nil || status != lanauth.AuthStatusOK || deviceID != device.DeviceID {
+		t.Fatalf("authenticate deviceID=%q status=%v err=%v", deviceID, status, err)
 	}
 	stored, found, err := db.GetPairedDevice(ctx, device.DeviceID)
 	if err != nil || !found {
@@ -180,10 +180,28 @@ func TestAuthenticationFailsAfterRevocation(t *testing.T) {
 	if err := lanauth.RevokeDevice(ctx, db, device.DeviceID); err != nil {
 		t.Fatalf("revoke device: %v", err)
 	}
-	if _, ok, err := lanauth.Authenticate(ctx, db, device.Token); err != nil || ok {
-		t.Fatalf("authenticate after revoke ok=%v err=%v, want false nil", ok, err)
+	// 已撤销设备返回 AuthStatusRevoked，而非笼统的 AuthStatusMissing。
+	_, status, err := lanauth.Authenticate(ctx, db, device.Token)
+	if err != nil {
+		t.Fatalf("authenticate after revoke err=%v", err)
 	}
-	if _, ok, err := lanauth.Authenticate(ctx, db, ""); err != nil || ok {
-		t.Fatalf("authenticate empty token ok=%v err=%v, want false nil", ok, err)
+	if status != lanauth.AuthStatusRevoked {
+		t.Fatalf("authenticate after revoke status=%v, want AuthStatusRevoked", status)
+	}
+	// 空 token 仍返回 AuthStatusMissing。
+	_, status, err = lanauth.Authenticate(ctx, db, "")
+	if err != nil {
+		t.Fatalf("authenticate empty token err=%v", err)
+	}
+	if status != lanauth.AuthStatusMissing {
+		t.Fatalf("authenticate empty token status=%v, want AuthStatusMissing", status)
+	}
+	// 未知 token 也返回 AuthStatusMissing。
+	_, status, err = lanauth.Authenticate(ctx, db, "completely-unknown-token")
+	if err != nil {
+		t.Fatalf("authenticate unknown token err=%v", err)
+	}
+	if status != lanauth.AuthStatusMissing {
+		t.Fatalf("authenticate unknown token status=%v, want AuthStatusMissing", status)
 	}
 }

@@ -49,7 +49,7 @@ type options struct {
 }
 
 var commandNames = []string{
-	"status", "agents", "capabilities", "diagnostics", "doctor", "service", "migrations", "trace", "daemon", "demo-lan", "pair",
+	"status", "agents", "capabilities", "diagnostics", "doctor", "service", "migrations", "trace", "daemon", "demo-lan", "pair", "devices",
 }
 
 // Execute runs the CLI with the explicit local-development version fallback.
@@ -117,6 +117,8 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 		return 0
 	case "pair":
 		return runPair(ctx, newPairDeps(), database, filepath.Dir(parsed.dbPath), stdout, stderr)
+	case "devices":
+		return runDevices(ctx, database, parsed.commandArgs, stdout, stderr)
 	}
 
 	projector := projection.New(database)
@@ -286,6 +288,8 @@ func validateCommandArgs(command string, args []string) string {
 		return "diagnostics accepts only --json"
 	case "service":
 		return validateServiceArgs(args)
+	case "devices":
+		return validateDevicesArgs(args)
 	default:
 		if len(args) != 0 {
 			return fmt.Sprintf("%s does not accept arguments", command)
@@ -329,8 +333,8 @@ func isServiceAction(action string) bool {
 }
 
 func prepareCommand(ctx context.Context, parsed options, stderr io.Writer, sourceFactory SourceFactory) (herdrsource.Source, *store.Store, int) {
-	if parsed.command == "migrations" || parsed.command == "pair" {
-		// pair/migrations 不需要 source adapter：pair 只读写配对表。
+	if parsed.command == "migrations" || parsed.command == "pair" || parsed.command == "devices" {
+		// pair/migrations/devices 不需要 source adapter：只读写配对/设备表。
 		database, err := store.Open(ctx, parsed.dbPath)
 		if err != nil {
 			return nil, nil, printError(stderr, err)
@@ -741,6 +745,7 @@ Commands:
   service       Install and manage the background LAN preview service
   demo-lan      Start the LAN server (self-signed TLS, paired devices only)
   pair          Pair a device by showing a scannable QR code
+  devices       List and revoke paired devices
   diagnostics   Print backward-compatible diagnostics JSON
   status        Print the projected source state as JSON
   agents        Print the current Agent list as JSON
@@ -783,6 +788,7 @@ func writeCommandHelp(writer io.Writer, command string) {
 		"demo-lan":     "demo-lan\n  Start the LAN server on TCP 9808 (self-signed TLS) and advertise _herdr-connect._tcp.\n  Only paired devices can read output or send input; trusted, controlled LANs only.",
 		"diagnostics":  "diagnostics [--json]\n  Print the established diagnostics JSON shape. --json is accepted explicitly\n  without changing the backward-compatible default.",
 		"pair":         "pair\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. Requires a running 'demo-lan' daemon.",
+		"devices":      "devices <list|revoke <device_id>>\n  List all paired devices or revoke a device by its device_id.\n  Revocation is immediate and persistent; the revoked token is rejected on the next request.",
 		"status":       "status\n  Synchronize and print the complete projected source state as JSON.",
 		"agents":       "agents\n  Synchronize and print the current Agent list as JSON.",
 		"capabilities": "capabilities\n  Print the selected source adapter's capabilities as JSON.",

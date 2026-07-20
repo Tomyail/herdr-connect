@@ -174,7 +174,7 @@ func Test帮助版本和解析错误不会初始化来源或数据库(t *testing
 func Test每个运行命令拒绝未声明参数且不初始化依赖(t *testing.T) {
 	t.Parallel()
 
-	for _, command := range []string{"status", "agents", "capabilities", "diagnostics", "doctor", "migrations", "trace", "daemon", "demo-lan"} {
+	for _, command := range []string{"status", "agents", "capabilities", "diagnostics", "doctor", "migrations", "trace", "daemon", "demo-lan", "devices"} {
 		command := command
 		t.Run(command, func(t *testing.T) {
 			dbPath := filepath.Join(t.TempDir(), "must-not-exist.db")

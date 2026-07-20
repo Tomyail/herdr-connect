@@ -53,7 +53,7 @@ Failure modes are deliberately uniform to avoid leaking state:
 
 - An invalid pairing request (malformed JSON, empty device name or secret) returns `400 invalid_pairing_request`.
 - A secret that is absent, expired, or already consumed returns the same `400 pairing_secret_invalid`. The server does not distinguish these cases, so an unauthenticated caller cannot probe secret status.
-- Any other request to a non-pairing endpoint without a valid bearer token returns `401 unauthorized`, regardless of whether the token is missing, unknown, or revoked.
+- Any other request to a non-pairing endpoint without a valid bearer token returns `401 unauthorized`, without distinguishing a missing token from an unknown one. A revoked device's token is deliberately carved out of this uniformity — it returns `401 revoked` instead — because knowing a token was revoked is only actionable information to whoever already holds that exact 32-byte token (the previously-paired device itself); an attacker without the token gains nothing from this, since guessing a valid token remains computationally infeasible either way. This lets the mobile client show "this device was revoked, pair again" instead of a generic authentication failure. See issue #22.
 
 ### Automatic approval is a known deviation
 
@@ -65,9 +65,9 @@ When multi-user or unattended deployments become a real requirement, the natural
 
 ## Revocation
 
-`lanauth.RevokeDevice` sets `revoked_at_ms` on a paired device. Once revoked, the device's bearer token no longer authenticates (`Authenticate` treats a non-null `revoked_at_ms` as failure, uniform with unknown tokens). Revocation is host-side only; there is no remote recovery or key escrow in this milestone, matching the Protocol v1 stance that a lost or compromised device must be revoked from the installation host.
+`lanauth.RevokeDevice` sets `revoked_at_ms` on a paired device. Once revoked, the device's bearer token no longer authenticates: `Authenticate` returns `AuthStatusRevoked`, which the HTTP layer maps to a `401 revoked` response distinct from the generic `401 unauthorized` for missing or unknown tokens. Revocation is host-side only; there is no remote recovery or key escrow in this milestone, matching the Protocol v1 stance that a lost or compromised device must be revoked from the installation host.
 
-A future CLI for listing and revoking paired devices is tracked separately; the storage and auth primitives are already in place (`store.GetPairedDevice`, `store.RevokeDevice`, `lanauth.Authenticate`).
+A CLI for listing and revoking paired devices is available via `herdr-connect devices list` and `herdr-connect devices revoke <device_id>`.
 
 ## Relationship to Protocol v1 identities
 
