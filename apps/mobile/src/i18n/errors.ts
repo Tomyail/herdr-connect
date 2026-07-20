@@ -28,6 +28,10 @@ export type NetworkErrorCode =
   | "send_timeout"
   | "send_tls"
   | "send_failed"
+  | "interrupt_http"
+  | "interrupt_timeout"
+  | "interrupt_tls"
+  | "interrupt_failed"
   | "discovery_search_failed"
   | "discovery_resolve_failed"
   | "connect_failed"
@@ -61,6 +65,10 @@ export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
   "send_timeout",
   "send_tls",
   "send_failed",
+  "interrupt_http",
+  "interrupt_timeout",
+  "interrupt_tls",
+  "interrupt_failed",
   "discovery_search_failed",
   "discovery_resolve_failed",
   "connect_failed",

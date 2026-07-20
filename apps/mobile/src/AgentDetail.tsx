@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,6 +18,7 @@ import type { DiscoveredService } from "./discovery";
 import type { DemoAgent } from "./demo-contract";
 import {
   fetchDemoAgentHistory,
+  interruptDemoAgent,
   sendDemoAgentMessage,
   type DemoAgentHistory,
 } from "./network";
@@ -36,6 +38,9 @@ const HISTORY_REFRESH_MS = 2_000;
 
 type LoadPhase = "loading" | "ready" | "failed";
 type SendPhase = "idle" | "sending" | "sent" | "failed";
+// 叫停状态机与 SendPhase 同构但不共用：发消息与叫停是两个独立动作，各自的
+// “已发送 / 已叫停”提示和错误不应互相覆盖。
+type InterruptPhase = "idle" | "sending" | "sent" | "failed";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AgentDetail">;
 
@@ -193,6 +198,8 @@ function AgentDetail({
   const [draft, setDraft] = useState("");
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
   const [sendError, setSendError] = useState<Failure>();
+  const [interruptPhase, setInterruptPhase] = useState<InterruptPhase>("idle");
+  const [interruptError, setInterruptError] = useState<Failure>();
   const [hasNewContent, setHasNewContent] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
@@ -281,6 +288,44 @@ function AgentDetail({
 
   const canSend = draft.trim().length > 0 && sendPhase !== "sending";
 
+  // 「仅运行中可叫停」映射：只有 InteractionState === "working" 才算“正在跑、
+  // 可以叫停”。blocked 通常意味着 turn 已不在推进（等输入或卡住）、ready_input
+  // 意味着上一个 turn 已结束等待用户输入、unknown 状态不明——这三者叫停语义上
+  // 都没意义，而且可能让用户误以为能停止一个根本没在跑的 turn。因此按钮只在
+  // working 时启用。
+  const canInterrupt = agent.interaction_state === "working" && interruptPhase !== "sending";
+
+  const interrupt = useCallback(async () => {
+    if (interruptPhase === "sending") return;
+    // 威胁模型要求 interrupt 需二次确认；误触不应直接叫停。
+    Alert.alert(
+      t("detail.interruptConfirm.title"),
+      t("detail.interruptConfirm.body"),
+      [
+        { text: t("detail.interruptConfirm.cancel"), style: "cancel" },
+        {
+          text: t("detail.interruptConfirm.confirm"),
+          style: "destructive",
+          onPress: async () => {
+            setInterruptPhase("sending");
+            setInterruptError(undefined);
+            try {
+              await interruptDemoAgent(service, agent.source_id);
+              if (!mountedRef.current) return;
+              setInterruptPhase("sent");
+              await loadHistory();
+            } catch (error) {
+              if (!mountedRef.current) return;
+              setInterruptPhase("failed");
+              setInterruptError({ code: toErrorCode(error, "interrupt_failed"), status: toErrorStatus(error) });
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  }, [agent.source_id, interruptPhase, loadHistory, service, t]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -354,6 +399,32 @@ function AgentDetail({
       </View>
 
       <View style={styles.composerArea}>
+        <View style={styles.interruptBar}>
+          {interruptPhase === "failed" && interruptError ? (
+            <Text style={styles.sendError}>{tError(interruptError.code, { status: interruptError.status })}</Text>
+          ) : interruptPhase === "sent" ? (
+            <Text style={styles.sentText}>{t("detail.interruptSent")}</Text>
+          ) : (
+            <Text style={styles.interruptSpacer} />
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={canInterrupt ? t("detail.interruptA11y") : t("detail.interruptDisabledA11y")}
+            disabled={!canInterrupt}
+            onPress={() => void interrupt()}
+            style={({ pressed }) => [
+              styles.interruptButton,
+              !canInterrupt && styles.interruptButtonDisabled,
+              pressed && canInterrupt && styles.interruptButtonPressed,
+            ]}
+          >
+            {interruptPhase === "sending" ? (
+              <ActivityIndicator color={colors.onDanger} size="small" />
+            ) : (
+              <Text style={[styles.interruptButtonText, !canInterrupt && styles.interruptButtonTextDisabled]}>{t("detail.interrupt")}</Text>
+            )}
+          </Pressable>
+        </View>
         {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
         {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
         <View style={styles.composer}>
@@ -433,6 +504,13 @@ const createStyles = (colors: ThemeColors) =>
     stateText: { color: colors.textSecondary, fontSize: 13 },
     errorText: { color: colors.danger, fontSize: 13, textAlign: "center" },
     composerArea: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+    interruptBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 30, marginBottom: 6, paddingHorizontal: 4 },
+    interruptSpacer: { flex: 1 },
+    interruptButton: { minHeight: 30, borderRadius: 12, backgroundColor: colors.danger, alignItems: "center", justifyContent: "center", paddingHorizontal: 14, paddingVertical: 5 },
+    interruptButtonDisabled: { backgroundColor: colors.dangerDisabledBg },
+    interruptButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+    interruptButtonText: { color: colors.onDanger, fontSize: 13, fontWeight: "700" },
+    interruptButtonTextDisabled: { color: colors.onActionDisabled },
     composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 8 },
     input: { flex: 1, minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
     sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },

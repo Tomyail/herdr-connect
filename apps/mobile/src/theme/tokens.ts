@@ -45,6 +45,10 @@ export interface ThemeColors {
 
   success: string;
   danger: string;
+  /** Foreground on top of `danger` fills (destructive buttons). */
+  onDanger: string;
+  /** Subtle destructive border/fill for disabled destructive buttons. */
+  dangerDisabledBg: string;
 
   switchTrackOff: string;
   switchTrackOn: string;
@@ -85,6 +89,8 @@ const light: ThemeColors = {
 
   success: "#4F744D",
   danger: "#A34B43",
+  onDanger: "#FFFFFF",
+  dangerDisabledBg: "#E3D6D5",
 
   switchTrackOff: "#D6D4CC",
   switchTrackOn: "#6F916B",
@@ -124,6 +130,8 @@ const dark: ThemeColors = {
 
   success: "#6DE23A",
   danger: "#FE425A", // icon red dot
+  onDanger: "#04130A",
+  dangerDisabledBg: "#3A262C",
 
   switchTrackOff: "#2A322B",
   switchTrackOn: "#2E8C55",

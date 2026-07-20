@@ -197,6 +197,28 @@ export async function focusDemoAgent(
   });
 }
 
+export async function interruptDemoAgent(
+  service: DiscoveredService,
+  sourceID: string,
+): Promise<void> {
+  const address = preferredAddress(service.addresses);
+  if (!address) throw new NetworkError("no_address");
+
+  const { fingerprint, token } = await requireCredentials();
+
+  const baseURL = demoAgentsUrl(address, service.port);
+
+  await authPinnedFetch({
+    url: `${baseURL}/${encodeURIComponent(sourceID)}/interrupt`,
+    fingerprint,
+    token,
+    method: "POST",
+    tlsErrorCode: "interrupt_tls",
+    timeoutErrorCode: "interrupt_timeout",
+    httpErrorCode: "interrupt_http",
+  });
+}
+
 export async function fetchDemoAgentHistory(
   service: DiscoveredService,
   sourceID: string,
