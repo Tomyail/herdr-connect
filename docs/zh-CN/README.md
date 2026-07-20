@@ -75,6 +75,17 @@ Herdr Connect 目前是早期预览，不是可用于生产环境的远程访问
 
 发现只能证明实例可达，不建立信任，也不授予读取或操作 Agent 的权限。
 
+## 文档
+
+| 读者 | 从这里开始 |
+| --- | --- |
+| 试用预览版 | [5 分钟开始使用](#5-分钟开始使用)、[daemon 指南](release/daemon.md)、[TestFlight 故障排查](release/ios-testflight.md) |
+| CLI 参考 | [CLI 指南](cli.md) |
+| 架构、领域模型与贡献者深度文档 | [OpenWiki](../../openwiki/quickstart.md)（英文） |
+| 受控局域网 demo 流程 | [LAN iOS demo 指南](../demo/lan-ios-agent-list.md) |
+
+OpenWiki 是面向代码的活文档（架构、adapter、projection、协议说明、开发环境与测试）。README 不再重复这些细节，请优先查阅 OpenWiki。
+
 ## 架构
 
 ```text
@@ -89,85 +100,28 @@ Expo / React Native 移动客户端
 
 Herdr 作为独立程序运行，必须单独安装。Herdr Connect 通过 CLI 与其交互，不嵌入或链接 Herdr 源码。
 
+组件职责、数据流与源码地图见 [architecture overview](../../openwiki/architecture/overview.md)（英文）。
+
 ## 从源码开发
 
-下面的步骤面向参与 Herdr Connect 开发的贡献者。只想使用下载版预览时，请按照[“5 分钟开始使用”](#5-分钟开始使用)操作。
+贡献者环境、仓库布局、常用 `pnpm` 命令和完整开发流程见 OpenWiki：
 
-### 开发环境要求
+- [Development setup](../../openwiki/development/setup.md)（英文）
+- [Testing guide](../../openwiki/development/testing.md)（英文）
 
-当前已验证的 iOS demo 需要：
+只想使用下载版预览时，请按照[“5 分钟开始使用”](#5-分钟开始使用)操作。
 
-- macOS，并已安装可用的 `herdr` CLI；
-- Go 1.24 或更高版本；
-- 推荐 Node.js 24；
-- pnpm 10.28.1；
-- Xcode 与一台 iPhone 真机；
-- Mac 和 iPhone 位于同一个可信 Wi-Fi，且没有客户端隔离；
-- development build 已获得本地网络权限。
-
-移动端使用原生 Bonjour 模块，因此必须使用 Expo development build，不能使用 Expo Go 代替。
-
-### 源码开发设置
-
-安装 JavaScript 依赖：
+克隆仓库后的最小路径：
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
+pnpm demo:lan      # daemon 监听 TCP 9808，广播 _herdr-connect._tcp
+pnpm ios:mobile    # 在 iPhone 真机上安装 Expo development build
+pnpm dev:mobile    # 后续开发只需启动 Metro
 ```
 
-确认 Herdr 可用并至少存在一个 Agent：
-
-```sh
-herdr agent list
-```
-
-启动 LAN demo daemon：
-
-```sh
-pnpm demo:lan
-```
-
-daemon 默认监听 TCP `9808` 并广播 `_herdr-connect._tcp`。
-
-将 Expo development build 安装到已连接的 iPhone：
-
-```sh
-pnpm ios:mobile
-```
-
-后续开发时启动 Metro：
-
-```sh
-pnpm dev:mobile
-```
-
-iOS 请求权限时允许本地网络访问。完整操作、安全边界、验收清单和故障排查参见[受控局域网 demo 指南](../demo/lan-ios-agent-list.md)。
-
-## 开发
-
-| 命令 | 用途 |
-| --- | --- |
-| `pnpm demo:lan` | 运行当前基于 Herdr 的 LAN demo |
-| `pnpm dev:mobile` | 启动 Expo 开发服务器 |
-| `pnpm ios:mobile` | 构建并安装 iOS development client |
-| `pnpm typecheck` | 检查 TypeScript packages 和移动端类型 |
-| `pnpm test:go` | 运行 Go 测试 |
-| `pnpm test:ts` | 运行 TypeScript protocol 测试 |
-| `pnpm test:conformance` | 运行 Go/TypeScript protocol 一致性测试 |
-| `pnpm test:install` | 测试 macOS/Linux 安装脚本行为 |
-| `pnpm test` | 运行完整测试套件 |
-
-仓库结构：
-
-```text
-apps/mobile/       Expo / React Native 移动客户端
-cmd/               Go 命令入口
-internal/          daemon、LAN demo、Herdr adapter、projection 与存储
-packages/protocol/ TypeScript protocol 实现
-protocol/          Go protocol 实现与测试向量
-docs/              技术与协作文档
-```
+移动端依赖原生 Bonjour 模块，必须使用 Expo development build，不能用 Expo Go 代替。受控 demo 的安全边界与验收清单见 [LAN iOS demo 指南](../demo/lan-ios-agent-list.md)。
 
 ## 路线图
 

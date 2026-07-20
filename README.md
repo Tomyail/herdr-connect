@@ -86,6 +86,17 @@ The current public milestone is **LAN Discovery Preview**:
 
 Discovery proves reachability only. It does not establish trust or grant permission to read or control an Agent.
 
+## Documentation
+
+| Audience | Start here |
+| --- | --- |
+| Try the preview | [Try it in 5 minutes](#try-it-in-5-minutes), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
+| CLI reference | [CLI guide](docs/cli.md) |
+| Architecture, domain, and contributor deep dives | [OpenWiki](openwiki/quickstart.md) |
+| Controlled LAN demo procedure | [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) |
+
+OpenWiki is the living code-oriented wiki (architecture, adapters, projection, protocol notes, development setup, and testing). Prefer it over duplicating those details here.
+
 ## Architecture
 
 ```text
@@ -100,85 +111,28 @@ Expo / React Native mobile client
 
 Herdr runs as a separate program and must be installed independently. Herdr Connect communicates with it through its CLI rather than embedding or linking Herdr source code.
 
+For component responsibilities, data flow, and source maps, see the [architecture overview](openwiki/architecture/overview.md).
+
 ## Develop from source
 
-The steps below are for contributors working on Herdr Connect itself. To use the downloadable preview, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
+Contributor setup, repository layout, common `pnpm` commands, and the full development workflow live in OpenWiki:
 
-### Development requirements
+- [Development setup](openwiki/development/setup.md)
+- [Testing guide](openwiki/development/testing.md)
 
-For the currently validated iOS demo:
+For users who only want the downloadable preview, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
 
-- macOS with a working `herdr` CLI;
-- Go 1.24 or later;
-- Node.js 24 recommended;
-- pnpm 10.28.1;
-- Xcode and an iPhone physical device;
-- Mac and iPhone on the same trusted Wi-Fi without client isolation;
-- local-network permission enabled for the development build.
-
-The mobile client uses a native Bonjour module and therefore requires an Expo development build. Expo Go is not sufficient.
-
-### Source development setup
-
-Install JavaScript dependencies:
+Minimal path after cloning:
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
+pnpm demo:lan      # daemon on TCP 9808, advertises _herdr-connect._tcp
+pnpm ios:mobile    # Expo development build on a physical iPhone
+pnpm dev:mobile    # later sessions: Metro only
 ```
 
-Confirm that Herdr is available and has at least one Agent:
-
-```sh
-herdr agent list
-```
-
-Start the LAN demo daemon:
-
-```sh
-pnpm demo:lan
-```
-
-The daemon listens on TCP port `9808` and advertises `_herdr-connect._tcp`.
-
-Install the Expo development build on a connected iPhone:
-
-```sh
-pnpm ios:mobile
-```
-
-For later development sessions, start Metro with:
-
-```sh
-pnpm dev:mobile
-```
-
-Allow local-network access when iOS prompts for it. See the [controlled LAN demo guide](docs/demo/lan-ios-agent-list.md) for the full procedure, safety boundaries, acceptance checklist, and troubleshooting steps.
-
-## Development
-
-| Command | Purpose |
-| --- | --- |
-| `pnpm demo:lan` | Run the current Herdr-backed LAN demo |
-| `pnpm dev:mobile` | Start the Expo development server |
-| `pnpm ios:mobile` | Build and install the iOS development client |
-| `pnpm typecheck` | Type-check the TypeScript packages and mobile app |
-| `pnpm test:go` | Run Go tests |
-| `pnpm test:ts` | Run TypeScript protocol tests |
-| `pnpm test:conformance` | Run Go/TypeScript protocol conformance tests |
-| `pnpm test:install` | Test the macOS/Linux installer behavior |
-| `pnpm test` | Run the complete test suite |
-
-Repository layout:
-
-```text
-apps/mobile/       Expo / React Native mobile client
-cmd/               Go command entry points
-internal/          Daemon, LAN demo, Herdr adapter, projection, and storage
-packages/protocol/ TypeScript protocol implementation
-protocol/          Go protocol implementation and test vectors
-docs/              Technical and contributor documentation
-```
+The mobile client needs a native Bonjour module, so use an Expo development build rather than Expo Go. Safety boundaries and acceptance checks for the controlled demo are in the [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md).
 
 ## Roadmap
 
