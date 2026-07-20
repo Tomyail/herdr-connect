@@ -55,6 +55,17 @@ herdr-connect service uninstall
 
 `diagnostics` remains the compatibility command for existing scripts. Its default output is JSON, and `diagnostics --json` is an explicit equivalent. Its established fields are `database`, `schema_version`, `source_name`, `source_online`, `agent_count`, and `through_event_seq`; an unavailable source adds the stable `source_error: "source_unavailable"` marker.
 
+## Pair a device over the LAN
+
+`pair` issues a one-time QR code that a Herdr Connect device scans to establish its own per-device token. It requires the LAN daemon to already be running. In one terminal start the daemon, then in a second terminal run:
+
+```sh
+herdr-connect --source herdr demo-lan   # terminal 1
+herdr-connect pair                       # terminal 2
+```
+
+`pair` first probes whether the daemon is listening on `9808`; if it is not, the command exits non-zero and tells you to start `demo-lan` first. While waiting it prints a scannable terminal QR whose payload carries the installation certificate fingerprint (`fp`), candidate LAN host addresses, the fixed port `9808`, and a one-time `secret`. A device that scans the QR submits the secret to `/v1/pair` to complete pairing; the command polls until pairing completes or the secret times out, then prints the paired device name and `device_id`. The plaintext device token is returned only to the pairing device and is never printed on the host.
+
 ## Commands and options
 
 Global options must appear before the command:
@@ -66,7 +77,7 @@ Global options must appear before the command:
 --version             Show the build version without contacting Herdr or opening SQLite
 ```
 
-The owner-facing commands are `doctor`, `service`, `demo-lan`, `diagnostics`, `status`, `agents`, `capabilities`, `migrations`, and `daemon`. `daemon --once` performs one synchronization for a scripted health check. `trace` and `--source fake` are development tools.
+The owner-facing commands are `doctor`, `service`, `demo-lan`, `pair`, `diagnostics`, `status`, `agents`, `capabilities`, `migrations`, and `daemon`. `daemon --once` performs one synchronization for a scripted health check. `trace` and `--source fake` are development tools.
 
 CLI output follows a stable convention:
 
@@ -78,8 +89,8 @@ CLI output follows a stable convention:
 
 ## LAN preview safety boundary
 
-`demo-lan` listens on TCP port `9808` and advertises `_herdr-connect._tcp`. It has no pairing, device authentication, transport encryption, or end-to-end encryption. It can expose recent terminal output and accept text input over unencrypted HTTP.
+`demo-lan` listens on TCP port `9808` and advertises `_herdr-connect._tcp`. Transport is HTTPS with a self-signed ECDSA P-256 certificate whose SHA-256 fingerprint is the installation identity that devices pin. Every endpoint except `/v1/pair` requires an `Authorization: Bearer <token>` from a paired device; unpaired, unknown, or revoked requests receive a structured `401 unauthorized` response. Pairing is a single-use QR secret exchanged at `/v1/pair` for a per-device token. Recent terminal output and text input are only reachable through these authenticated endpoints.
 
-Run it only on a trusted, controlled LAN, never enter secrets while testing, and stop it with `Ctrl+C` afterward. Do not expose the port to the internet. Discovery proves reachability only; it does not establish trust or grant permission to read or control an Agent.
+Run it only on a trusted, controlled LAN, and revoke devices you no longer use. Do not expose the port to the internet. Discovery proves reachability only; it does not establish trust or grant permission to read or control an Agent. See [LAN TLS and pairing](security/lan-tls-pairing.md) for the trust model, certificate lifecycle, and pairing flow.
 
 For binary installation and platform notes, see the [daemon installation guide](release/daemon.md).

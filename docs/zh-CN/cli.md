@@ -55,6 +55,17 @@ herdr-connect service uninstall
 
 `diagnostics` 继续作为现有脚本的兼容命令，其默认输出仍为 JSON；`diagnostics --json` 是含义相同的显式写法。既有字段为 `database`、`schema_version`、`source_name`、`source_online`、`agent_count` 和 `through_event_seq`；来源不可用时会增加稳定标记 `source_error: "source_unavailable"`。
 
+## 通过局域网配对设备
+
+`pair` 签发一个一次性 QR 码，供 Herdr Connect 设备扫描以建立该设备专属的 token。它要求 LAN daemon 已经在运行。在一个终端启动 daemon，然后在另一个终端执行：
+
+```sh
+herdr-connect --source herdr demo-lan   # 终端 1
+herdr-connect pair                       # 终端 2
+```
+
+`pair` 首先探活 daemon 是否在监听 `9808`；如果未运行，命令以非零退出码退出并提示先启动 `demo-lan`。等待期间它会打印可扫描的终端 QR，其 payload 包含安装实例证书指纹（`fp`）、候选 LAN 主机地址、固定端口 `9808` 和一次性 `secret`。设备扫码后将 secret 提交到 `/v1/pair` 即可完成配对；命令会轮询直到配对完成或 secret 超时，随后打印已配对的设备名和 `device_id`。明文设备 token 只会返回给配对设备，绝不会在主机端打印。
+
 ## 命令与选项
 
 全局选项必须放在命令之前：
@@ -66,7 +77,7 @@ herdr-connect service uninstall
 --version             显示 build 版本，不连接 Herdr 或打开 SQLite
 ```
 
-面向所有者的命令包括 `doctor`、`service`、`demo-lan`、`diagnostics`、`status`、`agents`、`capabilities`、`migrations` 和 `daemon`。`daemon --once` 只同步一次，可用于脚本化健康检查。`trace` 和 `--source fake` 属于开发工具。
+面向所有者的命令包括 `doctor`、`service`、`demo-lan`、`pair`、`diagnostics`、`status`、`agents`、`capabilities`、`migrations` 和 `daemon`。`daemon --once` 只同步一次，可用于脚本化健康检查。`trace` 和 `--source fake` 属于开发工具。
 
 CLI 输出遵循统一约定：
 
@@ -78,8 +89,8 @@ CLI 输出遵循统一约定：
 
 ## LAN preview 安全边界
 
-`demo-lan` 监听 TCP `9808` 并广播 `_herdr-connect._tcp`。它没有配对、设备认证、传输加密或端到端加密，会通过未加密 HTTP 暴露近期终端输出并接受文本输入。
+`demo-lan` 监听 TCP `9808` 并广播 `_herdr-connect._tcp`。传输层为 HTTPS，使用自签的 ECDSA P-256 证书，其证书指纹 SHA-256 即为设备 pin 的安装实例身份。除 `/v1/pair` 外的所有端点都要求携带已配对设备的 `Authorization: Bearer <token>`；未配对、未知或已撤销的请求会收到结构化的 `401 unauthorized` 响应。配对通过一次性 QR secret 在 `/v1/pair` 换取每设备专属 token。近期终端输出与文本输入都只能通过这些已认证端点访问。
 
-只能在可信、可控的局域网运行；测试期间不得输入秘密，结束后用 `Ctrl+C` 停止。不要把端口暴露到互联网。局域网发现只能证明安装实例可达，不建立信任，也不授予读取或操作 Agent 的权限。
+只能在可信、可控的局域网运行，并及时撤销不再使用的设备。不要把端口暴露到互联网。局域网发现只能证明安装实例可达，不建立信任，也不授予读取或操作 Agent 的权限。信任模型、证书生命周期与配对流程详见 [LAN TLS 与配对](../security/lan-tls-pairing.md)。
 
 二进制安装与平台说明见 [daemon 安装指南](release/daemon.md)。

@@ -47,6 +47,6 @@ Herdr 返回的 `agent_status` 可能来自 screen detector，因此适配器不
 - durable outbox 元数据；
 - 后续命令去重、设备记录和逐设备 ACK cursor 的入口。
 
-数据库和日志不保存 prompt、Agent 输出、已解密 payload、token 或私钥。安装实例私钥管理、设备配对和远程传输属于后续 ticket，不在这个 tracer 中生成或保存。
+数据库和日志不保存 prompt、Agent 输出、已解密 payload 或私钥。设备配对凭据（配对 secret 哈希、已配对设备的 token 哈希）由本仓库的配对与鉴权层生成并仅以哈希形式保存；配对与远程传输的安全模型见 [LAN TLS 与配对](security/lan-tls-pairing.md)。
 
 一个来源快照或增量批次中的 Agent 投影、durable outbox、`event_seq` 和来源 cursor 在同一 SQLite 事务中提交。批次失败或进程在提交前退出时会整体回滚；重试不会制造重复的逻辑事实。
