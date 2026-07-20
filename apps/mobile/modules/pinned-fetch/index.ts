@@ -5,6 +5,10 @@
  * a URLSession request pinned to the supplied certificate fingerprint. On every
  * other platform (Android, web), throws {@link PinnedFetchError} with code
  * `unsupported_platform` without touching the network.
+ *
+ * Uses Expo Modules' `requireNativeModule` (not RN `NativeModules`) because
+ * Expo SDK 56 registers modules through the TurboModule / ExpoModulesCore
+ * system rather than the legacy NativeModules bridge.
  */
 
 import { Platform } from "react-native";
@@ -16,18 +20,25 @@ import {
   type PinnedFetchResponse,
 } from "./src/PinnedFetch.types";
 
-// `require` so a missing native module (e.g. prebuild not yet run, or JS bundle
-// on a non-iOS host) surfaces a clear, typed error instead of a crash at import.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const NativeModule = require("react-native").NativeModules.PinnedFetchModule as
-  | {
-      pinnedFetch: (
-        url: string,
-        fingerprintBase64Url: string,
-        options: PinnedFetchOptions,
-      ) => Promise<PinnedFetchResponse>;
-    }
-  | undefined;
+// `requireNativeModule` is the canonical way to access Expo native modules
+// from SDK 48+. It resolves modules registered via ExpoModulesProvider.
+let NativeModule: {
+  pinnedFetch: (
+    url: string,
+    fingerprintBase64Url: string,
+    options: PinnedFetchOptions,
+  ) => Promise<PinnedFetchResponse>;
+} | undefined;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const core = require("expo-modules-core") as {
+    requireNativeModule: <T>(name: string) => T;
+  };
+  NativeModule = core.requireNativeModule<typeof NativeModule>("PinnedFetchModule");
+} catch {
+  NativeModule = undefined;
+}
 
 /**
  * Issue an HTTPS request pinned to `fingerprintBase64Url`.

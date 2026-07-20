@@ -21,6 +21,8 @@ const config: ExpoConfig = {
       NSAppTransportSecurity: {
         NSAllowsLocalNetworking: true,
       },
+      NSCameraUsageDescription:
+        "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
     },
   },
   android: {
@@ -36,7 +38,7 @@ const config: ExpoConfig = {
     en: "./locales/en.json",
     "zh-Hans": "./locales/zh-Hans.json",
   },
-  plugins: ["expo-localization", "expo-audio", "expo-dev-client", "./plugins/withAndroidCleartextTraffic.cjs"],
+  plugins: ["expo-localization", "expo-audio", "expo-dev-client", "expo-camera", "expo-secure-store", "./plugins/withAndroidCleartextTraffic.cjs"],
 };
 
 export default config;

@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,16 +19,18 @@ import {
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
 import { preferredAddress } from "./network";
+import { loadCredentials, type DeviceCredentials } from "./credentials";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { appearanceLabelKey } from "./AppearanceScreen";
 import type { RootStackParamList } from "./navigation";
+import type { ConnectionState } from "./connection";
+import { useConnection } from "./connection";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 interface SettingsProps {
-  service?: DiscoveredService;
-  data?: DemoAgentsResponse;
+  connectionState: ConnectionState;
 }
 
 interface SettingsRow {
@@ -151,11 +154,32 @@ function NotificationsCard() {
   );
 }
 
-export function Settings({ service, data }: SettingsProps) {
+export function Settings({ connectionState }: SettingsProps) {
   const { t, language } = useI18n();
   const { appearance } = useTheme();
   const styles = useThemedStyles(createStyles);
   const navigation = useNavigation<Navigation>();
+  const { unpair } = useConnection();
+
+  const connected = connectionState.phase === "connected" ? connectionState : undefined;
+  const service: DiscoveredService | undefined = connected?.service;
+  const data: DemoAgentsResponse | undefined = connected?.data;
+
+  // Load credentials eagerly so the Settings screen always shows current pairing
+  // state even when not connected (e.g. not_paired / fingerprint_mismatch).
+  const [creds, setCreds] = useState<DeviceCredentials | null>(null);
+  const reloadCreds = useCallback(async () => {
+    const c = await loadCredentials();
+    setCreds(c);
+  }, []);
+  useEffect(() => {
+    void reloadCreds();
+  }, [reloadCreds]);
+
+  const handleUnpair = useCallback(async () => {
+    await unpair();
+    setCreds(null);
+  }, [unpair]);
 
   const connectionRows: SettingsRow[] = [
     { icon: "radio-outline", label: t("settings.row.status"), value: service ? t("settings.value.connected") : t("settings.value.notConnected") },
@@ -170,6 +194,25 @@ export function Settings({ service, data }: SettingsProps) {
     connectionRows.push(
       { icon: "terminal-outline", label: t("settings.row.source"), value: data.source_name },
       { icon: "pulse-outline", label: t("settings.row.sourceStatus"), value: data.source_online ? t("settings.value.online") : t("settings.value.offline") },
+    );
+  }
+
+  // Pairing section — separate card so the connection card stays about the live
+  // daemon link while this one is about the persistent pairing identity.
+  const pairingRows: SettingsRow[] = [];
+  if (creds) {
+    pairingRows.push(
+      { icon: "finger-print-outline", label: t("settings.row.fingerprint"), value: creds.fingerprint.slice(-8) },
+      { icon: "phone-portrait-outline", label: t("settings.row.deviceName"), value: creds.deviceName },
+    );
+    pairingRows.push(
+      { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: () => navigation.navigate("Pairing") },
+      { icon: "trash-outline", label: t("settings.row.unpairDevice"), value: "", onPress: () => void handleUnpair() },
+    );
+  } else {
+    pairingRows.push(
+      { icon: "finger-print-outline", label: t("settings.row.status"), value: t("settings.value.notPaired") },
+      { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: () => navigation.navigate("Pairing") },
     );
   }
 
@@ -198,13 +241,7 @@ export function Settings({ service, data }: SettingsProps) {
       />
       <NotificationsCard />
       <SettingsCard title={t("settings.section.connection")} rows={connectionRows} />
-      <SettingsCard
-        title={t("settings.section.discovery")}
-        rows={[
-          { icon: "pricetag-outline", label: t("settings.row.serviceType"), value: "_herdr-connect._tcp" },
-          { icon: "wifi-outline", label: t("settings.row.discoveryMethod"), value: t("settings.value.discoveryMethod") },
-        ]}
-      />
+      <SettingsCard title={t("settings.section.discovery")} rows={pairingRows} />
       <SettingsCard
         title={t("settings.section.about")}
         rows={[

@@ -12,13 +12,12 @@ export function SettingsScreen() {
   const { state } = useConnection();
   const { t } = useI18n();
   const styles = useThemedStyles(createStyles);
-  const connected = state.phase === "connected" ? state : undefined;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
       <View style={styles.screen}>
         <ScreenHeader title={t("settings.screenTitle")} />
-        <Settings service={connected?.service} data={connected?.data} />
+        <Settings connectionState={state} />
       </View>
     </SafeAreaView>
   );

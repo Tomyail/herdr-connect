@@ -20,6 +20,7 @@ import {
 } from "./discovery";
 import { discoveryRetryDelay, shouldRestartDiscovery } from "./discovery-lifecycle";
 import { devServerFallbackService, fetchDemoAgents, focusDemoAgent, serviceKey } from "./network";
+import { loadCredentials, clearCredentials } from "./credentials";
 import { useI18n } from "./i18n/I18nContext";
 import {
   NetworkError,
@@ -59,6 +60,8 @@ function failureFrom(error: unknown, fallback: NetworkErrorCode) {
 export type ConnectionState =
   | { phase: "discovering" }
   | { phase: "not_found" }
+  | { phase: "not_paired" }
+  | { phase: "fingerprint_mismatch" }
   | { phase: "failed"; code: NetworkErrorCode; status?: number }
   | { phase: "connected"; service: DiscoveredService; data: DemoAgentsResponse };
 
@@ -69,6 +72,8 @@ interface ConnectionValue {
   focusResult?: { sourceID: string; phase: FocusPhase };
   refresh: () => Promise<void>;
   switchAgent: (service: DiscoveredService, agent: DemoAgent) => Promise<void>;
+  /** Clear local pairing credentials and reset to "not_paired" state. */
+  unpair: () => Promise<void>;
 }
 
 const ConnectionContext = createContext<ConnectionValue | undefined>(undefined);
@@ -138,6 +143,18 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         if (mountedRef.current && selectedKeyRef.current === key && !controller.signal.aborted) {
+          if (error instanceof NetworkError && error.code === "unauthorized") {
+            void clearCredentials().then(() => {
+              if (mountedRef.current && selectedKeyRef.current === key) {
+                setState({ phase: "not_paired" });
+              }
+            });
+            return;
+          }
+          if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
+            setState({ phase: "fingerprint_mismatch" });
+            return;
+          }
           setState(failureFrom(error, "connect_failed"));
         }
       }
@@ -167,6 +184,18 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     requestRef.current?.abort();
     selectedKeyRef.current = undefined;
     servicesRef.current.clear();
+
+    // Re-check credentials before restarting discovery — the user may have
+    // paired (or unpaired) while the app was in another screen.
+    const creds = await loadCredentials();
+    if (!mountedRef.current) return;
+    if (!creds) {
+      setState({ phase: "not_paired" });
+      stopDiscoverySearch();
+      clearDiscoveryTimer();
+      return;
+    }
+
     setState({ phase: "discovering" });
     beginNotFoundCountdown();
 
@@ -176,10 +205,30 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
     }
-  }, [beginNotFoundCountdown]);
+  }, [beginNotFoundCountdown, clearDiscoveryTimer]);
 
+  const unpair = useCallback(async () => {
+    requestRef.current?.abort();
+    selectedKeyRef.current = undefined;
+    servicesRef.current.clear();
+    clearDiscoveryTimer();
+    stopDiscoverySearch();
+    await clearCredentials();
+    if (mountedRef.current) {
+      setState({ phase: "not_paired" });
+    }
+  }, [clearDiscoveryTimer]);
+
+  // Retry: back off after non-terminal errors, but do NOT retry from
+  // not_paired / fingerprint_mismatch — those require user action (pair, or
+  // accept the new daemon identity).
   useEffect(() => {
-    if (state.phase === "connected" || state.phase === "discovering") return;
+    if (
+      state.phase === "connected" ||
+      state.phase === "discovering" ||
+      state.phase === "not_paired" ||
+      state.phase === "fingerprint_mismatch"
+    ) return;
 
     const delay = discoveryRetryDelay(retryAttemptRef.current);
     retryAttemptRef.current += 1;
@@ -216,8 +265,18 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         if (mountedRef.current && selectedKeyRef.current === key) {
           setState({ phase: "connected", service, data });
         }
-      } catch {
-        // Silent: keep the last snapshot on transient errors.
+      } catch (error) {
+        if (error instanceof NetworkError && error.code === "unauthorized") {
+          await clearCredentials();
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "not_paired" });
+          }
+        } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "fingerprint_mismatch" });
+          }
+        }
+        // Other errors: silent — keep the last snapshot on transient errors.
       } finally {
         pollingInflightRef.current = false;
       }
@@ -251,9 +310,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     mountedRef.current = true;
+
+    // Bonjour listeners are registered unconditionally — they survive the
+    // whole component lifetime. If they were gated on "has credentials",
+    // refresh() after a first-time pairing would have no listeners to consume
+    // discovery results and the app would be stuck in "discovering" forever.
     const resultsListener = listenForDiscoveredServices((services) => {
       const nextServices = new Map(
-        services.map((service) => [serviceKey(service), service] as const),
+        services.map((s) => [serviceKey(s), s] as const),
       );
       servicesRef.current = nextServices;
       const selectedKey = selectedKeyRef.current;
@@ -286,12 +350,25 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    beginNotFoundCountdown();
-    void ensureAndroidLocalNetworkPermission(rationaleRef.current)
-      .then(() => startDiscoverySearch())
-      .catch((error: unknown) => {
-        if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
-      });
+    // Discovery itself is gated on credential presence — without credentials
+    // we show not_paired and don't waste resources scanning.
+    const setup = async () => {
+      const creds = await loadCredentials();
+      if (!mountedRef.current) return;
+      if (!creds) {
+        setState({ phase: "not_paired" });
+        return;
+      }
+
+      beginNotFoundCountdown();
+      void ensureAndroidLocalNetworkPermission(rationaleRef.current)
+        .then(() => startDiscoverySearch())
+        .catch((error: unknown) => {
+          if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
+        });
+    };
+
+    setup();
 
     return () => {
       mountedRef.current = false;
@@ -304,8 +381,8 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [beginNotFoundCountdown, clearDiscoveryTimer, connect]);
 
   const value = useMemo(
-    () => ({ state, focusResult, refresh, switchAgent }),
-    [state, focusResult, refresh, switchAgent],
+    () => ({ state, focusResult, refresh, switchAgent, unpair }),
+    [state, focusResult, refresh, switchAgent, unpair],
   );
 
   return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;

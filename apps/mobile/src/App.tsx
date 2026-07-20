@@ -20,6 +20,7 @@ import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
+import { PairingScreen } from "./PairingScreen";
 import { Ionicons, type IoniconName } from "./icons";
 import type { RootStackParamList, TabParamList } from "./navigation";
 
@@ -90,6 +91,7 @@ function ThemedNavigation() {
         <Stack.Screen name="AgentDetail" component={AgentDetailScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen name="Appearance" component={AppearanceScreen} />
+        <Stack.Screen name="Pairing" component={PairingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

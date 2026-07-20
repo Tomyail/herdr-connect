@@ -99,17 +99,25 @@ export function AgentsScreen() {
       ? "agents.status.discovering"
       : state.phase === "not_found"
         ? "agents.status.notFound"
-        : state.phase === "failed"
-          ? "agents.status.failed"
-          : "agents.status.connected";
+        : state.phase === "not_paired"
+          ? "agents.status.notPaired"
+          : state.phase === "fingerprint_mismatch"
+            ? "agents.status.fingerprintMismatch"
+            : state.phase === "failed"
+              ? "agents.status.failed"
+              : "agents.status.connected";
   const statusDetail =
     state.phase === "discovering"
       ? t("agents.detail.discovering")
       : state.phase === "not_found"
         ? t("agents.detail.notFound")
-        : state.phase === "failed"
-          ? tError(state.code, { status: state.status })
-          : `${state.data.source_name} · ${state.service.name}`;
+        : state.phase === "not_paired"
+          ? t("agents.detail.notPaired")
+          : state.phase === "fingerprint_mismatch"
+            ? t("agents.detail.fingerprintMismatch")
+            : state.phase === "failed"
+              ? tError(state.code, { status: state.status })
+              : `${state.data.source_name} · ${state.service.name}`;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>
