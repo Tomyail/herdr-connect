@@ -2,7 +2,11 @@ package daemoncli
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +22,7 @@ import (
 	"github.com/Tomyail/herdr-connect/internal/daemonservice"
 	"github.com/Tomyail/herdr-connect/internal/demolan"
 	"github.com/Tomyail/herdr-connect/internal/herdrsource"
+	"github.com/Tomyail/herdr-connect/internal/lanauth"
 	"github.com/Tomyail/herdr-connect/internal/projection"
 	"github.com/Tomyail/herdr-connect/internal/store"
 )
@@ -71,6 +76,14 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 		return runService(ctx, stdout, stderr, parsed.commandArgs, previewChecker)
 	}
 
+	if parsed.command == "demo-lan" {
+		// 安全提示先于任何初始化输出；启动前已取消（如立即 SIGINT）保持干净退出。
+		fmt.Fprintln(stderr, "demo-lan serves HTTPS with a self-signed certificate; only paired devices can read output or send input. Use it on a trusted, controlled LAN and revoke devices you no longer use.")
+		if ctx.Err() != nil {
+			return 0
+		}
+	}
+
 	source, database, code := prepareCommand(ctx, parsed, stderr, sourceFactory)
 	if code != 0 {
 		return code
@@ -89,8 +102,7 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 		}
 		return writeJSON(stdout, caps)
 	case "demo-lan":
-		fmt.Fprintln(stderr, "WARNING: demo-lan has no authentication and no encryption. Use it only on a trusted, controlled LAN, never enter secrets, and stop it after testing.")
-		if err := demolan.Serve(ctx, demolan.DefaultAddress, source); err != nil {
+		if err := demolan.Serve(ctx, demolan.DefaultAddress, source, database, filepath.Dir(parsed.dbPath)); err != nil {
 			return printDemoLANError(stderr, err)
 		}
 		return 0
@@ -317,7 +329,7 @@ func prepareCommand(ctx context.Context, parsed options, stderr io.Writer, sourc
 	if err != nil {
 		return nil, nil, printError(stderr, err)
 	}
-	if parsed.command == "capabilities" || parsed.command == "demo-lan" {
+	if parsed.command == "capabilities" {
 		return source, nil, 0
 	}
 	database, err := store.Open(ctx, parsed.dbPath)
@@ -554,11 +566,18 @@ func runDoctor(ctx context.Context, stdout io.Writer, args []string, source herd
 }
 
 func checkPreview(ctx context.Context) PreviewStatus {
-	return checkPreviewAt(ctx, demolan.DefaultAddress, []string{"http://127.0.0.1:9808" + demolan.Path, "http://[::1]:9808" + demolan.Path})
+	certPath := filepath.Join(filepath.Dir(defaultDBPath()), lanauth.CertFileName)
+	return checkPreviewAt(ctx, demolan.DefaultAddress, []string{"https://127.0.0.1:9808" + demolan.Path, "https://[::1]:9808" + demolan.Path}, certPath)
 }
 
-func checkPreviewAt(ctx context.Context, address string, endpoints []string) PreviewStatus {
-	transport := &http.Transport{Proxy: nil}
+func checkPreviewAt(ctx context.Context, address string, endpoints []string, certPath string) PreviewStatus {
+	// 本机回环探活不发送凭据。证书存在时 pin 本地 Installation 身份；首次启动前
+	// 尚无证书时，仅以版本标记识别既有进程，保留 service install 的占用检测语义。
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	if verify := previewCertificateVerifier(certPath); verify != nil {
+		tlsConfig.VerifyPeerCertificate = verify
+	}
+	transport := &http.Transport{Proxy: nil, TLSClientConfig: tlsConfig}
 	client := &http.Client{Timeout: 500 * time.Millisecond, Transport: transport}
 	defer transport.CloseIdleConnections()
 	for _, endpoint := range endpoints {
@@ -585,6 +604,34 @@ func checkPreviewAt(ctx context.Context, address string, endpoints []string) Pre
 	}
 	_ = listener.Close()
 	return classifyPreview(false, nil)
+}
+
+func previewCertificateVerifier(certPath string) func([][]byte, [][]*x509.Certificate) error {
+	certificatePEM, err := os.ReadFile(certPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return func([][]byte, [][]*x509.Certificate) error {
+			return fmt.Errorf("read local LAN certificate: %w", err)
+		}
+	}
+	block, _ := pem.Decode(certificatePEM)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return func([][]byte, [][]*x509.Certificate) error {
+			return errors.New("parse local LAN certificate: invalid PEM certificate")
+		}
+	}
+	want := sha256.Sum256(block.Bytes)
+	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+		if len(rawCerts) == 0 {
+			return errors.New("LAN endpoint did not present a certificate")
+		}
+		if sha256.Sum256(rawCerts[0]) != want {
+			return errors.New("LAN endpoint certificate fingerprint does not match local identity")
+		}
+		return nil
+	}
 }
 
 func classifyPreview(endpointRunning bool, bindErr error) PreviewStatus {
@@ -680,7 +727,7 @@ Usage:
 Commands:
   doctor        Check Herdr, Agents, and the local database; show the next step
   service       Install and manage the background LAN preview service
-  demo-lan      Start the LAN preview (unsafe: no authentication or encryption)
+  demo-lan      Start the LAN server (self-signed TLS, paired devices only)
   diagnostics   Print backward-compatible diagnostics JSON
   status        Print the projected source state as JSON
   agents        Print the current Agent list as JSON
@@ -706,10 +753,10 @@ Examples:
   herdr-connect help demo-lan
 
 Safety:
-  The LAN preview has no pairing, authentication, or encryption. It exposes recent
-  terminal output and text input over HTTP. Use only on a trusted, controlled LAN,
-  never enter secrets, and stop the daemon after testing. Discovery proves only
-  reachability; it does not establish trust or grant access.
+  The LAN server uses self-signed TLS and paired-device authentication: a device
+  must complete QR pairing before it can read output or send input. Use it on a
+  trusted, controlled LAN and revoke devices you no longer use. Discovery proves
+  only reachability; it does not establish trust or grant access.
 `)
 }
 
@@ -719,7 +766,7 @@ func writeCommandHelp(writer io.Writer, command string) {
 		"version":      "version\n  Print the release version, or 'development' for a local build.",
 		"doctor":       "doctor [--json]\n  Check Herdr CLI/source availability, Agent count, database health, and TCP 9808.\n  Human-readable by default; --json is intended for new automation.",
 		"service":      "service <install|status|logs|restart|uninstall> [options]\n  Manage the owner-level LaunchAgent or systemd user service.\n  Run 'herdr-connect help service install' for action-specific help.",
-		"demo-lan":     "demo-lan\n  Start the preview on TCP 9808 and advertise _herdr-connect._tcp.\n  WARNING: no authentication or encryption; trusted, controlled LANs only.",
+		"demo-lan":     "demo-lan\n  Start the LAN server on TCP 9808 (self-signed TLS) and advertise _herdr-connect._tcp.\n  Only paired devices can read output or send input; trusted, controlled LANs only.",
 		"diagnostics":  "diagnostics [--json]\n  Print the established diagnostics JSON shape. --json is accepted explicitly\n  without changing the backward-compatible default.",
 		"status":       "status\n  Synchronize and print the complete projected source state as JSON.",
 		"agents":       "agents\n  Synchronize and print the current Agent list as JSON.",

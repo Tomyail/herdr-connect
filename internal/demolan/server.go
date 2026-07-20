@@ -2,6 +2,7 @@ package demolan
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 	"time"
 
 	"github.com/Tomyail/herdr-connect/internal/herdrsource"
+	"github.com/Tomyail/herdr-connect/internal/lanauth"
+	"github.com/Tomyail/herdr-connect/internal/store"
 )
 
 const (
@@ -77,10 +80,16 @@ func NewHandler(source herdrsource.Source) http.Handler {
 	return &handler{source: source, now: time.Now}
 }
 
-func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+// setCommonHeaders 统一响应头：鉴权中间件与 pair 端点的错误响应也必须携带
+// demo version 标记，daemoncli 的存活探测依赖它（401 也算"服务在跑"）。
+func setCommonHeaders(response http.ResponseWriter) {
 	response.Header().Set("Cache-Control", "no-store")
 	response.Header().Set("Content-Type", "application/json; charset=utf-8")
 	response.Header().Set("X-Herdr-Connect-Demo-Version", fmt.Sprintf("%d", DemoVersion))
+}
+
+func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	setCommonHeaders(response)
 
 	if sourceID, action, ok := agentAction(request.URL.Path); ok {
 		switch action {
@@ -95,18 +104,18 @@ func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request)
 	}
 
 	if request.URL.Path != Path {
-		writeError(response, http.StatusNotFound, "not_found", "演示接口不存在")
+		writeError(response, http.StatusNotFound, "not_found", "endpoint not found")
 		return
 	}
 	if request.Method != http.MethodGet {
 		response.Header().Set("Allow", http.MethodGet)
-		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "演示接口仅接受 GET")
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "agents endpoint only accepts GET")
 		return
 	}
 
 	snapshot, err := h.source.Snapshot(request.Context())
 	if err != nil || !snapshot.Online {
-		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr Source 当前不可用")
+		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return
 	}
 
@@ -152,13 +161,13 @@ func agentAction(path string) (string, string, bool) {
 func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request, sourceID string) {
 	if request.Method != http.MethodPost {
 		response.Header().Set("Allow", http.MethodPost)
-		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "切换 Agent 仅接受 POST")
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "focus endpoint only accepts POST")
 		return
 	}
 
 	snapshot, err := h.source.Snapshot(request.Context())
 	if err != nil || !snapshot.Online {
-		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr Source 当前不可用")
+		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return
 	}
 	found := false
@@ -169,16 +178,16 @@ func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request
 		}
 	}
 	if !found {
-		writeError(response, http.StatusNotFound, "agent_not_found", "Agent 已不存在")
+		writeError(response, http.StatusNotFound, "agent_not_found", "agent no longer exists")
 		return
 	}
 	focuser, ok := h.source.(herdrsource.AgentFocuser)
 	if !ok {
-		writeError(response, http.StatusNotImplemented, "focus_unsupported", "当前来源不支持切换 Agent")
+		writeError(response, http.StatusNotImplemented, "focus_unsupported", "source does not support focusing agents")
 		return
 	}
 	if err := focuser.FocusAgent(request.Context(), sourceID); err != nil {
-		writeError(response, http.StatusBadGateway, "focus_failed", "切换 Agent 失败")
+		writeError(response, http.StatusBadGateway, "focus_failed", "failed to focus agent")
 		return
 	}
 	response.WriteHeader(http.StatusNoContent)
@@ -187,7 +196,7 @@ func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request
 func (h *handler) readHistory(response http.ResponseWriter, request *http.Request, sourceID string) {
 	if request.Method != http.MethodGet {
 		response.Header().Set("Allow", http.MethodGet)
-		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "读取历史仅接受 GET")
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "history endpoint only accepts GET")
 		return
 	}
 	if !h.agentExists(response, request, sourceID) {
@@ -195,12 +204,12 @@ func (h *handler) readHistory(response http.ResponseWriter, request *http.Reques
 	}
 	reader, ok := h.source.(herdrsource.AgentHistoryReader)
 	if !ok {
-		writeError(response, http.StatusNotImplemented, "history_unsupported", "当前来源不支持读取历史")
+		writeError(response, http.StatusNotImplemented, "history_unsupported", "source does not support reading history")
 		return
 	}
 	history, err := reader.ReadAgentHistory(request.Context(), sourceID, HistoryLines)
 	if err != nil {
-		writeError(response, http.StatusBadGateway, "history_failed", "读取 Agent 历史失败")
+		writeError(response, http.StatusBadGateway, "history_failed", "failed to read agent history")
 		return
 	}
 	writeJSON(response, http.StatusOK, HistoryResponse{
@@ -216,7 +225,7 @@ func (h *handler) readHistory(response http.ResponseWriter, request *http.Reques
 func (h *handler) sendMessage(response http.ResponseWriter, request *http.Request, sourceID string) {
 	if request.Method != http.MethodPost {
 		response.Header().Set("Allow", http.MethodPost)
-		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "发送消息仅接受 POST")
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "messages endpoint only accepts POST")
 		return
 	}
 	if !h.agentExists(response, request, sourceID) {
@@ -227,16 +236,16 @@ func (h *handler) sendMessage(response http.ResponseWriter, request *http.Reques
 	decoder.DisallowUnknownFields()
 	var message MessageRequest
 	if err := decoder.Decode(&message); err != nil || strings.TrimSpace(message.Text) == "" || len(message.Text) > MaxMessageSize {
-		writeError(response, http.StatusBadRequest, "invalid_message", "消息必须是 1 到 4000 字节的文本")
+		writeError(response, http.StatusBadRequest, "invalid_message", "message must be 1 to 4000 bytes of text")
 		return
 	}
 	sender, ok := h.source.(herdrsource.AgentMessageSender)
 	if !ok {
-		writeError(response, http.StatusNotImplemented, "send_unsupported", "当前来源不支持发送消息")
+		writeError(response, http.StatusNotImplemented, "send_unsupported", "source does not support sending messages")
 		return
 	}
 	if err := sender.SendAgentMessage(request.Context(), sourceID, message.Text); err != nil {
-		writeError(response, http.StatusBadGateway, "send_failed", "发送 Agent 消息失败")
+		writeError(response, http.StatusBadGateway, "send_failed", "failed to send agent message")
 		return
 	}
 	response.WriteHeader(http.StatusNoContent)
@@ -245,7 +254,7 @@ func (h *handler) sendMessage(response http.ResponseWriter, request *http.Reques
 func (h *handler) agentExists(response http.ResponseWriter, request *http.Request, sourceID string) bool {
 	snapshot, err := h.source.Snapshot(request.Context())
 	if err != nil || !snapshot.Online {
-		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr Source 当前不可用")
+		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
 		return false
 	}
 	for _, agent := range snapshot.Agents {
@@ -253,18 +262,23 @@ func (h *handler) agentExists(response http.ResponseWriter, request *http.Reques
 			return true
 		}
 	}
-	writeError(response, http.StatusNotFound, "agent_not_found", "Agent 已不存在")
+	writeError(response, http.StatusNotFound, "agent_not_found", "agent no longer exists")
 	return false
 }
 
-func Serve(ctx context.Context, address string, source herdrsource.Source) error {
+func Serve(ctx context.Context, address string, source herdrsource.Source, database *store.Store, tlsDir string) error {
 	if ctx.Err() != nil {
 		return nil
 	}
 
-	listener, err := net.Listen("tcp", address)
+	cert, err := lanauth.LoadOrCreateCertificate(tlsDir)
 	if err != nil {
-		return fmt.Errorf("监听演示接口: %w", err)
+		return fmt.Errorf("load LAN TLS identity: %w", err)
+	}
+	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert.TLS}, MinVersion: tls.VersionTLS12}
+	listener, err := tls.Listen("tcp", address, tlsConfig)
+	if err != nil {
+		return fmt.Errorf("listen on LAN endpoint: %w", err)
 	}
 	defer listener.Close()
 
@@ -276,13 +290,14 @@ func Serve(ctx context.Context, address string, source herdrsource.Source) error
 	bonjour, err := startAdvertisement(ctx, instance, port, []string{
 		"path=" + Path,
 		fmt.Sprintf("demo_version=%d", DemoVersion),
+		"fp=" + cert.FingerprintBase64(),
 	})
 	if err != nil {
-		return fmt.Errorf("广播演示服务: %w", err)
+		return fmt.Errorf("advertise LAN service: %w", err)
 	}
 	defer bonjour.Shutdown()
 
-	server := &http.Server{Handler: NewHandler(source), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Handler: secureHandler(NewHandler(source), database, cert), ReadHeaderTimeout: 5 * time.Second}
 	serveResult := make(chan error, 1)
 	go func() {
 		serveResult <- server.Serve(listener)
@@ -293,16 +308,16 @@ func Serve(ctx context.Context, address string, source herdrsource.Source) error
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}
-		return fmt.Errorf("运行演示接口: %w", err)
+		return fmt.Errorf("run LAN endpoint: %w", err)
 	case <-ctx.Done():
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("停止演示接口: %w", err)
+			return fmt.Errorf("stop LAN endpoint: %w", err)
 		}
 		err := <-serveResult
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("停止演示接口: %w", err)
+			return fmt.Errorf("stop LAN endpoint: %w", err)
 		}
 		return nil
 	}

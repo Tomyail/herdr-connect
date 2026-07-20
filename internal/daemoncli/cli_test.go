@@ -63,11 +63,11 @@ func TestDemoLAN命令明确警告且已取消时正常退出(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	var stdout, stderr bytes.Buffer
-	code := daemoncli.Execute(ctx, []string{"--source", "fake", "demo-lan"}, &stdout, &stderr, fakeFactory)
+	code := daemoncli.Execute(ctx, []string{"--source", "fake", "--db", filepath.Join(t.TempDir(), "daemon.db"), "demo-lan"}, &stdout, &stderr, fakeFactory)
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 	}
-	for _, warning := range []string{"no authentication", "no encryption", "trusted, controlled LAN"} {
+	for _, warning := range []string{"self-signed certificate", "paired devices", "trusted, controlled LAN"} {
 		if !strings.Contains(stderr.String(), warning) {
 			t.Fatalf("stderr 缺少 %q: %s", warning, stderr.String())
 		}
@@ -120,7 +120,7 @@ func Test帮助版本和解析错误不会初始化来源或数据库(t *testing
 		{name: "service action help", args: []string{"help", "service", "logs"}, wantOutput: "service logs [--tail]"},
 		{name: "service inline help", args: []string{"service", "install", "--help"}, wantOutput: "service install [--herdr ABSOLUTE_PATH]"},
 		{name: "command long help", args: []string{"doctor", "--help"}, wantOutput: "Herdr CLI/source"},
-		{name: "command short help", args: []string{"demo-lan", "-h"}, wantOutput: "no authentication"},
+		{name: "command short help", args: []string{"demo-lan", "-h"}, wantOutput: "paired devices"},
 		{name: "version flag", args: []string{"--version"}, wantOutput: "herdr-connect development"},
 		{name: "version command", args: []string{"version"}, wantOutput: "herdr-connect development"},
 		{name: "version command help", args: []string{"version", "--help"}, wantOutput: "release version"},

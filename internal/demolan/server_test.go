@@ -188,7 +188,7 @@ func TestAgentsHandler离线Snapshot返回503(t *testing.T) {
 func TestServe已取消Context不会启动监听(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := Serve(ctx, "invalid address", &sequenceSource{}); err != nil {
+	if err := Serve(ctx, "invalid address", &sequenceSource{}, nil, t.TempDir()); err != nil {
 		t.Fatalf("Serve = %v", err)
 	}
 }
