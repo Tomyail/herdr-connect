@@ -102,6 +102,40 @@ func (a *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID, text s
 	return nil
 }
 
+// Interrupt 向指定 Agent 的 pane 发送中断信号（SIGINT / Ctrl-C）。
+//
+// 实现说明：与 SendAgentMessage 一样先 `agent get <sourceID>` 拿到 PaneID，
+// 再用 `pane send-keys <paneID> C-c` 向该 pane 发送 Ctrl-C。
+//
+// 验证记录：对着一个原始后台 `sleep` 子进程手测 send-keys 时未观察到 SIGINT
+// 效果，一度怀疑 herdr CLI 不支持控制键。但在真机上对一个运行中的真实 Herdr
+// agent（有前台 TUI 在读键盘输入，不是裸 shell 命令）实测 `POST .../interrupt`
+// 端到端流程，agent 的当前 turn 确实被打断了——说明 send-keys 传递 C-c 本身是
+// 有效的，之前的裸 sleep 测试只是不能代表真实场景（前台交互式进程会处理终端
+// 信号，纯后台命令未必会）。如果后续遇到某些 agent 类型对 C-c 无响应，
+// 优先怀疑是该 agent 自身对 SIGINT 的处理方式，而不是这条调用链路本身失效。
+func (a *HerdrCLIAdapter) Interrupt(ctx context.Context, sourceID string) error {
+	if sourceID == "" {
+		return fmt.Errorf("Agent source_id 不能为空")
+	}
+
+	output, err := a.runner.Run(ctx, a.binary, "agent", "get", sourceID)
+	if err != nil {
+		return fmt.Errorf("执行 Herdr agent.get: %w", err)
+	}
+	var response herdrAgentGetResponse
+	if err := json.Unmarshal(output, &response); err != nil {
+		return fmt.Errorf("解析 Herdr agent.get JSON: %w", err)
+	}
+	if response.Result.Type != "agent_info" || response.Result.Agent.PaneID == "" {
+		return fmt.Errorf("Herdr agent.get 返回非成功响应")
+	}
+	if _, err := a.runner.Run(ctx, a.binary, "pane", "send-keys", response.Result.Agent.PaneID, "C-c"); err != nil {
+		return fmt.Errorf("执行 Herdr pane.send-keys (interrupt): %w", err)
+	}
+	return nil
+}
+
 func (a *HerdrCLIAdapter) Snapshot(ctx context.Context) (Snapshot, error) {
 	output, err := a.runner.Run(ctx, a.binary, "agent", "list")
 	if err != nil {

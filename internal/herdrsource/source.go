@@ -91,3 +91,9 @@ type AgentHistoryReader interface {
 type AgentMessageSender interface {
 	SendAgentMessage(context.Context, string, string) error
 }
+
+// AgentInterrupter 向已存在的 Agent pane 发送中断信号（SIGINT/Ctrl-C），
+// 用于叫停当前正在执行的 turn。对齐现有 AgentFocuser / AgentMessageSender 模式。
+type AgentInterrupter interface {
+	Interrupt(context.Context, string) error
+}

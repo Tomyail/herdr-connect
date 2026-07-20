@@ -18,15 +18,16 @@ import (
 )
 
 const (
-	DefaultAddress = ":9808"
-	Path           = "/v1/demo/agents"
-	FocusSuffix    = "/focus"
-	HistorySuffix  = "/history"
-	MessagesSuffix = "/messages"
-	ServiceType    = "_herdr-connect._tcp"
-	DemoVersion    = 0
-	HistoryLines   = 120
-	MaxMessageSize = 4000
+	DefaultAddress  = ":9808"
+	Path            = "/v1/demo/agents"
+	FocusSuffix     = "/focus"
+	HistorySuffix   = "/history"
+	MessagesSuffix  = "/messages"
+	InterruptSuffix = "/interrupt"
+	ServiceType     = "_herdr-connect._tcp"
+	DemoVersion     = 0
+	HistoryLines    = 120
+	MaxMessageSize  = 4000
 )
 
 type Agent struct {
@@ -108,6 +109,8 @@ func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request)
 			h.readHistory(response, request, sourceID)
 		case "messages":
 			h.sendMessage(response, request, sourceID)
+		case "interrupt":
+			h.interruptAgent(response, request, sourceID)
 		}
 		return
 	}
@@ -161,7 +164,7 @@ func agentAction(path string) (string, string, bool) {
 		return "", "", false
 	}
 	action := parts[1]
-	if action != strings.TrimPrefix(FocusSuffix, "/") && action != strings.TrimPrefix(HistorySuffix, "/") && action != strings.TrimPrefix(MessagesSuffix, "/") {
+	if action != strings.TrimPrefix(FocusSuffix, "/") && action != strings.TrimPrefix(HistorySuffix, "/") && action != strings.TrimPrefix(MessagesSuffix, "/") && action != strings.TrimPrefix(InterruptSuffix, "/") {
 		return "", "", false
 	}
 	return parts[0], action, true
@@ -197,6 +200,47 @@ func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request
 	}
 	if err := focuser.FocusAgent(request.Context(), sourceID); err != nil {
 		writeError(response, http.StatusBadGateway, "focus_failed", "failed to focus agent")
+		return
+	}
+	response.WriteHeader(http.StatusNoContent)
+}
+
+// interruptAgent 照搬 focusAgent 结构：校验 POST → 查 Snapshot 确认 agent 还在 →
+// 类型断言 herdrsource.AgentInterrupter，不支持返回 501 interrupt_unsupported →
+// 调用 → 204 No Content。
+// 注意：取 Snapshot 走 h.snapshot（#23 的缓存包装），capability 断言走
+// h.source（原始未包装值），别搞反——否则会重踩 #23 修过的“缓存污染 capability
+// 断言”的坑。
+func (h *handler) interruptAgent(response http.ResponseWriter, request *http.Request, sourceID string) {
+	if request.Method != http.MethodPost {
+		response.Header().Set("Allow", http.MethodPost)
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "interrupt endpoint only accepts POST")
+		return
+	}
+
+	snapshot, err := h.snapshot(request.Context())
+	if err != nil || !snapshot.Online {
+		writeError(response, http.StatusServiceUnavailable, "source_unavailable", "Herdr source is currently unavailable")
+		return
+	}
+	found := false
+	for _, agent := range snapshot.Agents {
+		if agent.SourceID == sourceID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		writeError(response, http.StatusNotFound, "agent_not_found", "agent no longer exists")
+		return
+	}
+	interrupter, ok := h.source.(herdrsource.AgentInterrupter)
+	if !ok {
+		writeError(response, http.StatusNotImplemented, "interrupt_unsupported", "source does not support interrupting agents")
+		return
+	}
+	if err := interrupter.Interrupt(request.Context(), sourceID); err != nil {
+		writeError(response, http.StatusBadGateway, "interrupt_failed", "failed to interrupt agent")
 		return
 	}
 	response.WriteHeader(http.StatusNoContent)

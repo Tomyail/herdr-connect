@@ -185,6 +185,58 @@ func TestAgentsHandler离线Snapshot返回503(t *testing.T) {
 	assertErrorCode(t, response, "source_unavailable")
 }
 
+func TestAgentsHandlerInterruptsRunningAgent(t *testing.T) {
+	source := &focusableSource{sequenceSource: sequenceSource{snapshots: []herdrsource.Snapshot{{
+		Online: true,
+		Agents: []herdrsource.AgentObservation{{SourceID: "term-current"}},
+	}}}}
+	handler := NewHandler(source)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, Path+"/term-current/interrupt", nil))
+	if response.Code != http.StatusNoContent || source.interrupted != "term-current" {
+		t.Fatalf("叫停结果 status=%d interrupted=%q body=%s", response.Code, source.interrupted, response.Body.String())
+	}
+
+	// 不存在的 Agent → 404
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodPost, Path+"/term-stale/interrupt", nil))
+	if response.Code != http.StatusNotFound || source.interrupted != "term-current" {
+		t.Fatalf("过期 Agent 叫停 status=%d interrupted=%q body=%s", response.Code, source.interrupted, response.Body.String())
+	}
+}
+
+func TestAgentsHandlerInterruptUnsupportedReturns501(t *testing.T) {
+	// sequenceSource 不实现 Interrupt，模拟 *herdrsource.Fake 的能力形状
+	// （与 #23 的 capability 回归测试同一类正确性）。
+	source := &sequenceSource{snapshots: []herdrsource.Snapshot{{
+		Online: true,
+		Agents: []herdrsource.AgentObservation{{SourceID: "term-current"}},
+	}}}
+	response := httptest.NewRecorder()
+	NewHandler(source).ServeHTTP(response, httptest.NewRequest(http.MethodPost, Path+"/term-current/interrupt", nil))
+	if response.Code != http.StatusNotImplemented {
+		t.Fatalf("状态码 = %d, body = %s", response.Code, response.Body.String())
+	}
+	assertErrorCode(t, response, "interrupt_unsupported")
+}
+
+func TestAgentsHandlerInterruptRejectsNonPOST(t *testing.T) {
+	source := &focusableSource{sequenceSource: sequenceSource{snapshots: []herdrsource.Snapshot{{
+		Online: true,
+		Agents: []herdrsource.AgentObservation{{SourceID: "term-current"}},
+	}}}}
+	response := httptest.NewRecorder()
+	NewHandler(source).ServeHTTP(response, httptest.NewRequest(http.MethodGet, Path+"/term-current/interrupt", nil))
+	if response.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("状态码 = %d", response.Code)
+	}
+	if got := response.Header().Get("Allow"); got != http.MethodPost {
+		t.Fatalf("Allow = %q", got)
+	}
+	assertErrorCode(t, response, "method_not_allowed")
+}
+
 func TestServe已取消Context不会启动监听(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -212,9 +264,10 @@ type sequenceSource struct {
 
 type focusableSource struct {
 	sequenceSource
-	focused string
-	history herdrsource.AgentHistory
-	sent    string
+	focused    string
+	interrupted string
+	history   herdrsource.AgentHistory
+	sent      string
 }
 
 func (s *focusableSource) ReadAgentHistory(_ context.Context, _ string, _ int) (herdrsource.AgentHistory, error) {
@@ -228,6 +281,11 @@ func (s *focusableSource) SendAgentMessage(_ context.Context, _ string, text str
 
 func (s *focusableSource) FocusAgent(_ context.Context, sourceID string) error {
 	s.focused = sourceID
+	return nil
+}
+
+func (s *focusableSource) Interrupt(_ context.Context, sourceID string) error {
+	s.interrupted = sourceID
 	return nil
 }
 

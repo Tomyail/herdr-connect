@@ -165,6 +165,46 @@ func Test当前Herdr适配器通过TerminalID切换Agent(t *testing.T) {
 	}
 }
 
+// Test当前Herdr适配器中断Agent走paneSendKeysCCl 验证 Interrupt 的 CLI 调用形状：
+// 先 `agent get <sourceID>` 拿 PaneID，再 `pane send-keys <paneID> C-c`。
+//
+// 注意：本测试只断言“调用了预期子命令+参数”，不断言 herdr CLI 真的会发 SIGINT
+// ——后者我在 herdr --help / pane send-keys 上实测过当前版本不支持 C-c 解释
+// （见 herdr_cli.go Interrupt 的实现注释）。一旦 herdr 推出专用 interrupt 子命令，
+// 本测试的期望命令需同步修改。
+func TestHerdrAdapterInterruptSendsControlCViaPaneSendKeys(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{
+		"agent get term-ios":           `{"result":{"type":"agent_info","agent":{"pane_id":"wR:p1K"}}}`,
+		"pane send-keys wR:p1K C-c": `{}`,
+	}}
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	if err := adapter.Interrupt(context.Background(), "term-ios"); err != nil {
+		t.Fatalf("中断 Agent: %v", err)
+	}
+	wantCalls := []string{
+		"agent get term-ios",
+		"pane send-keys wR:p1K C-c",
+	}
+	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
+		t.Fatalf("命令 = %#v, want %#v", runner.calls, wantCalls)
+	}
+}
+
+func TestHerdrAdapterInterruptRejectsEmptySourceID(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{}}
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	if err := adapter.Interrupt(context.Background(), ""); err == nil {
+		t.Fatalf("空 sourceID 应报错")
+	}
+	if len(runner.calls) != 0 {
+		t.Fatalf("空 sourceID 不应触发任何 CLI 调用，实际 = %#v", runner.calls)
+	}
+}
+
 func Test当前Herdr适配器读取历史并通过Pane提交消息(t *testing.T) {
 	t.Parallel()
 
