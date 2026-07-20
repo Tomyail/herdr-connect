@@ -49,7 +49,7 @@ type options struct {
 }
 
 var commandNames = []string{
-	"status", "agents", "capabilities", "diagnostics", "doctor", "service", "migrations", "trace", "daemon", "demo-lan",
+	"status", "agents", "capabilities", "diagnostics", "doctor", "service", "migrations", "trace", "daemon", "demo-lan", "pair",
 }
 
 // Execute runs the CLI with the explicit local-development version fallback.
@@ -84,6 +84,15 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 		}
 	}
 
+	if parsed.command == "pair" {
+		// 探活先于开库：没有运行中的 daemon 时直接退出，不创建 DB 文件、
+		// 不触碰 sourceFactory（source 适配器与此命令无关）。
+		if previewChecker(ctx) != PreviewRunning {
+			fmt.Fprintln(stderr, "error: LAN daemon is not running; start it with 'herdr-connect demo-lan' and keep it running, then run 'herdr-connect pair' again")
+			return 1
+		}
+	}
+
 	source, database, code := prepareCommand(ctx, parsed, stderr, sourceFactory)
 	if code != 0 {
 		return code
@@ -106,6 +115,8 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 			return printDemoLANError(stderr, err)
 		}
 		return 0
+	case "pair":
+		return runPair(ctx, newPairDeps(), database, filepath.Dir(parsed.dbPath), stdout, stderr)
 	}
 
 	projector := projection.New(database)
@@ -318,7 +329,8 @@ func isServiceAction(action string) bool {
 }
 
 func prepareCommand(ctx context.Context, parsed options, stderr io.Writer, sourceFactory SourceFactory) (herdrsource.Source, *store.Store, int) {
-	if parsed.command == "migrations" {
+	if parsed.command == "migrations" || parsed.command == "pair" {
+		// pair/migrations 不需要 source adapter：pair 只读写配对表。
 		database, err := store.Open(ctx, parsed.dbPath)
 		if err != nil {
 			return nil, nil, printError(stderr, err)
@@ -728,6 +740,7 @@ Commands:
   doctor        Check Herdr, Agents, and the local database; show the next step
   service       Install and manage the background LAN preview service
   demo-lan      Start the LAN server (self-signed TLS, paired devices only)
+  pair          Pair a device by showing a scannable QR code
   diagnostics   Print backward-compatible diagnostics JSON
   status        Print the projected source state as JSON
   agents        Print the current Agent list as JSON
@@ -749,6 +762,7 @@ Examples:
   herdr-connect service install
   herdr-connect service status
   herdr-connect --source herdr demo-lan
+  herdr-connect pair
   herdr-connect diagnostics
   herdr-connect help demo-lan
 
@@ -768,6 +782,7 @@ func writeCommandHelp(writer io.Writer, command string) {
 		"service":      "service <install|status|logs|restart|uninstall> [options]\n  Manage the owner-level LaunchAgent or systemd user service.\n  Run 'herdr-connect help service install' for action-specific help.",
 		"demo-lan":     "demo-lan\n  Start the LAN server on TCP 9808 (self-signed TLS) and advertise _herdr-connect._tcp.\n  Only paired devices can read output or send input; trusted, controlled LANs only.",
 		"diagnostics":  "diagnostics [--json]\n  Print the established diagnostics JSON shape. --json is accepted explicitly\n  without changing the backward-compatible default.",
+		"pair":         "pair\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. Requires a running 'demo-lan' daemon.",
 		"status":       "status\n  Synchronize and print the complete projected source state as JSON.",
 		"agents":       "agents\n  Synchronize and print the current Agent list as JSON.",
 		"capabilities": "capabilities\n  Print the selected source adapter's capabilities as JSON.",
