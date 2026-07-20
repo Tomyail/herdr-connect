@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-06-18T00:00:00Z",
+  "version": "v0.1.0-preview.3",
+  "commit": "2472917",
+  "pages": [
+    "quickstart.md",
+    "architecture/overview.md",
+    "domain/herdr-source-adapters.md",
+    "domain/agent-projection.md",
+    "cli/commands.md",
+    "mobile/ios-client.md",
+    "protocol/secure-pairing.md",
+    "development/setup.md",
+    "development/testing.md"
+  ]
+}
