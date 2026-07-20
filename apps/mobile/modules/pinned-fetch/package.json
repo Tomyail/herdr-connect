@@ -1,0 +1,8 @@
+{
+  "name": "pinned-fetch",
+  "version": "0.1.0",
+  "description": "iOS-only local Expo module: HTTPS fetch with self-signed certificate fingerprint pinning.",
+  "main": "index.ts",
+  "private": true,
+  "sideEffects": false
+}
