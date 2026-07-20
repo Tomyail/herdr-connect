@@ -1,0 +1,51 @@
+name: OpenWiki Update
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC 19:00 = 北京 03:00
+    - cron: "0 19 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install OpenWiki
+        run: npm install --global openwiki
+
+      - name: Run OpenWiki
+        run: openwiki code --update --print
+        env:
+          OPENWIKI_PROVIDER: anthropic
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: https://open.bigmodel.cn/api/anthropic
+          OPENWIKI_MODEL_ID: glm-5.2
+
+      - name: Commit and push OpenWiki updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- openwiki AGENTS.md CLAUDE.md
+
+          if git diff --cached --quiet; then
+            echo "No OpenWiki updates to commit."
+            exit 0
+          fi
+
+          git commit -m "docs: update OpenWiki"
+          git push origin HEAD:main
