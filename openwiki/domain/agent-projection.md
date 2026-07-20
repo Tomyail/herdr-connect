@@ -144,7 +144,7 @@ This allows the daemon to continue serving stale state when Herdr is temporarily
 
 ## SQLite Schema
 
-The projection layer uses two tables (`/internal/store/store.go`):
+The projection layer uses two tables (`/internal/store/store.go`, schema v1):
 
 ### `agents` Table
 
@@ -182,6 +182,10 @@ CREATE TABLE projection_state (
 - `cursor` — Last cursor from source (timestamp, token, etc.)
 - `last_sync_at` — ISO 8601 timestamp of last sync
 - `authoritative` — Boolean: true if source was online on last sync
+
+### Schema v2: Pairing Tables
+
+Schema v2 migration adds `paired_devices` and `pairing_secrets` tables for the LAN [pairing](../protocol/secure-pairing.md) model. These tables are separate from the projection tables above and store per-device bearer token hashes and one-time pairing secrets. See the [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md) page for details.
 
 ## Projection API
 

@@ -1,16 +1,6 @@
 {
-  "timestamp": "2025-06-18T00:00:00Z",
-  "version": "v0.1.0-preview.3",
-  "commit": "2472917",
-  "pages": [
-    "quickstart.md",
-    "architecture/overview.md",
-    "domain/herdr-source-adapters.md",
-    "domain/agent-projection.md",
-    "cli/commands.md",
-    "mobile/ios-client.md",
-    "protocol/secure-pairing.md",
-    "development/setup.md",
-    "development/testing.md"
-  ]
+  "updatedAt": "2026-07-20T20:27:29.219Z",
+  "command": "update",
+  "gitHead": "79e60591b904c1e829b5f4eb1e2b32534bef757c",
+  "model": "glm-5.2"
 }

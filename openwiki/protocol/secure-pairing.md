@@ -1,18 +1,118 @@
 ---
 type: Protocol Specification
-title: Secure Pairing Protocol
-description: Cryptographic protocol for authenticated and encrypted remote connections between devices and installations
-tags: [protocol, cryptography, hpke, pairing, authentication, encryption]
-resource: /packages/protocol
+title: Secure Pairing & TLS Protocol
+description: Implemented LAN pairing flow with TLS fingerprint pinning and bearer-token auth, plus future HPKE-based end-to-end encryption design for relay connections
+tags: [protocol, tls, pairing, authentication, cryptography, hpke, encryption]
+resource: /docs/security/lan-tls-pairing.md
 ---
 
-# Secure Pairing Protocol
+# Secure Pairing & TLS Protocol
 
-The protocol package (`/packages/protocol/`) defines cryptographic primitives and message formats for **future secure pairing and remote connections**. It is not integrated into the current LAN demo but provides the foundation for authenticated, encrypted, replay-protected communication.
+This page documents two security layers:
+
+1. **LAN Security (Implemented)** — TLS with self-signed certificate, fingerprint pinning, QR-code pairing, per-device bearer tokens, and device revocation. This is the active security model for all LAN communication today.
+2. **End-to-End Encryption (Future)** — HPKE-based protocol primitives for future relay connections. Not yet integrated into the transport.
+
+For the authoritative human-readable security model, see [`/docs/security/lan-tls-pairing.md`](../../docs/security/lan-tls-pairing.md).
+
+## LAN Security (Implemented)
+
+### TLS & Certificate Pinning
+
+All daemon traffic is HTTPS (TLS 1.2 minimum) using a **self-signed ECDSA P-256 certificate** generated on first launch by the [LAN auth layer](#lan-auth-layer) (`lanauth.LoadOrCreateCertificate`). The certificate is valid for 10 years and stored as `lan-cert.pem` / `lan-key.pem` next to the SQLite database.
+
+Mobile devices do **not** perform standard CA-chain or hostname validation. Instead, they pin the **SHA-256 fingerprint of the certificate's DER encoding** (base64 RawURL). This fingerprint is:
+
+- Returned in the `POST /v1/pair` response
+- Advertised in the `fp` mDNS/Bonjour TXT record
+
+If the certificate files are deleted or regenerated, the fingerprint changes and all previously paired devices must re-pair. The fingerprint serves as the stable installation identity.
+
+### Pairing Flow
+
+Pairing uses a QR code containing a one-time secret:
+
+1. **Owner initiates** — `herdr-connect pair` generates a 32-byte random secret, stores only its **SHA-256 hash** in `pairing_secrets` with a 5-minute TTL, and renders a QR code in the terminal
+2. **QR payload** — `{v:1, fp, hosts[], port, secret}` containing the certificate fingerprint, LAN host addresses, port (9808), and plaintext secret
+3. **Mobile scans** — The [iOS client](../mobile/ios-client.md) scans the QR, POSTs `{device_name, secret}` to `POST /v1/pair` via pinned-fetch, validating the cert fingerprint during the TLS handshake
+4. **Server consumes** — `lanauth.CompletePairing` runs a single SQLite transaction: conditionally consumes the secret (must exist, be unconsumed, not expired), inserts a new `paired_devices` row with a fresh per-device token (stored as SHA-256 hash)
+5. **Token returned once** — The plaintext bearer token is returned exactly once in the pairing response, stored by the mobile client in iOS Keychain, and never persisted or logged in cleartext
+
+Pairing is auto-approved (scanning a QR visible only on the host's physical screen is the out-of-band confirmation). The single-transaction `CompletePairing` is the seam where a future explicit confirm step would go.
+
+### Bearer-Token Authentication
+
+Every endpoint except `/v1/pair` requires `Authorization: Bearer <token>`. The auth middleware (`/internal/demolan/auth.go`) hashes the incoming token and calls `lanauth.Authenticate`, which returns a three-state result:
+
+- **`AuthStatusMissing`** — Token absent, unknown, or DB error → `401 unauthorized`
+- **`AuthStatusRevoked`** — Token valid but device revoked → `401 revoked` (distinct so mobile can show "pair again")
+- **`AuthStatusOK`** — Device active, `last_seen_at_ms` touched, request proceeds
+
+Plaintext tokens are never stored — only SHA-256 hashes persist in SQLite.
+
+### Rate Limiting
+
+The daemon enforces token-bucket rate limits (`/internal/demolan/rate_limit.go`):
+
+| Scope | Rate | Burst | Applies to |
+|-------|------|-------|------------|
+| Per-device reads | 5 req/s | 10 | Authenticated GET requests |
+| Per-device writes | 1 req/s | 3 | Authenticated POST requests (focus, messages, interrupt) |
+| Per-IP | 1 req/s | 20 | `/v1/pair` + all unauthenticated (401) requests |
+
+Exceeded limits return `429 Too Many Requests` with `Retry-After: 1`.
+
+### Device Lifecycle
+
+Paired devices are managed via the `herdr-connect devices` CLI (see [CLI Commands](../cli/commands.md)):
+
+- **List** — Shows all paired devices with status (active/revoked), paired/last-seen timestamps
+- **Revoke** — Sets `revoked_at_ms`; subsequent requests with that token get `401 revoked`. Idempotent: revoking an already-revoked device returns an error.
+
+Revocation is host-side only. The mobile client detects the `401 revoked` status, clears local credentials, and surfaces a "revoked" UI state prompting re-pairing.
+
+### LAN Auth Layer
+
+The `/internal/lanauth/` package owns all security logic independent of HTTP:
+
+- **Certificate identity** — `LoadOrCreateCertificate` generates and manages the self-signed ECDSA P-256 cert with race-safe concurrent first-generation (O_CREATE|O_EXCL lock)
+- **Secret/token lifecycle** — `NewPairingSecret` (issue), `CompletePairing` (consume + issue token), `Authenticate` (validate)
+- **Revocation** — `RevokeDevice` sets the revoked timestamp
+
+It does **not** depend on `net/http` — HTTP route mapping and status code selection live in `/internal/demolan/`.
+
+### Store Schema v2
+
+Pairing data lives in two SQLite tables introduced by schema migration v2 (`/internal/store/pairing.go`):
+
+```sql
+CREATE TABLE paired_devices (
+    device_id       TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    token_hash      BLOB NOT NULL UNIQUE,
+    paired_at_ms    INTEGER NOT NULL,
+    last_seen_at_ms INTEGER,
+    revoked_at_ms   INTEGER
+);
+
+CREATE TABLE pairing_secrets (
+    secret_hash    BLOB PRIMARY KEY,
+    created_at_ms  INTEGER NOT NULL,
+    expires_at_ms  INTEGER NOT NULL,
+    consumed_at_ms INTEGER,
+    device_id      TEXT REFERENCES paired_devices(device_id)
+);
+```
+
+These are intentionally separate from the schema v1 `devices`/`device_cursors` tables (which store Ed25519/X25519 keypairs for the future HPKE relay milestone).
+
+## End-to-End Encryption (Future)
+
+The protocol package (`/packages/protocol/`) defines cryptographic primitives and message formats for **future end-to-end encryption** over remote relay connections. It is not integrated into the current LAN transport.
 
 **Status**: Research and development. Not yet used in production.
 
-## Overview
+### Overview
 
 The protocol provides:
 

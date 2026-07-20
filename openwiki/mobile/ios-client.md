@@ -8,7 +8,7 @@ resource: /apps/mobile
 
 # iOS Mobile Client
 
-The iOS client (`/apps/mobile/`) is a React Native application that discovers the Herdr Connect daemon via Bonjour, displays agent state, and provides limited interaction (view output, switch focus, send text). The app is distributed via TestFlight beta and requires a development build due to the native service discovery module.
+The iOS client (`/apps/mobile/`) is a React Native application that pairs with the Herdr Connect daemon via QR code, discovers the daemon via Bonjour, displays agent state, and interacts with agents (view output, switch focus, send text, interrupt). The app is distributed via TestFlight beta and requires a development build due to native service discovery and pinned-fetch modules.
 
 ## Architecture
 
@@ -21,42 +21,67 @@ App
       │   ├─ Agents Screen (agents list)
       │   └─ Settings Screen (settings tabs)
       └─ Stack.Screen (detail screens)
-           ├─ Agent Detail (output, focus, input)
+           ├─ Agent Detail (output, focus, input, interrupt)
+           ├─ Pairing (QR scanner)
            ├─ Language (localization)
            └─ Appearance (theme)
 ```
 
 ### Key Screens
 
-- **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons
-- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input
-- **SettingsScreen** (`SettingsScreen.tsx`) — Links to language, appearance, and diagnostics
+- **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected
+- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input, and interrupt button with confirmation dialog
+- **PairingScreen** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
+- **SettingsScreen** (`SettingsScreen.tsx`) — Links to language, appearance, pairing, and diagnostics
 - **LanguageScreen** (`LanguageScreen.tsx`) — English/Chinese selection
 - **AppearanceScreen** (`AppearanceScreen.tsx`) — Light/dark theme selection
 
-## Discovery Flow
+## Connection & Pairing Flow
 
-The app uses `@inthepocket/react-native-service-discovery` for Bonjour browsing:
+The app uses `@inthepocket/react-native-service-discovery` for Bonjour browsing and a custom pinned-fetch native module for TLS-pinned HTTPS communication.
+
+### Pinned-Fetch Module
+
+The pinned-fetch module (`/apps/mobile/modules/pinned-fetch/`) is an iOS-only Expo native module that performs HTTPS requests via `URLSession` with a custom delegate. The delegate validates the server certificate's SHA-256 fingerprint against a pinned value during the TLS handshake — no standard CA-chain or hostname validation is performed. See [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md) for the trust model.
+
+Error codes are deliberately limited (`fingerprint_mismatch`, `tls_handshake_failed`, `timeout`, `network_error`, `invalid_url`, `unsupported_platform`) to avoid leaking server state to unauthenticated callers.
+
+### Credential Storage
+
+Device credentials are stored in iOS Keychain via `expo-secure-store` (`/apps/mobile/src/credentials.ts`):
+
+- Key: `"herdr-connect.paired-device"`
+- Shape: `{fingerprint, deviceId, token, deviceName, pairedAt}`
+- Keychain option: `WHEN_UNLOCKED_THIS_DEVICE_ONLY` (device-local, no iCloud sync)
+
+Credentials are cleared in three scenarios: generic 401 (unauthorized), explicit 401 revoked, and manual unpair from Settings.
+
+### Pairing Flow
+
+1. User taps "Pair Device" in Settings → navigates to PairingScreen
+2. Camera permission requested; QR scanner activates
+3. User scans the QR displayed by `herdr-connect pair` on the host terminal
+4. `parsePairingQRPayload` validates QR structure (`v`, `fp`, `hosts`, `port`, `secret`)
+5. `pairDaemon` POSTs `{device_name, secret}` to `/v1/pair` via pinned-fetch with the QR fingerprint
+6. On success, credentials are saved to Keychain and `connection.refresh()` restarts discovery
+7. On failure, a localized error alert is shown
 
 ### Connection Context
 
-The `ConnectionProvider` (`connection.tsx`) manages discovery state:
+The `ConnectionProvider` (`connection.tsx`) manages the full connection lifecycle:
 
 ```typescript
-type ConnectionState = 
-  | "discovering"  // Actively browsing
-  | "found"        // Daemon resolved
-  | "denied"       // Local network permission denied
-  | "timeout"      // No daemon found after timeout
-  | "unavailable"  // Source offline or error
+type ConnectionState =
+  | { phase: "discovering" }
+  | { phase: "not_found" }
+  | { phase: "not_paired" }        // No stored credentials
+  | { phase: "revoked" }           // Daemon revoked this device
+  | { phase: "fingerprint_mismatch" } // Cert changed since pairing
+  | { phase: "failed"; code; status? }
+  | { phase: "connected"; service; data }
 ```
 
-### Discovery Process
-
-1. **Start browsing** — On app mount, call `search()` for `_herdr-connect._tcp`
-2. **Resolve service** — When service found, resolve hostname and port
-3. **Test endpoint** — Call `GET /v1/demo/agents` to verify daemon is responsive
-4. **Update state** — Transition to `"found"` if successful, `"unavailable"` if source offline
+On mount, the provider checks for stored credentials. If none exist, it transitions directly to `"not_paired"` without starting discovery. Bonjour listeners are always registered so `refresh()` works after first pairing.
 
 ### Local Network Permission
 
@@ -73,10 +98,14 @@ Permission is requested automatically on first discovery; no custom prompt is sh
 | State | Description | UI |
 |-------|-------------|-----|
 | `discovering` | Actively browsing for daemon | Loading spinner |
-| `found` | Daemon resolved and responding | Agent list |
-| `denied` | Local network permission denied | Instructions for Settings |
-| `timeout` | No daemon found (60s) | Retry prompt |
-| `unavailable` | Daemon found but source offline | Warning, last known state |
+| `connected` | Daemon resolved and responding | Agent list |
+| `not_found` | No daemon found (timeout) | Retry prompt |
+| `not_paired` | No stored credentials | Pair device prompt |
+| `revoked` | Daemon revoked this device | Re-pair prompt |
+| `fingerprint_mismatch` | Certificate changed since pairing | Accept new identity prompt |
+| `failed` | Network or source error | Error detail, retry |
+
+The `denied` (local network permission) state is handled via discovery errors and shown as a failed state with instructions to enable in Settings.
 
 ## Agent List
 
@@ -136,6 +165,15 @@ Text input field with send button:
 - Disables while source is offline
 - Clears after send
 - Shows character count
+
+### Interrupt Button
+
+An interrupt bar sits above the input composer, enabled only when the agent's interaction state is `working`. Interrupting a `blocked`, `ready_input`, or `unknown` agent is not meaningful and is disabled.
+
+- Tapping shows a two-step confirmation dialog (destructive style)
+- Sends `POST /v1/demo/agents/{sourceId}/interrupt`
+- Uses a dedicated `InterruptPhase` state machine (`idle`, `sending`, `sent`, `failed`) separate from the message send state
+- Shows success/failure feedback via localized strings
 
 ## Notifications
 
@@ -203,22 +241,27 @@ Colors are derived from agent brand icons:
 
 Dark mode uses slightly muted accent colors for visual comfort.
 
-## HTTP Client
+## Network Layer
 
-The app uses `fetch` to call daemon endpoints:
+All daemon communication uses the pinned-fetch native module for TLS-pinned HTTPS. Authenticated requests add `Authorization: Bearer <token>` via `authPinnedFetch`.
 
 ### Endpoints Used
 
+- `POST /v1/pair` — Pair device (no auth, uses one-time secret from QR)
 - `GET /v1/demo/agents` — Agent list and state
 - `GET /v1/demo/agents/{sourceId}/history` — Recent terminal output
 - `POST /v1/demo/agents/{sourceId}/focus` — Switch focus to agent
 - `POST /v1/demo/agents/{sourceId}/messages` — Send text input
+- `POST /v1/demo/agents/{sourceId}/interrupt` — Interrupt running agent
 
 ### Error Handling
 
-- **Network errors** — Show retry prompt
+- **Revoked (401)** — Clears credentials, transitions to `revoked` state
+- **Unauthorized (401)** — Clears credentials, transitions to `not_paired` state
+- **Fingerprint mismatch** — Transitions to `fingerprint_mismatch` state (credentials retained)
+- **Network errors** — Show retry prompt or error state
 - **Source offline** — Show warning, serve last known state
-- **4xx/5xx errors** — Show error message from daemon
+- **429 rate limited** — Respects `Retry-After` header
 
 ### Polling
 

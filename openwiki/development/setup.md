@@ -39,10 +39,11 @@ herdr-connect/
 │   └── protocol-conformance/ # Protocol test CLI
 ├── internal/               # Go internal packages
 │   ├── daemoncli/        # CLI command implementation
-│   ├── demolan/          # LAN demo HTTP server
+│   ├── demolan/          # LAN HTTPS server (TLS, auth, rate limiting)
 │   ├── herdrsource/      # Herdr source adapters
+│   ├── lanauth/          # LAN identity, pairing, and bearer-token auth
 │   ├── projection/       # Projection layer
-│   ├── store/            # SQLite storage
+│   ├── store/            # SQLite storage (schema v2)
 │   └── daemonservice/   # Service installation
 ├── apps/
 │   └── mobile/           # React Native iOS app

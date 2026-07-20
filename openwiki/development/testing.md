@@ -136,6 +136,41 @@ func TestApplyProjectionBatch(t *testing.T) {
 - **Fake source** — Synthetic agents for development
 - **Herdr CLI adapter** — Mocked Herdr output parsing
 - **Capability negotiation** — Correct capability reporting
+- **Interrupt** — `AgentInterrupter` interface implementation
+
+### LAN Auth Tests
+
+`/internal/lanauth/lanauth_test.go` tests the LAN authentication layer:
+
+- **Certificate generation** — Self-signed ECDSA P-256 cert creation, fingerprint computation
+- **Pairing secret lifecycle** — Issue, consume, expire, reject replay
+- **Device authentication** — Three-state auth (OK, missing, revoked)
+- **Device revocation** — Idempotent revoke, status detection
+
+### Demo LAN Auth & Rate Limit Tests
+
+`/internal/demolan/auth_test.go` and `/internal/demolan/rate_limit_test.go` test:
+
+- **Bearer token validation** — Auth middleware extracts and validates tokens
+- **Revoked vs. missing distinction** — Correct HTTP status mapping (`401 revoked` vs. `401 unauthorized`)
+- **Rate limiting** — Token bucket per-device (read/write) and per-IP limits, `429` responses
+- **Pairing endpoint** — `/v1/pair` secret consumption and token issuance
+
+### Pairing & Device CLI Tests
+
+`/internal/daemoncli/pair_test.go` and `/internal/daemoncli/devices_test.go` test:
+
+- **Pair command** — QR payload generation, secret creation, polling loop
+- **Devices command** — List and revoke subcommands, JSON output formatting
+- **Dependency injection** — `pairDeps` seams for testable CLI logic
+
+### Store Pairing Tests
+
+`/internal/store/pairing_test.go` and `/internal/store/migrate_internal_test.go` test:
+
+- **Schema v2 migration** — `paired_devices` and `pairing_secrets` table creation
+- **CompletePairing transaction** — Conditional secret consumption with WAL deadlock avoidance
+- **Device CRUD** — Insert, list, revoke, touch `last_seen_at_ms`
 
 ## Protocol Conformance Tests
 
@@ -203,6 +238,8 @@ test("rejects replay messages", async () => {
 - **AgentBrandIcon** — Icon detection and color extraction
 - **Agent status formatting** — State to human-readable text
 - **History scroll logic** — Scroll position preservation
+- **Pairing** — QR payload parsing, URL construction (`pairing.test.ts`)
+- **Discovery lifecycle** — Bonjour discovery start/stop/cleanup (`discovery-lifecycle.test.ts`)
 
 ### Theme Tests
 
@@ -248,12 +285,14 @@ describe("AgentBrandIcon", () => {
 
 ### Demo Server Tests
 
-`/internal/demolan/server_test.go` tests the LAN demo server:
+`/internal/demolan/server_test.go` tests the LAN HTTPS server:
 
 - **Agent list endpoint** — Returns valid JSON
 - **History endpoint** — Truncates to 120 lines
 - **Focus endpoint** — Calls source adapter
 - **Message endpoint** — Validates message size
+- **Interrupt endpoint** — Capability assertion, source interrupt call
+- **Snapshot caching** — TTL cache and singleflight coalescing behavior
 - **Error handling** — Returns correct error codes
 
 ## Test Practices

@@ -134,6 +134,18 @@ func (h *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID string,
 
 This is called when the user sends text from the mobile client.
 
+### Interrupt
+
+The adapter implements `AgentInterrupter` to send SIGINT (Ctrl-C) to a running agent:
+
+```go
+func (h *HerdrCLIAdapter) Interrupt(ctx context.Context, sourceID string) error {
+    // Run: herder pane interrupt --id <sourceID>
+}
+```
+
+This is called when the user taps the interrupt button in the mobile client. The server only allows interrupt when the agent's interaction state is `working`.
+
 ## Fake Source
 
 A fake source (`/internal/herdrsource/fake.go`) is provided for development and testing:

@@ -8,7 +8,7 @@ resource: /internal/daemoncli
 
 # CLI Commands
 
-The `herdr-connect` CLI (`/internal/daemoncli/cli.go`) provides commands for diagnosing the installation, managing the background service, and running the LAN preview. All commands share global options and follow consistent output conventions.
+The `herdr-connect` CLI (`/internal/daemoncli/cli.go`) provides commands for diagnosing the installation, managing the background service, [pairing](../protocol/secure-pairing.md) mobile devices, managing paired devices, and running the LAN server. All commands share global options and follow consistent output conventions.
 
 ## Global Options
 
@@ -58,7 +58,7 @@ Output format (default):
 
 ```text
 Herdr Connect doctor
-[OK] Database: /home/owner/.config/herdr-connect/daemon.db (schema v1)
+[OK] Database: /home/owner/.config/herdr-connect/daemon.db (schema v2)
 [OK] Herdr CLI/source: herdr-cli-v0.7 is online
 [OK] Agents: 2 found
 [OK] LAN preview port: TCP 9808 is available
@@ -70,7 +70,7 @@ Output format (`--json`):
 ```json
 {
   "database": "/home/owner/.config/herdr-connect/daemon.db",
-  "schema_version": 1,
+  "schema_version": 2,
   "source_name": "herdr",
   "source_online": true,
   "agent_count": 2,
@@ -153,9 +153,10 @@ herdr-connect --source herdr demo-lan
 
 The server:
 
-- Listens on TCP port 9808
-- Advertises `_herdr-connect._tcp` via mDNS
-- Serves unencrypted HTTP (see [safety boundary](#lan-preview-safety-boundary))
+- Listens on TCP port 9808 with TLS (self-signed ECDSA P-256 certificate)
+- Advertises `_herdr-connect._tcp` via mDNS with certificate fingerprint in TXT record
+- Requires bearer-token authentication on all endpoints except `/v1/pair`
+- Enforces per-device and per-IP rate limits
 - Logs all requests to stderr
 
 Exit the server with Ctrl+C. The service wrapper runs this command in the background.
@@ -176,6 +177,57 @@ The daemon:
 - Handles graceful shutdown on SIGINT/SIGTERM
 
 `--once` is useful for health checks in scripts.
+
+### pair
+
+Generate a pairing QR code for a mobile device:
+
+```sh
+herdr-connect pair
+```
+
+This command:
+
+1. Loads (or creates) the self-signed TLS certificate and its SHA-256 fingerprint
+2. Generates a 32-byte one-time secret, stored as SHA-256 hash with a 5-minute TTL
+3. Renders a terminal QR code containing `{v:1, fp, hosts[], port:9808, secret}`
+4. Polls every second until the secret is consumed or expires (TTL + 10s margin)
+
+The mobile device scans the QR, POSTs the secret to the daemon's `/v1/pair`, and receives a per-device bearer token. The CLI prints the paired device name on success. Exit code 1 on timeout.
+
+Pairing is auto-approved — physical access to the terminal screen is the out-of-band confirmation.
+
+### devices
+
+List and revoke paired devices:
+
+```sh
+herdr-connect devices list
+herdr-connect devices revoke <device_id>
+```
+
+#### devices list
+
+Outputs a JSON array of paired devices sorted by pairing time (RFC 3339 UTC timestamps):
+
+```json
+[
+  {
+    "device_id": "dev_abc123",
+    "name": "My iPhone",
+    "paired_at": "2025-06-18T10:30:00Z",
+    "last_seen_at": "2025-06-18T12:00:00Z",
+    "status": "active",
+    "revoked_at": null
+  }
+]
+```
+
+Empty list outputs `[]`. Status is `"active"` or `"revoked"`.
+
+#### devices revoke
+
+Revokes a paired device by ID. The device's bearer token is immediately rejected with `401 revoked` on subsequent requests. Idempotency: returns an error if the device is already revoked or not found. Revocation is host-side only — no remote recovery; the device must re-pair.
 
 ### agents
 
@@ -253,7 +305,7 @@ Output:
 ```json
 {
   "database": "/home/owner/.config/herdr-connect/daemon.db",
-  "schema_version": 1
+  "schema_version": 2
 }
 ```
 

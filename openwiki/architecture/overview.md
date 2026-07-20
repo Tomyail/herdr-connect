@@ -8,7 +8,7 @@ resource: https://github.com/Tomyail/herdr-connect
 
 # System Architecture
 
-Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw data, the **Go daemon** projects and serves it, and the **mobile client** discovers and consumes the HTTP API. A separate **protocol package** defines cryptographic primitives for future secure pairing.
+Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw data, the **Go daemon** projects and serves it over HTTPS with bearer-token authentication, and the **mobile client** discovers, pairs with, and consumes the authenticated API. A separate **protocol package** defines cryptographic primitives for future end-to-end encryption over relay connections.
 
 ## Core Components
 
@@ -31,7 +31,7 @@ Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw 
 │                            │  └──────┬─────┘ │                  │
 │                            │         │       │                  │
 │                            │  ┌──────▼─────┐ │                  │
-│                            │  │ HTTP Demo  │ │                  │
+│                            │  │ HTTPS Demo │ │                  │
 │                            │  │  Server    │ │                  │
 │                            │  └──────┬─────┘ │                  │
 │                            └─────────┼───────┘                  │
@@ -52,8 +52,9 @@ Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw 
 │                            │  └──────┬─────┘ │                   │
 │                            │         │       │                   │
 │                            │  ┌──────▼─────┐ │                   │
-│                            │  │ HTTP       │ │                   │
-│                            │  │ Client     │ │                   │
+│                            │  │ HTTPS      │ │                   │
+│                            │  │ + Pinned   │ │                   │
+│                            │  │  Fetch     │ │                   │
 │                            │  └────────────┘ │                   │
 │                            └──────────────────┘                   │
 └───────────────────────────────────────────────────────────────────┘
@@ -65,16 +66,17 @@ The daemon (`/cmd/herdr-connect/main.go`) is a long-lived service that:
 
 1. **Adapts Herdr CLI output** — The [Herdr Source Adapter](../domain/herdr-source-adapters.md) invokes `herder agent list --json` and parses the response into domain types
 2. **Projects agent state** — The [Projection Layer](../domain/agent-projection.md) normalizes source observations and persists them to SQLite
-3. **Serves HTTP API** — The demo LAN server (`/internal/demolan/server.go`) exposes agent list, output, focus, and input endpoints on TCP port 9808
-4. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service for mobile discovery
+3. **Serves HTTPS API** — The demo LAN server (`/internal/demolan/server.go`) serves agent list, output, focus, messages, and interrupt endpoints over HTTPS with bearer-token auth on TCP port 9808
+4. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service with a `fp` TXT record containing the TLS certificate fingerprint for mobile pairing verification
 
 The daemon runs as an owner-level service on macOS (launchd) and Linux (systemd user services). Windows service installation is not supported in the current preview.
 
 ### Key Daemon Responsibilities
 
 - **Command execution** — Invokes Herdr CLI commands via `os/exec` and parses JSON output
-- **State synchronization** — Calls `source.Snapshot()` periodically and projects changes to SQLite
-- **HTTP serving** — Handles demo endpoints with no authentication or encryption
+- **State synchronization** — Calls `source.Snapshot()` periodically and projects changes to SQLite, with a 1-second TTL cache and singleflight coalescing to avoid redundant CLI spawns during polling
+- **HTTPS serving** — Serves TLS-encrypted endpoints with self-signed certificate and per-device bearer-token authentication
+- **Rate limiting** — Token-bucket limits per device (reads: 5/s burst 10, writes: 1/s burst 3) and per IP for pairing/unauthenticated (1/s burst 20)
 - **Service lifecycle** — Installs, starts, stops, and uninstalls the background service
 - **Diagnostics** — Checks database health, source availability, and port readiness
 
@@ -82,22 +84,24 @@ The daemon runs as an owner-level service on macOS (launchd) and Linux (systemd 
 
 The iOS app (`/apps/mobile/`) is a React Native application that:
 
-1. **Discovers the daemon** — Uses `@inthepocket/react-native-service-discovery` to browse `_herdr-connect._tcp` services
-2. **Fetches agent state** — Calls `GET /v1/demo/agents` to retrieve the current agent list
-3. **Displays status** — Shows agents with interaction state, outcome, and brand icons
-4. **Interacts with agents** — Calls `/history`, `/focus`, and `/messages` endpoints for limited control
+1. **Pairs with the daemon** — Scans a QR code rendered by `herdr-connect pair` to exchange a one-time secret for per-device bearer credentials, stored in iOS Keychain
+2. **Discovers the daemon** — Uses `@inthepocket/react-native-service-discovery` to browse `_herdr-connect._tcp` services
+3. **Fetches agent state** — Calls `GET /v1/demo/agents` over HTTPS using a pinned-fetch native module that validates the server's TLS certificate fingerprint
+4. **Displays status** — Shows agents with interaction state, outcome, and brand icons
+5. **Interacts with agents** — Calls `/history`, `/focus`, `/messages`, and `/interrupt` endpoints for control
 
-The client requires an Expo development build due to the native Bonjour module; Expo Go is not sufficient.
+The client requires an Expo development build due to native Bonjour and pinned-fetch modules; Expo Go is not sufficient.
 
 ### Key Client Screens
 
-- **Agents Screen** (`AgentsScreen.tsx`) — Lists all discovered agents with status pills
-- **Agent Detail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, and text input
-- **Settings** (`SettingsScreen.tsx`) — Language, appearance, and diagnostic options
+- **Agents Screen** (`AgentsScreen.tsx`) — Lists all discovered agents with status pills; shows pairing/revoked/error state when not connected
+- **Agent Detail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input, and interrupt button with confirmation dialog
+- **Settings** (`SettingsScreen.tsx`) — Language, appearance, pairing, and diagnostic options
+- **Pairing** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
 
 ## Protocol Package
 
-The protocol package (`/packages/protocol/`) defines cryptographic primitives for **future secure pairing**:
+The protocol package (`/packages/protocol/`) defines cryptographic primitives for **future end-to-end encryption** over remote relay connections:
 
 - **HPKE hybrid encryption** — X25519 key exchange, HKDF-SHA256, ChaCha20Poly1305
 - **Ed25519 signatures** — For device authentication and message integrity
@@ -105,22 +109,24 @@ The protocol package (`/packages/protocol/`) defines cryptographic primitives fo
 - **Replay protection** — Event-based sequencing and TTL enforcement
 - **Error codes** — Well-defined protocol error types
 
-The protocol is **not integrated** into the current LAN demo. It is research for future authenticated and encrypted remote connections.
+The protocol is **not yet integrated** into the LAN transport. Today's LAN security uses TLS with certificate fingerprint pinning and bearer-token pairing (see [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md)). The HPKE protocol will provide end-to-end encryption for the future relay milestone.
 
 ## Data Flow
 
-### Discovery Flow
+### Discovery & Pairing Flow
 
-1. Mobile client starts Bonjour browsing for `_herdr-connect._tcp`
-2. Daemon advertises on port 9808 with TXT record containing demo version
-3. Client resolves hostname and port, then calls `GET /v1/demo/agents`
-4. Server returns JSON with agent list, source online status, and refreshed timestamp
+1. Owner runs `herdr-connect pair` → generates one-time secret, renders QR with secret + cert fingerprint + host addresses + port
+2. Mobile app scans QR, POSTs secret + device name to `POST /v1/pair` via pinned-fetch (validates cert fingerprint)
+3. Server consumes secret, issues per-device bearer token, returns it exactly once
+4. Mobile stores credentials (fingerprint, token, device ID) in iOS Keychain
+5. Daemon advertises `_herdr-connect._tcp` with `fp` TXT record containing cert fingerprint
+6. Mobile discovers daemon via Bonjour, connects using stored credentials
 
 ### State Synchronization Flow
 
-1. Daemon calls `source.Snapshot()` to fetch current agents from Herdr CLI
+1. Daemon calls `source.Snapshot()` to fetch current agents from Herdr CLI (cached with 1-second TTL and singleflight coalescing)
 2. Projection layer normalizes observations and applies batch updates to SQLite
-3. Server reads from SQLite on each HTTP request (no long-lived cache)
+3. Server reads from SQLite on each authenticated HTTP request
 4. If source is offline, server returns last known state with `source_online: false`
 
 ### Interaction Flow
@@ -129,6 +135,8 @@ The protocol is **not integrated** into the current LAN demo. It is research for
 2. Server invokes Herdr CLI to read last 120 lines of agent output
 3. User sends text → Client calls `POST /v1/demo/agents/{sourceId}/messages`
 4. Server invokes Herdr CLI to send text to agent pane and submit Enter
+5. User interrupts → Client calls `POST /v1/demo/agents/{sourceId}/interrupt` (requires confirmation dialog on mobile)
+6. Server invokes Herdr CLI to send SIGINT/Ctrl-C to agent pane
 
 ## Design Principles
 
@@ -138,15 +146,15 @@ All state persists locally on the owner's computer. The daemon does not depend o
 
 ### Unidirectional Projection
 
-The daemon projects Herdr state outward but does not modify Herdr's internal state except through explicit user commands (focus, send message). It does not bidirectionally sync.
+The daemon projects Herdr state outward but does not modify Herdr's internal state except through explicit user commands (focus, send message, interrupt). It does not bidirectionally sync.
 
 ### CLI Boundary
 
 Herdr Connect communicates with Herder through its documented CLI interface only. It does not embed Herdr source code, link against Herdr libraries, or call internal APIs.
 
-### Preview Security Boundary
+### LAN Security Boundary
 
-The current demo has **no pairing, no authentication, no encryption**. It exposes terminal output and accepts text input over unencrypted HTTP. This is intentional for the LAN preview scope and will be replaced by the protocol package in future milestones.
+All LAN traffic is encrypted with TLS using a self-signed ECDSA P-256 certificate. Mobile devices pin the certificate's SHA-256 fingerprint and authenticate with per-device bearer tokens obtained through [QR-code pairing](../protocol/secure-pairing.md). Tokens are stored only as SHA-256 hashes on the daemon side. The daemon enforces per-device and per-IP rate limits. There is no end-to-end encryption layer yet — TLS terminates at the daemon. The HPKE-based protocol package will add E2EE for the future relay milestone.
 
 ## Service Architecture
 
@@ -165,12 +173,18 @@ The service resolves absolute paths to both Herdr Connect and Herdr binaries at 
 - `github.com/grandcat/zeroconf` — mDNS/Bonjour advertising
 - `modernc.org/sqlite` — Pure Go SQLite, no CGO
 - `golang.org/x/sys` — Platform-specific service installation
+- `golang.org/x/time/rate` — Token-bucket rate limiting
+- `golang.org/x/sync/singleflight` — Snapshot call coalescing
+- `crypto/tls`, `crypto/ecdsa` — Self-signed TLS certificate generation and HTTPS serving
 
 ### React Native Dependencies
 
 - `@inthepocket/react-native-service-discovery` — Native Bonjour browsing (requires dev build)
+- `expo-camera` — QR scanning for pairing
+- `expo-secure-store` — iOS Keychain credential storage
 - `react-native-mmkv` — Fast local storage for settings
 - `@react-navigation/*` — Navigation stack and tab bar
+- **pinned-fetch** (custom Expo module) — Native iOS TLS fingerprint pinning via URLSession delegate
 
 ### Platform Support Matrix
 
