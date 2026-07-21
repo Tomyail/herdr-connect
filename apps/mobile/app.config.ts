@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
-    buildNumber: "3",
+    buildNumber: "4",
     supportsTablet: false,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
