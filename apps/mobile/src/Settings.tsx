@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
@@ -7,6 +7,8 @@ import { useMMKVBoolean } from "react-native-mmkv";
 import type { DiscoveredService } from "./discovery";
 
 import appConfig from "../app.config";
+
+const PROJECT_URL = "https://github.com/Tomyail/herdr-connect";
 import { useI18n } from "./i18n/I18nContext";
 import type { AppLanguage } from "./i18n/locale";
 import type { MessageKey } from "./i18n/messages";
@@ -277,6 +279,12 @@ export function Settings({ connectionState }: SettingsProps) {
         rows={[
           { icon: "phone-portrait-outline", label: t("settings.row.app"), value: appConfig.name },
           { icon: "information-circle-outline", label: t("settings.row.version"), value: appConfig.version ?? t("common.unknown") },
+          {
+            icon: "logo-github",
+            label: t("settings.row.project"),
+            value: "",
+            onPress: () => void Linking.openURL(PROJECT_URL),
+          },
         ]}
       />
     </ScrollView>
