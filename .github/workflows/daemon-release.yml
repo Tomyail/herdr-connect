@@ -39,13 +39,22 @@ jobs:
       matrix:
         include:
           # macOS builds run on a macOS runner so the binary can be signed,
-          # notarized and stapled with codesign/notarytool/stapler.
+          # notarized and stapled with codesign/notarytool/stapler. Signing
+          # and notarizing don't require the runner's CPU to match the
+          # target GOARCH (codesign/notarytool just operate on the file), so
+          # amd64 doesn't need an Intel host — but GitHub is retiring Intel
+          # macOS runners entirely (macos-13 was removed Dec 2025; macos-15-intel
+          # is the last x86_64 image, supported until Aug 2027), so use it
+          # explicitly rather than an arch-matched label that will keep
+          # disappearing. macos-14 is also mid-deprecation (unsupported after
+          # Nov 2026), so arm64 uses macos-15 rather than tracking whichever
+          # OS version macos-latest happens to point to.
           - goos: darwin
             goarch: arm64
-            runner: macos-14
+            runner: macos-15
           - goos: darwin
             goarch: amd64
-            runner: macos-13
+            runner: macos-15-intel
           - goos: linux
             goarch: arm64
             runner: ubuntu-latest
