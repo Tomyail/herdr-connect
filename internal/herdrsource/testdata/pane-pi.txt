@@ -1,0 +1,26 @@
+   grep -RIn "no pairing\|no auth\|无认证\|无加密\|Unsafe LAN demo\|unsafe LAN demo" README.md docs/ 2>/dev/null | grep -v 'docs/demo/lan-ios-agent-list.md'
+ ```
+
+ 结果为空。
+
+ - 额外 grep 旧 disclaimer 口径，也为空：
+
+ ```sh
+   grep -RIn "trusted network\|trusted local\|stop .*testing\|stop .*finished\|测试结束\|只.*可信\|仅限.*可信\|不安全" README.md docs SECURITY.md 2>/dev/null | grep -v 'docs/demo/lan-ios-agent-list.md'
+ ```
+
+ 结果为空。
+
+ - 对改动的用户文档做了轻量本地相对链接存在性检查（排除 OpenWiki 里原本就相对 repo 根的生成页链接），通过。
+
+ 当前状态
+
+ 仅文档改动，未 commit。
+
+ Model: deepseek-v4-flash
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+~/source/personal/herdr-connect (main)
+↑1.1M ↓49k R21M CH99.8% $7.974 18.6%/1.0M (auto)                                                                                                                                                            (deepseek) deepseek-v4-flash • thinking off

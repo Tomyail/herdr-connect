@@ -71,7 +71,7 @@ func (a *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string,
 		return AgentHistory{}, fmt.Errorf("Herdr agent.read 返回非成功响应")
 	}
 	return AgentHistory{
-		Text:      response.Result.Read.Text,
+		Text:      stripTUIChrome(response.Result.Read.Text),
 		Revision:  response.Result.Read.Revision,
 		Truncated: response.Result.Read.Truncated,
 	}, nil

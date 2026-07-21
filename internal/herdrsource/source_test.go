@@ -2,6 +2,7 @@ package herdrsource_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -231,6 +232,78 @@ func Test当前Herdr适配器读取历史并通过Pane提交消息(t *testing.T)
 	}
 	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
 		t.Fatalf("命令 = %#v", runner.calls)
+	}
+}
+
+func TestReadAgentHistoryStripsTUIChrome(t *testing.T) {
+	t.Parallel()
+
+	rawText := strings.Join([]string{
+		"* recap: shipped the LAN-only launch checklist.",
+		"",
+		strings.Repeat("─", 40),
+		"❯",
+		strings.Repeat("─", 40),
+		"  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents" + strings.Repeat(" ", 20) + "912380 tokens",
+		"globalVersion: 2.1.215 · latestVersion: 2.1.216",
+	}, "\n")
+	payload, err := json.Marshal(struct {
+		Result struct {
+			Type string `json:"type"`
+			Read struct {
+				Text      string `json:"text"`
+				Revision  uint64 `json:"revision"`
+				Truncated bool   `json:"truncated"`
+			} `json:"read"`
+		} `json:"result"`
+	}{
+		Result: struct {
+			Type string `json:"type"`
+			Read struct {
+				Text      string `json:"text"`
+				Revision  uint64 `json:"revision"`
+				Truncated bool   `json:"truncated"`
+			} `json:"read"`
+		}{
+			Type: "pane_read",
+			Read: struct {
+				Text      string `json:"text"`
+				Revision  uint64 `json:"revision"`
+				Truncated bool   `json:"truncated"`
+			}{Text: rawText, Revision: 9, Truncated: false},
+		},
+	})
+	if err != nil {
+		t.Fatalf("marshal fixture: %v", err)
+	}
+
+	runner := &recordingRunner{outputs: map[string]string{
+		"agent read term-ios --source recent-unwrapped --lines 40": string(payload),
+	}}
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	history, err := adapter.ReadAgentHistory(context.Background(), "term-ios", 40)
+	if err != nil {
+		t.Fatalf("read history: %v", err)
+	}
+	want := "* recap: shipped the LAN-only launch checklist."
+	if history.Text != want {
+		t.Fatalf("history.Text = %q, want %q", history.Text, want)
+	}
+}
+
+func TestReadAgentHistoryPreservesShortMarkdownDivider(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{
+		"agent read term-ios --source recent-unwrapped --lines 40": `{"result":{"type":"pane_read","read":{"text":"a\n---\nb","revision":1,"truncated":false}}}`,
+	}}
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	history, err := adapter.ReadAgentHistory(context.Background(), "term-ios", 40)
+	if err != nil {
+		t.Fatalf("read history: %v", err)
+	}
+	if history.Text != "a\n---\nb" {
+		t.Fatalf("history.Text = %q, want short markdown divider preserved", history.Text)
 	}
 }
 
