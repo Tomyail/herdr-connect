@@ -78,7 +78,7 @@ func secureHandlerWithLimiter(agents http.Handler, database *store.Store, cert l
 				writeRateLimited(response)
 				return
 			}
-			agents.ServeHTTP(response, request)
+			agents.ServeHTTP(response, requestWithDeviceID(request, deviceID))
 		}
 	})
 }

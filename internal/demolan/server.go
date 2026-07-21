@@ -73,21 +73,37 @@ type MessageRequest struct {
 }
 
 type handler struct {
-	source   herdrsource.Source
-	snapshot snapshotFunc // 取 Snapshot 的回调，默认 = source.Snapshot；Serve 会注入缓存版本
-	now      func() time.Time
+	source        herdrsource.Source
+	snapshot      snapshotFunc // 取 Snapshot 的回调，默认 = source.Snapshot；Serve 会注入缓存版本
+	now           func() time.Time
+	broadcaster   *sseBroadcaster   // SSE 状态推送，订阅者计数驱动启停
+	streamLimiter *streamConnLimiter // SSE per-device 并发连接数计数
 }
 
 func NewHandler(source herdrsource.Source) http.Handler {
-	return &handler{source: source, snapshot: source.Snapshot, now: time.Now}
+	return &handler{
+		source:        source,
+		snapshot:      source.Snapshot,
+		now:           time.Now,
+		broadcaster:   newSSEBroadcaster(source.Snapshot),
+		streamLimiter: newStreamConnLimiter(),
+	}
 }
 
 // newHandlerWithSnapshotter 把 "capability 判断用的原始 source" 与
 // "Snapshot 调用" 解耦：source 仍传原始值（保证 h.source.(AgentFocuser) 等
 // 类型断言反映底层真实能力），snapshot 传缓存版本（合并/降频）。
-// 生产入口 Serve 用这个构造函数。
+// 生产入口 Serve 用这个构造函数。broadcaster 复用同一个 snapshot，这样
+// SSE 轮询与 REST 请求共享缓存，净 CLI 调用速率不因加 SSE 升高（见
+// sseBroadcastPollInterval 注释）。
 func newHandlerWithSnapshotter(source herdrsource.Source, snapshot snapshotFunc) http.Handler {
-	return &handler{source: source, snapshot: snapshot, now: time.Now}
+	return &handler{
+		source:        source,
+		snapshot:      snapshot,
+		now:           time.Now,
+		broadcaster:   newSSEBroadcaster(snapshot),
+		streamLimiter: newStreamConnLimiter(),
+	}
 }
 
 // setCommonHeaders 统一响应头：鉴权中间件与 pair 端点的错误响应也必须携带
@@ -100,6 +116,12 @@ func setCommonHeaders(response http.ResponseWriter) {
 
 func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	setCommonHeaders(response)
+
+	// SSE 端点是集合级（一段路径），单独分发，不走 agentAction 两段式解析。
+	if request.URL.Path == EventsPath {
+		h.streamEvents(response, request)
+		return
+	}
 
 	if sourceID, action, ok := agentAction(request.URL.Path); ok {
 		switch action {
