@@ -43,7 +43,7 @@ Windows 用户继续使用下方的 zip 下载方式。
 | Linux | x86-64 | `linux_amd64.tar.gz` |
 | Windows | x86-64 | `windows_amd64.zip` |
 
-Release 还包含 `SHA256SUMS`。使用 daemon 压缩包不需要安装 Go、Node.js、pnpm 或 Expo。
+Release 还包含 `SHA256SUMS`。使用 daemon 压缩包不需要安装 Go、Node.js、pnpm 或 Expo。macOS 压缩包内的二进制额外使用 Developer ID Application 证书签名并经 Apple 公证，因此在 Mac 上双击或直接运行不会触发 Gatekeeper 的“无法验证开发者”拦截。
 
 ## 校验并运行
 
@@ -114,9 +114,20 @@ shasum -a 256 herdr-connect_*.tar.gz
 
 将输出与 `SHA256SUMS` 中对应记录比较。
 
+## 校验 macOS 签名与公证
+
+解压 macOS 压缩包后，可以在 Mac 上确认 Developer ID 签名和 Apple 公证记录：
+
+```sh
+codesign --verify --strict --verbose=2 herdr-connect
+spctl -a -vvv --type execute herdr-connect
+```
+
+`spctl` 应输出 `accepted`，且 `source=Notarized Developer ID`。首次运行二进制时 Gatekeeper 会进行在线公证票据检查，因此首次启动需要联网。
+
 ## 已知限制
 
-- 二进制没有经过 Apple notarization 或 Windows code signing，操作系统可能显示来源警告。
+- macOS 二进制使用 Developer ID Application 证书签名并经 Apple 公证，Gatekeeper 不会拦截；Linux 与 Windows 二进制未做 code signing，操作系统可能显示来源警告，Windows 用户还会看到 SmartScreen 提示。
 - Windows 服务管理尚未实现；Windows 上使用前台 `demo-lan` 命令。
 - Android APK 尚未发布。
 - 消息层 E2EE 与官方远程 relay 访问是未来里程碑；当前发布范围是 LAN-only。

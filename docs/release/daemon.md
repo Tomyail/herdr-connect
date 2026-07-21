@@ -43,7 +43,7 @@ Download the archive matching your computer:
 | Linux | x86-64 | `linux_amd64.tar.gz` |
 | Windows | x86-64 | `windows_amd64.zip` |
 
-The release also includes `SHA256SUMS`. The daemon archives do not require Go, Node.js, pnpm, or Expo.
+The release also includes `SHA256SUMS`. The daemon archives do not require Go, Node.js, pnpm, or Expo. macOS archives additionally contain a binary that is signed with a Developer ID Application certificate and notarized by Apple, so double-clicking or running it on a Mac does not trigger a Gatekeeper "unidentified developer" block.
 
 ## Verify and run
 
@@ -114,9 +114,20 @@ shasum -a 256 herdr-connect_*.tar.gz
 
 Compare the output with the matching entry in `SHA256SUMS`.
 
+## Verify the macOS signature and notarization
+
+After extracting a macOS archive, you can confirm the Developer ID signature and the Apple notarization record on a Mac:
+
+```sh
+codesign --verify --strict --verbose=2 herdr-connect
+spctl -a -vvv --type execute herdr-connect
+```
+
+`spctl` should print `accepted` with `source=Notarized Developer ID`. Gatekeeper performs an online notarization ticket check the first time the binary runs, so that first launch needs network access.
+
 ## Known limitations
 
-- Binaries are not Apple-notarized or Windows code-signed, so the operating system may show an origin warning.
+- macOS binaries are signed with a Developer ID Application certificate and notarized by Apple, so Gatekeeper will not block them. Linux and Windows binaries are not code-signed, so the operating system may show an origin warning; Windows users will additionally see a SmartScreen prompt.
 - Windows service management is not implemented; use the foreground `demo-lan` command on Windows.
 - Android APKs are not published yet.
 - Message-layer E2EE and official remote relay access are future milestones; the current release is LAN-only.
