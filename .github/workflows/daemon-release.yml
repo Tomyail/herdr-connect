@@ -181,16 +181,33 @@ jobs:
 
           echo "Stapling notarization ticket..."
           # stapler can return non-zero for a bare (non-.app) Mach-O executable
-          # because Apple only embeds offline tickets into app/dmg/pkg containers.
-          # Notarization is still valid via Gatekeeper's online ticket check,
-          # which spctl verifies below.
+          # because Apple only embeds offline tickets into app/dmg/pkg
+          # containers. Notarization is still valid via Gatekeeper's online
+          # ticket check; the `notarytool submit --wait` "Accepted" status
+          # above is the authoritative signal, not the checks below.
           if ! xcrun stapler staple "$bin"; then
-            echo "::warning::stapler staple returned non-zero for the bare binary (Apple limits offline tickets for non-bundle executables). Notarization remains valid via the online Gatekeeper check; spctl below is the source of truth."
+            echo "::warning::stapler staple returned non-zero for the bare binary (Apple limits offline tickets for non-bundle executables). Notarization remains valid via the online Gatekeeper check submitted above."
           fi
           xcrun stapler validate "$bin" || true
 
-          echo "Gatekeeper assessment:"
-          spctl -a -vvv --type execute "$bin"
+          # `spctl -a --type execute` is designed for .app bundles: it always
+          # reports "rejected (the code is valid but does not seem to be an
+          # app)" for a bare Mach-O executable regardless of signing/notarization
+          # status, so it cannot be used as a pass/fail gate here. Run it only
+          # for informational log output (verified 2026-07-21 against a real
+          # signed+notarized build of this exact binary: notarytool accepted
+          # the submission, spctl still reported this exact benign rejection).
+          echo "spctl assessment (informational only, see comment above):"
+          spctl -a -vvv --type execute "$bin" || true
+
+          # The test that actually matters: simulate what happens when a user
+          # downloads this file (which sets the com.apple.quarantine extended
+          # attribute) and runs it, since that's the real Gatekeeper enforcement
+          # path for a standalone CLI tool.
+          echo "Simulating a quarantined download and executing the binary..."
+          xattr -w com.apple.quarantine "0081;$(printf '%x' "$(date +%s)");Safari;$(uuidgen | tr '[:upper:]' '[:lower:]')" "$bin"
+          xattr -p com.apple.quarantine "$bin"
+          "$bin" --version
 
       - name: Clean up signing keychain and credentials
         if: matrix.goos == 'darwin' && always()
