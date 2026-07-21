@@ -28,7 +28,7 @@ go run ./cmd/herdr-connect --source herdr doctor
 go run ./cmd/herdr-connect migrations
 ```
 
-`doctor` 面向普通安装诊断，默认检查数据库、Herdr 来源、Agent 数和 LAN preview 的 TCP `9808`，再提供可执行的下一步；兼容脚本继续使用默认输出为 JSON 的 `diagnostics`。`status` 同时显示来源在线状态、能力矩阵、当前 Agent 投影和 `through_event_seq`。`daemon --once` 可用于脚本化健康检查；不带 `--once` 时每两秒重新取得公开快照，并在 Herdr 暂时不可用时继续低频重试。完整公开用法见英文 canonical [CLI 指南](cli.md)及其[中文翻译](zh-CN/cli.md)。
+`doctor` 面向普通安装诊断，默认检查数据库、Herdr 来源、Agent 数和 LAN daemon 的 TCP `9808`，再提供可执行的下一步；兼容脚本继续使用默认输出为 JSON 的 `diagnostics`。`status` 同时显示来源在线状态、能力矩阵、当前 Agent 投影和 `through_event_seq`。`daemon --once` 可用于脚本化健康检查；不带 `--once` 时每两秒重新取得公开快照，并在 Herdr 暂时不可用时继续低频重试。完整公开用法见英文 canonical [CLI 指南](cli.md)及其[中文翻译](zh-CN/cli.md)。
 
 根目录的 fake 开发命令使用被 Git 忽略的 `.data/fake-daemon.db`，不会污染默认的真实安装实例数据库。
 
@@ -36,11 +36,11 @@ go run ./cmd/herdr-connect migrations
 
 当前兼容适配器只调用 Herdr v0.7 的公开 `herdr agent list` JSON 命令。它使用 `terminal_id` 作为稳定来源身份，并消费来源 `revision` 来拒绝重复或乱序观察。
 
-Herdr 返回的 `agent_status` 可能来自 screen detector，因此适配器不会把 `done`、`idle`、焦点、终端文字或进程状态映射为可信事实。所有 Agent 的 `interaction_state` 都保守表示为 `unknown`，`turn_outcome` 保持缺省；`send_prompt` 和 `interrupt` 能力明确关闭。fake provider 才声明完整结构化生命周期和能力矩阵，用作 daemon contract 的规范 provider。
+Herdr 返回的 `agent_status` 可能来自 screen detector，因此适配器不会把 `done`、`idle`、焦点、终端文字或进程状态映射为可信事实。Herdr 适配器仍支持基于 pane 的历史读取、焦点切换、文本发送和 `C-c` interrupt；结构化 lifecycle 的精确 `interaction_state` / `turn_outcome` 仍主要由 fake provider 作为 daemon contract 的规范 provider 覆盖。
 
 ## 本地持久状态与隐私
 
-默认数据库位于当前所有者配置目录的 `herdr-connect/daemon.db`，也可用 `--db` 覆盖。SQLite driver 不依赖 CGO。daemon 会把数据库及其 sidecar 权限收紧为仅当前所有者可读写，并在启动迁移后执行 `quick_check`，拒绝继续使用损坏或更高 schema version 的数据库。schema v1 包含：
+默认数据库位于当前所有者配置目录的 `herdr-connect/daemon.db`，也可用 `--db` 覆盖。SQLite driver 不依赖 CGO。daemon 会把数据库及其 sidecar 权限收紧为仅当前所有者可读写，并在启动迁移后执行 `quick_check`，拒绝继续使用损坏或更高 schema version 的数据库。当前 schema 包含：
 
 - 安装实例级事件序列和来源 cursor；
 - 稳定来源身份映射与当前 Agent 投影；

@@ -2,7 +2,7 @@
 
 [English](../cli.md)
 
-`herdr-connect` CLI 帮助所有者检查本地 Herdr 安装实例并启动同一局域网预览。建议从以下命令开始：
+`herdr-connect` CLI 帮助所有者检查本地 Herdr 安装实例并启动同一局域网 daemon。建议从以下命令开始：
 
 ```sh
 herdr-connect doctor
@@ -14,19 +14,19 @@ herdr-connect service status
 
 ## 诊断安装实例
 
-`doctor` 是面向普通使用者的默认入口。它检查 SQLite 数据库能否打开并通过校验、所选 Herdr 来源是否可达、是否能看到至少一个 Agent，以及 TCP `9808` 能否用于 LAN preview，并在结尾给出所有者可直接执行的下一步命令：
+`doctor` 是面向普通使用者的默认入口。它检查 SQLite 数据库能否打开并通过校验、所选 Herdr 来源是否可达、是否能看到至少一个 Agent，以及 TCP `9808` 能否用于 LAN daemon，并在结尾给出所有者可直接执行的下一步命令：
 
 ```console
 $ herdr-connect doctor
 Herdr Connect doctor
-[OK] Database: /home/owner/.config/herdr-connect/daemon.db (schema v1)
+[OK] Database: /home/owner/.config/herdr-connect/daemon.db (schema v2)
 [OK] Herdr CLI/source: herdr-cli-v0.7 is online
 [OK] Agents: 2 found
-[OK] LAN preview port: TCP 9808 is available
+[OK] LAN daemon port: TCP 9808 is available
 Next: Ready. Run '/home/owner/.local/bin/herdr-connect service install' to install and start the background service.
 ```
 
-如果 Herdr 缺失或不可用，请先让 `herdr agent list` 正常工作。如果没有发现 Agent，请启动一个 Agent，再重试 `herdr-connect doctor`。如果 `9808` 上已经运行另一个 Herdr Connect preview，doctor 会报告它已在运行，而不会要求所有者重复启动；如果端口属于其他程序，doctor 会以退出码 1 结束并提示如何检查占用者。新自动化可以使用结构化的 `doctor --json` 获得相同检查。
+如果 Herdr 缺失或不可用，请先让 `herdr agent list` 正常工作。如果没有发现 Agent，请启动一个 Agent，再重试 `herdr-connect doctor`。如果 `9808` 上已经运行另一个 Herdr Connect daemon，doctor 会报告它已在运行，而不会要求所有者重复启动；如果端口属于其他程序，doctor 会以退出码 1 结束并提示如何检查占用者。新自动化可以使用结构化的 `doctor --json` 获得相同检查。
 
 安装版会显示实际可执行文件路径。临时的 `go run` 二进制不能安装为永久服务；源码开发仍可使用前台命令 `go run ./cmd/herdr-connect --source herdr demo-lan`。
 
@@ -51,7 +51,7 @@ herdr-connect service restart
 herdr-connect service uninstall
 ```
 
-`logs` 输出最近 100 行；`--tail` 持续输出新增内容。`uninstall` 停止服务并且只移除受管理的配置，保留 CLI 二进制、数据库和日志。再次执行 `service install` 会原子更新 Herdr Connect 自己生成的配置。macOS 使用 `~/Library/LaunchAgents/com.tomyail.herdr-connect.plist`；Linux 要求 systemd user service，并使用 `~/.config/systemd/user/herdr-connect.service`。当前预览不支持 Windows 服务管理。
+`logs` 输出最近 100 行；`--tail` 持续输出新增内容。`uninstall` 停止服务并且只移除受管理的配置，保留 CLI 二进制、数据库和日志。再次执行 `service install` 会原子更新 Herdr Connect 自己生成的配置。macOS 使用 `~/Library/LaunchAgents/com.tomyail.herdr-connect.plist`；Linux 要求 systemd user service，并使用 `~/.config/systemd/user/herdr-connect.service`。Windows 服务管理尚未支持。
 
 `diagnostics` 继续作为现有脚本的兼容命令，其默认输出仍为 JSON；`diagnostics --json` 是含义相同的显式写法。既有字段为 `database`、`schema_version`、`source_name`、`source_online`、`agent_count` 和 `through_event_seq`；来源不可用时会增加稳定标记 `source_error: "source_unavailable"`。
 
@@ -87,10 +87,10 @@ CLI 输出遵循统一约定：
 - `service status` 等生命周期命令在服务尚未安装时使用退出码 3。
 - help、version、未知命令和参数错误都会在连接 Herdr 或打开 SQLite 前处理。未知命令与已有命令接近时会给出建议。
 
-## LAN preview 安全边界
+## LAN-only 安全边界
 
-`demo-lan` 监听 TCP `9808` 并广播 `_herdr-connect._tcp`。传输层为 HTTPS，使用自签的 ECDSA P-256 证书，其证书指纹 SHA-256 即为设备 pin 的安装实例身份。除 `/v1/pair` 外的所有端点都要求携带已配对设备的 `Authorization: Bearer <token>`；未配对、未知或已撤销的请求会收到结构化的 `401 unauthorized` 响应。配对通过一次性 QR secret 在 `/v1/pair` 换取每设备专属 token。近期终端输出与文本输入都只能通过这些已认证端点访问。
+`demo-lan` 监听 TCP `9808` 并广播 `_herdr-connect._tcp`。传输层为 HTTPS，使用自签的 ECDSA P-256 证书，其证书指纹 SHA-256 即为设备 pin 的安装实例身份。除 `/v1/pair` 外的所有端点都要求携带已配对设备的 `Authorization: Bearer <token>`；缺失/未知 token 返回 `401 unauthorized`，已撤销设备返回 `401 revoked`。配对通过一次性 QR secret 在 `/v1/pair` 换取每设备专属 token。近期终端输出与文本输入都只能通过这些已认证端点访问。
 
-只能在可信、可控的局域网运行，并及时撤销不再使用的设备。不要把端口暴露到互联网。局域网发现只能证明安装实例可达，不建立信任，也不授予读取或操作 Agent 的权限。信任模型、证书生命周期与配对流程详见 [LAN TLS 与配对](../security/lan-tls-pairing.md)。
+受支持的产品范围是本地优先的 LAN 控制：请把 daemon 放在你管理的网络或 VPN 中，不要把 TCP `9808` 直接暴露到公网，并及时撤销不再使用的设备。局域网发现只能证明安装实例可达；信任由 QR 配对和证书 pinning 建立。信任模型、证书生命周期与配对流程详见 [LAN TLS 与配对](../security/lan-tls-pairing.md)。
 
 二进制安装与平台说明见 [daemon 安装指南](release/daemon.md)。

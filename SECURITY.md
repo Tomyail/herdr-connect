@@ -4,7 +4,7 @@
 
 ## Supported versions
 
-Herdr Connect is an experimental preview. Only the latest published preview is considered for security fixes; no version currently carries a production security guarantee.
+Security fixes are considered for the latest published Herdr Connect build. Older or unreleased builds are not supported.
 
 | Version | Supported |
 | --- | --- |
@@ -26,8 +26,8 @@ If private vulnerability reporting is unavailable, open a public issue that only
 
 Maintainers will acknowledge a private report as capacity allows, validate it, coordinate a fix and disclosure timeline, and credit the reporter if requested and appropriate. This volunteer project cannot promise a fixed response or remediation deadline.
 
-## Preview security boundary
+## LAN security boundary
 
-The current LAN demo has no pairing, device authentication, or end-to-end encryption. It sends recent terminal output and text input over unencrypted HTTP. Use it only on a trusted, controlled local network; never enter secrets; stop the daemon after testing.
+Herdr Connect's current product scope is LAN-only. The daemon serves an HTTPS LAN API with a self-signed ECDSA P-256 certificate pinned by SHA-256 fingerprint, one-time QR pairing, per-device bearer tokens, local revocation, and rate limiting. Keep the daemon on networks or VPNs you operate, and do not expose TCP `9808` directly to the public internet.
 
-Remote connectivity is not implemented. It is a later TODO and must not be inferred from the current LAN discovery preview.
+This is connection-layer security for same-LAN use. Message-layer E2EE and official remote relay connectivity are future milestones; see [LAN TLS and pairing](docs/security/lan-tls-pairing.md) and the Protocol v1 documents for the current model and roadmap.

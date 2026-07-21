@@ -1,5 +1,9 @@
 # 局域网 iOS Agent 详情与输入最小演示
 
+> **Archived / 已归档**: this document describes the pre-pairing, unauthenticated LAN demo procedure superseded by issue #21. It is kept only as historical context. See [LAN TLS and pairing](../security/lan-tls-pairing.md) for the current security model.
+>
+> **已归档**：本文描述的是 issue #21 之前、尚未配对且无认证的局域网 demo 流程，仅作为历史背景保留。当前安全模型见 [LAN TLS 与配对](../security/lan-tls-pairing.md)。
+
 ## 演示定位与安全边界
 
 这是为明日演示准备的**受控局域网 demo**，不是安全 MVP，也不能代表首个正式版本的安全设计已经完成。

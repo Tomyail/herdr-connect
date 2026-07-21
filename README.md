@@ -2,22 +2,22 @@
 
 [简体中文](docs/zh-CN/README.md)
 
-## Demo
+## LAN-only companion for Herdr
 
 [![Herdr Connect — LAN Discovery Demo](https://img.youtube.com/vi/BxX4ijalnzI/maxresdefault.jpg)](https://youtu.be/BxX4ijalnzI)
 
-Watch an iPhone discover the Herdr Connect daemon over local Wi-Fi and show the Agent list. See [Try it in 5 minutes](#try-it-in-5-minutes) to reproduce it yourself.
+Herdr Connect is a local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). It lets an iPhone discover a nearby Herdr daemon, pair with it, and control Agents on the same local network without sending Agent state through a cloud service.
 
 <p>
   <img src="assets/screenshot-1.png" alt="Herdr Connect iOS screenshot" width="180" />
   <img src="assets/screenshot-2.png" alt="Herdr Connect iOS screenshot" width="180" />
 </p>
 
-Herdr Connect is an experimental, local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). Its first public milestone is intentionally small: reliably discover a Herdr Connect daemon from a mobile device on the same local network.
+The current product scope is intentionally LAN-only: the daemon and phone must be on the same reachable network, and the data path stays inside that network. Remote relay access is a future milestone, not part of the current release.
 
 ## Try it in 5 minutes
 
-You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an iPhone, and both devices on the same trusted Wi-Fi network. Android and remote connections are not available in this preview.
+You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an iPhone, and both devices on the same LAN (physical Wi-Fi or a VPN that makes them mutually reachable). Android is not currently published.
 
 1. Confirm that Herdr is installed and has at least one Agent:
 
@@ -52,48 +52,66 @@ You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an i
    ```
 
 4. On your iPhone, join the public **[Herdr Connect TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm)**, install the app, and allow Local Network access when prompted.
-5. Open Herdr Connect. It should discover the daemon automatically and show your Agents. Tap an Agent to view recent output, switch focus, or send text.
+5. Pair the phone with the daemon:
 
-If discovery does not succeed, confirm that both devices use the same Wi-Fi, temporarily disable VPNs, and check firewall or guest-network isolation settings. See the [daemon guide](docs/release/daemon.md) and [TestFlight troubleshooting guide](docs/release/ios-testflight.md) for details.
+   ```sh
+   herdr-connect pair
+   ```
+
+   The command prints a one-time QR code. In the app, open Settings → Pair new device and scan it. The phone pins the daemon certificate fingerprint, exchanges the one-time secret for a per-device bearer token, and stores that credential locally.
+6. Return to the Agents tab. The app should show your Agents. Tap an Agent to view recent output, switch focus, send text, interrupt a running turn, or receive completion notifications while the app is in the foreground.
+
+If discovery does not succeed, confirm that both devices are on the same reachable LAN, temporarily disable VPNs that block local multicast, and check firewall or guest-network isolation settings. See the [daemon guide](docs/release/daemon.md) and [TestFlight troubleshooting guide](docs/release/ios-testflight.md) for details.
 
 For all commands, diagnostics output, exit codes, and examples, see the [CLI guide](docs/cli.md).
 
-> [!WARNING]
-> The current LAN demo has no pairing, device authentication, or end-to-end encryption. It exposes recent terminal output and text input over unencrypted HTTP. Run it only on a trusted, controlled network, never enter secrets, and stop the daemon after testing.
+> [!NOTE]
+> LAN-only is the current product boundary: Herdr Connect is designed for devices you control on a local network, with no cloud relay in the data path. The LAN transport is HTTPS with a self-signed ECDSA P-256 certificate pinned by SHA-256 fingerprint, one-time QR pairing, per-device bearer tokens, device revocation, and rate limiting. See [LAN TLS and pairing](docs/security/lan-tls-pairing.md) for the full trust model and known boundaries (single owner, bearer-token auth, no message-layer E2EE yet).
 
 ## Project status
 
-Herdr Connect is an early preview, not a production-ready remote access product.
+Herdr Connect is a local-first LAN control surface for Herdr. The current release focuses on same-LAN iOS control with pairing and transport security; remote relay access and message-layer E2EE remain future milestones.
 
 | Area | Status |
 | --- | --- |
-| Bonjour/mDNS daemon advertisement | Experimental |
-| iOS discovery on a physical device | Public TestFlight preview available |
-| Agent list, recent output, focus, and text input | Unsafe LAN demo only |
+| Bonjour/mDNS daemon advertisement | Implemented |
+| iOS discovery on a physical device | Public TestFlight beta available |
+| Pairing and LAN authentication | QR pairing, pinned TLS, per-device bearer tokens, revocation |
+| Agent list, recent output, focus, text input, interrupt | Authenticated LAN API |
+| Local completion signal | Foreground sound / haptic / local notification |
+| API compatibility | Daemon/app version negotiation with upgrade prompts |
 | Android app / APK | Not published |
-| Pairing, authentication, and E2EE | Not implemented |
-| Relay, push notifications, and remote access | Future research |
+| Message-layer E2EE and relay remote access | Future milestone |
 
-## Current goal
+## Current scope
 
-The current public milestone is **LAN Discovery Preview**:
+The current public scope is **LAN-only control**:
 
 - advertise `_herdr-connect._tcp` from the Go daemon;
-- discover the daemon from a mobile client on the same LAN;
-- clearly represent discovering, found, denied, timeout, and unavailable states;
-- provide useful diagnostics for local-network permission, VPN, multicast, firewall, and client-isolation failures;
-- verify discovery on physical devices.
+- secure the LAN transport with TLS fingerprint pinning and QR pairing;
+- manage paired devices locally (`herdr-connect devices list` / `revoke`);
+- discover and pair from an iPhone on the same reachable LAN;
+- show Agent state, recent history, focus controls, text input, and interrupt;
+- surface completion cues in the foreground (in-app badges, sound, haptic, local notification);
+- provide diagnostics for local-network permission, VPN, multicast, firewall, client isolation, and version mismatch failures.
 
-Discovery proves reachability only. It does not establish trust or grant permission to read or control an Agent.
+Discovery still proves reachability only; trust is established by QR pairing and certificate pinning. Official remote relay connectivity is deliberately outside this release scope.
+
+## Remote access via VPN (unofficial)
+
+Herdr Connect does not currently ship an official remote-connectivity product. If you already trust and operate a mesh VPN such as Tailscale, you can put the phone and daemon host on the same virtual LAN and use Herdr Connect over that network without changing Herdr Connect itself. The app only needs a reachable daemon address and the same TLS-pinning / pairing flow; it does not care whether the LAN is physical Wi-Fi or a VPN interface.
+
+This is an unofficial deployment pattern, not a product guarantee. You are responsible for the VPN's access controls, routing, DNS/multicast behavior, and device security. The official remote roadmap is a relay-based design with message-layer E2EE.
 
 ## Documentation
 
 | Audience | Start here |
 | --- | --- |
-| Try the preview | [Try it in 5 minutes](#try-it-in-5-minutes), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
+| Install and pair | [Try it in 5 minutes](#try-it-in-5-minutes), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
 | CLI reference | [CLI guide](docs/cli.md) |
+| LAN security model | [LAN TLS and pairing](docs/security/lan-tls-pairing.md) |
 | Architecture, domain, and contributor deep dives | [OpenWiki](openwiki/quickstart.md) |
-| Controlled LAN demo procedure | [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) |
+| Historical pre-pairing demo | [Archived LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) |
 
 OpenWiki is the living code-oriented wiki (architecture, adapters, projection, protocol notes, development setup, and testing). Prefer it over duplicating those details here.
 
@@ -104,7 +122,7 @@ Herdr CLI
     │ command-line arguments and JSON
     ▼
 Herdr Connect daemon
-    │ Bonjour / mDNS + local HTTP demo
+    │ Bonjour / mDNS + HTTPS LAN API (pinned TLS, bearer-token auth)
     ▼
 Expo / React Native mobile client
 ```
@@ -120,7 +138,7 @@ Contributor setup, repository layout, common `pnpm` commands, and the full devel
 - [Development setup](openwiki/development/setup.md)
 - [Testing guide](openwiki/development/testing.md)
 
-For users who only want the downloadable preview, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
+For users who only want the downloadable daemon and TestFlight app, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
 
 Minimal path after cloning:
 
@@ -132,27 +150,27 @@ pnpm ios:mobile    # Expo development build on a physical iPhone
 pnpm dev:mobile    # later sessions: Metro only
 ```
 
-The mobile client needs a native Bonjour module, so use an Expo development build rather than Expo Go. Safety boundaries and acceptance checks for the controlled demo are in the [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md).
+The mobile client needs native modules (Bonjour, pinned TLS fetch, camera pairing, notifications), so use an Expo development build rather than Expo Go. The historical [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) is kept only as an archive of the pre-pairing procedure.
 
 ## Roadmap
 
-1. Reliable cross-platform LAN discovery.
-2. Authenticated, read-only LAN connectivity.
-3. Secure remote connectivity and notifications as a later research track.
+1. Mature the LAN-only product: reliability, version compatibility, app-store readiness, and better owner ergonomics.
+2. Publish Android after the LAN model and native modules are ready on that platform.
+3. Add secure remote connectivity through a relay and message-layer E2EE as a later milestone.
 
-Remote access is not part of the current release commitment. Roadmap items may change as the project learns from real usage.
+Roadmap items may change as the project learns from real usage, but the current release commitment is local-first LAN control.
 
 ## Security
 
 Do not report vulnerabilities, credentials, private prompts, Agent output, or sensitive paths in public issues. Follow the private reporting instructions in [SECURITY.md](SECURITY.md).
 
-Until authentication and encryption are implemented, treat `demo-lan` as an unsafe development tool for controlled environments only.
+The current LAN transport is encrypted and authenticated at the connection layer. Message-layer E2EE is not yet integrated; it belongs to the future relay milestone described by the Protocol v1 documents. For current guarantees and limits, start with [LAN TLS and pairing](docs/security/lan-tls-pairing.md).
 
 ## Contributing
 
-The project is in an early scope-setting phase. Bug reports, reproducible discovery failures, documentation fixes, and design feedback are welcome through [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues).
+Bug reports, reproducible LAN discovery or pairing failures, documentation fixes, and design feedback are welcome through [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues).
 
-Before submitting code, open an issue to confirm that the change belongs to the current LAN discovery milestone. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the repository conventions in [AGENTS.md](AGENTS.md).
+Before submitting code, open an issue to confirm that the change belongs to the current LAN-only scope or an accepted roadmap item. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the repository conventions in [AGENTS.md](AGENTS.md).
 
 Community policies: [Code of Conduct](CODE_OF_CONDUCT.md), [Security Policy](SECURITY.md), and [Privacy Policy](PRIVACY.md).
 

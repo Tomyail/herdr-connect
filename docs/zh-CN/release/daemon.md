@@ -1,8 +1,8 @@
-# 安装 daemon 预览版
+# 安装 daemon
 
 [English](../../../docs/release/daemon.md)
 
-Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包。当前公开 build 是 [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2)。这是用于可信局域网的早期预览，不是生产级远程访问服务。
+Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包。当前公开 build 是 [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2)。daemon 是所有者侧的 LAN 服务：它与本机 Herdr CLI 交互、广播 `_herdr-connect._tcp`、提供 HTTPS LAN API，并在主机上保存配对与设备状态。
 
 ## 在 macOS 或 Linux 上快速安装
 
@@ -56,7 +56,7 @@ herdr agent list
 ~/.local/bin/herdr-connect service status
 ```
 
-服务以当前所有者身份运行：macOS 使用 LaunchAgent，Linux 使用 systemd user service。使用 `service logs`、`service logs --tail`、`service restart` 和 `service uninstall` 管理生命周期。卸载服务会保留二进制、数据库和日志。
+服务以当前所有者身份运行：macOS 使用 LaunchAgent，Linux 使用 systemd user service。使用 `service logs`、`service logs --tail`、`service restart` 和 `service uninstall` 管理生命周期。卸载服务会保留二进制、数据库、日志、证书和已配对设备记录。
 
 如果手动下载压缩包，请先解压。在 macOS 或 Linux 上按需添加可执行权限并检查能力：
 
@@ -65,7 +65,7 @@ chmod +x herdr-connect
 ./herdr-connect --source fake capabilities
 ```
 
-确认单独安装的 `herdr` CLI 可用，然后启动 LAN demo：
+确认单独安装的 `herdr` CLI 可用，然后启动 LAN 服务：
 
 ```sh
 herdr agent list
@@ -74,12 +74,29 @@ herdr agent list
 ./herdr-connect service status
 ```
 
-Windows 用户可从 PowerShell 或命令提示符运行 `herdr-connect.exe`。daemon 监听 TCP `9808` 并广播 `_herdr-connect._tcp`。
-当前预览不包含 Windows 服务管理；请保持前台 `demo-lan` 命令运行，结束时按 `Ctrl+C`。
+Windows 用户可从 PowerShell 或命令提示符运行 `herdr-connect.exe`。Windows 服务管理尚未实现；使用 App 期间请保持一个前台 `demo-lan` 进程运行：
 
-当前 demo 没有配对、认证或加密。只能在可信网络中使用，不得输入秘密，并在测试后停止。iPhone 和 daemon 主机必须位于同一个局域网；远程连接是后续 TODO。
+```powershell
+.\herdr-connect.exe doctor
+.\herdr-connect.exe --source herdr demo-lan
+```
 
-CLI 帮助、诊断格式和退出码见 [CLI 指南](../cli.md)。
+## 配对手机
+
+daemon 运行后，每部手机配对一次：
+
+```sh
+herdr-connect pair
+```
+
+该命令会打印 QR 码。在 iOS App 中打开“设置 → 配对新设备”并扫描它。配对会 pin daemon 证书指纹，并签发该设备专属的 bearer token。你可以在主机侧管理已配对设备：
+
+```sh
+herdr-connect devices list
+herdr-connect devices revoke <device_id>
+```
+
+LAN 传输层是 HTTPS，daemon 使用自签 ECDSA P-256 证书，手机 pin 其 SHA-256 指纹。所有 Agent 端点都要求已配对设备的 bearer token；`/v1/pair` 只接受一次性 secret。这是受支持的 LAN-only 产品模型，不是临时演示流程。完整保证与边界见 [LAN TLS 与配对](../../security/lan-tls-pairing.md)。
 
 ## 校验 checksum
 
@@ -100,7 +117,9 @@ shasum -a 256 herdr-connect_*.tar.gz
 ## 已知限制
 
 - 二进制没有经过 Apple notarization 或 Windows code signing，操作系统可能显示来源警告。
-- 本预览版没有发布 Android APK。
-- 配对、设备认证、端到端加密和远程连接尚未实现。
+- Windows 服务管理尚未实现；Windows 上使用前台 `demo-lan` 命令。
+- Android APK 尚未发布。
+- 消息层 E2EE 与官方远程 relay 访问是未来里程碑；当前发布范围是 LAN-only。
 
 源码环境与开发命令参见[项目 README](../README.md)。
+CLI 帮助、诊断格式和退出码见 [CLI 指南](../cli.md)。

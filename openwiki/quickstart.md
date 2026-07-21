@@ -46,6 +46,8 @@ Supported features:
 - ✅ Switch focus to an agent
 - ✅ Send text input to an agent
 - ✅ Interrupt a running agent
+- ✅ Real-time status push via SSE for foreground UI freshness
+- ✅ API version negotiation with daemon/app upgrade prompts
 - ✅ Localized UI (English and Chinese)
 - ✅ Light/dark theme
 
@@ -54,7 +56,7 @@ Not yet implemented:
 - ❌ Android app
 - ❌ End-to-end encryption (HPKE-based protocol exists but is not yet integrated)
 - ❌ Remote connections outside LAN (relay milestone)
-- ❌ Push notifications
+- ❌ Remote push notifications (APNs/Expo Push)
 
 ## Documentation Structure
 
