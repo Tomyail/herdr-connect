@@ -28,6 +28,7 @@ import { useI18n } from "./i18n/I18nContext";
 import { toErrorCode, toErrorStatus, type NetworkErrorCode } from "./i18n/errors";
 import { agentStatus } from "./agent-status";
 import { AgentBrandIcon } from "./AgentBrandIcon";
+import { HistoryMarkdown } from "./HistoryMarkdown";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
@@ -377,9 +378,15 @@ function AgentDetail({
               <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
             </View>
           ) : (
-            <Text selectable style={styles.transcript}>
-              {history?.text || t("detail.emptyHistory")}
-            </Text>
+            <HistoryMarkdown
+              text={history?.text || t("detail.emptyHistory")}
+              styles={{
+                base: styles.transcript,
+                header: [styles.transcript, styles.transcriptHeader],
+                bold: [styles.transcript, styles.transcriptBold],
+                code: [styles.transcript, styles.transcriptCode],
+              }}
+            />
           )}
         </ScrollView>
         {hasNewContent ? (
@@ -497,6 +504,9 @@ const createStyles = (colors: ThemeColors) =>
     history: { flex: 1, backgroundColor: colors.card, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
     historyContent: { flexGrow: 1, padding: 17, justifyContent: "flex-end" },
     transcript: { color: colors.transcript, fontSize: 12, lineHeight: 18, fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }) },
+    transcriptHeader: { color: colors.textPrimary, fontWeight: "700" },
+    transcriptBold: { color: colors.textPrimary, fontWeight: "700" },
+    transcriptCode: { backgroundColor: colors.separator },
     newContentButton: { position: "absolute", alignSelf: "center", bottom: 12, minHeight: 34, justifyContent: "center", borderRadius: 17, backgroundColor: colors.actionBg, paddingHorizontal: 15 },
     newContentButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
     newContentText: { color: colors.onAction, fontSize: 12, fontWeight: "700" },
