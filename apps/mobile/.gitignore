@@ -2,3 +2,4 @@
 /ios/
 /android/
 node_modules/
+fastlane/report.xml
