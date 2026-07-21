@@ -122,32 +122,38 @@ func TestSSEBroadcasterDoesNotStartPollTwiceOnConcurrentSubscribe(t *testing.T) 
 // —— cursor / online / error 三态 key 变化才推送 ——
 
 func TestSSEBroadcasterPushesOnlyWhenKeyChanges(t *testing.T) {
-	ctrl := &controllableSnapshot{snap: herdrsource.Snapshot{Online: true, Cursor: "1"}}
+	agentA := herdrsource.AgentObservation{SourceID: "term_a", Revision: 1, InteractionState: herdrsource.InteractionWorking}
+	ctrl := &controllableSnapshot{snap: herdrsource.Snapshot{Online: true, Cursor: "1", Agents: []herdrsource.AgentObservation{agentA}}}
 	b := newSSEBroadcasterWithInterval(ctrl.Snapshot, 5*time.Millisecond)
 
 	events, unsub := b.subscribe()
 	defer unsub()
 
-	// 订阅立即触发首帧（lastKey "" → "cursor:1"）。
+	// 订阅立即触发首帧。
 	first := recvEvent(t, events, time.Second)
-	if first.Cursor != "1" || !first.Online {
+	if !first.Online {
 		t.Fatalf("first frame = %#v", first)
 	}
 
-	// cursor 不变，不应再收到事件。
+	// agent 列表不变，不应再收到事件。
 	if _, ok := tryRecv(events, 60*time.Millisecond); ok {
 		t.Fatalf("received event while key unchanged")
 	}
 
-	// cursor 变化 → 推送。
-	ctrl.set(herdrsource.Snapshot{Online: true, Cursor: "2"}, nil)
+	// 关键回归场景：真机上发现的 bug——不相关 agent 的 revision 一直比其它 agent
+	// 高时，只用 snap.Cursor（全局 max revision）做判别 key 会被那个不变的高
+	// revision agent "压住"，导致其它 agent 真实的 interaction_state 变化
+	// 永远不会触发推送。这里让 agentA 的 interaction_state 变化但刻意保持
+	// Cursor 字符串不变，断言这依然会推送——证明判别 key 不再依赖 Cursor。
+	agentAChanged := herdrsource.AgentObservation{SourceID: "term_a", Revision: 1, InteractionState: herdrsource.InteractionReadyInput}
+	ctrl.set(herdrsource.Snapshot{Online: true, Cursor: "1", Agents: []herdrsource.AgentObservation{agentAChanged}}, nil)
 	second := recvEvent(t, events, time.Second)
-	if second.Cursor != "2" {
-		t.Fatalf("second frame cursor = %#v, want 2", second)
+	if second.Cursor != "1" {
+		t.Fatalf("second frame cursor = %#v, want 1 (unchanged — the state change is in interaction_state, not cursor)", second)
 	}
 
-	// cursor 不变但 online 变 false → key 变化（offline），必须推送。
-	ctrl.set(herdrsource.Snapshot{Online: false, Cursor: "2"}, nil)
+	// agent 列表不变但 online 变 false → key 变化（offline），必须推送。
+	ctrl.set(herdrsource.Snapshot{Online: false, Cursor: "1", Agents: []herdrsource.AgentObservation{agentAChanged}}, nil)
 	third := recvEvent(t, events, time.Second)
 	if third.Online {
 		t.Fatalf("offline frame online should be false, got %#v", third)
@@ -161,8 +167,45 @@ func TestSSEBroadcasterPushesOnlyWhenKeyChanges(t *testing.T) {
 	}
 }
 
+// TestSSEBroadcasterDetectsChangeEvenWhenAnotherAgentHasHigherStableRevision
+// 直接复现真机上发现的 bug：真实 Herdr 会话里，如果一个完全不相关的 agent
+// （比如另一个 workspace 里一直没变化的会话）恰好 revision 全场最高，早期实现
+// 用 snap.Cursor（= 所有 agent revision 的最大值）做变化判别 key，会被这个
+// 不变的高 revision agent "钉住"——真正在变化的低 revision agent 的
+// interaction_state 反复切换也推不出任何事件，手机端只有手动下拉刷新
+// （绕开 SSE 走 REST）才能看到最新状态。
+func TestSSEBroadcasterDetectsChangeEvenWhenAnotherAgentHasHigherStableRevision(t *testing.T) {
+	dominant := herdrsource.AgentObservation{SourceID: "term_unrelated_high_revision", Revision: 300, InteractionState: herdrsource.InteractionReadyInput}
+	watched := herdrsource.AgentObservation{SourceID: "term_watched", Revision: 7, InteractionState: herdrsource.InteractionReadyInput}
+	ctrl := &controllableSnapshot{snap: herdrsource.Snapshot{
+		Online: true,
+		Cursor: "300", // max(300, 7) — dominated by the unrelated agent, exactly like production.
+		Agents: []herdrsource.AgentObservation{dominant, watched},
+	}}
+	b := newSSEBroadcasterWithInterval(ctrl.Snapshot, 5*time.Millisecond)
+
+	events, unsub := b.subscribe()
+	defer unsub()
+	_ = recvEvent(t, events, time.Second) // initial frame
+
+	// The unrelated dominant agent does NOT change; only the watched agent's
+	// interaction_state flips (working now). The aggregate Cursor stays "300"
+	// either way (still the max), but this must still broadcast.
+	watchedWorking := herdrsource.AgentObservation{SourceID: "term_watched", Revision: 7, InteractionState: herdrsource.InteractionWorking}
+	ctrl.set(herdrsource.Snapshot{
+		Online: true,
+		Cursor: "300",
+		Agents: []herdrsource.AgentObservation{dominant, watchedWorking},
+	}, nil)
+	got := recvEvent(t, events, time.Second)
+	if !got.Online {
+		t.Fatalf("expected a broadcast when the watched agent's state changed even though Cursor stayed \"300\", got %#v", got)
+	}
+}
+
 func TestSSEBroadcasterDeliversToMultipleSubscribers(t *testing.T) {
-	ctrl := &controllableSnapshot{snap: herdrsource.Snapshot{Online: true, Cursor: "1"}}
+	agentA := herdrsource.AgentObservation{SourceID: "term_a", Revision: 1, InteractionState: herdrsource.InteractionWorking}
+	ctrl := &controllableSnapshot{snap: herdrsource.Snapshot{Online: true, Cursor: "1", Agents: []herdrsource.AgentObservation{agentA}}}
 	b := newSSEBroadcasterWithInterval(ctrl.Snapshot, 5*time.Millisecond)
 
 	ev1, unsub1 := b.subscribe()
@@ -174,11 +217,13 @@ func TestSSEBroadcasterDeliversToMultipleSubscribers(t *testing.T) {
 	_ = recvEvent(t, ev1, time.Second)
 	_ = recvEvent(t, ev2, time.Second)
 
-	// cursor 变化，两个订阅者都应收到。
-	ctrl.set(herdrsource.Snapshot{Online: true, Cursor: "9"}, nil)
+	// agent 的可观察状态变化，两个订阅者都应收到（Cursor 字段本身不变，
+	// 验证判别 key 来自 agent 列表本身而不是 Cursor）。
+	agentAChanged := herdrsource.AgentObservation{SourceID: "term_a", Revision: 1, InteractionState: herdrsource.InteractionBlocked}
+	ctrl.set(herdrsource.Snapshot{Online: true, Cursor: "1", Agents: []herdrsource.AgentObservation{agentAChanged}}, nil)
 	got1 := recvEvent(t, ev1, time.Second)
 	got2 := recvEvent(t, ev2, time.Second)
-	if got1.Cursor != "9" || got2.Cursor != "9" {
+	if !got1.Online || !got2.Online {
 		t.Fatalf("multi-subscriber missed delivery: got1=%#v got2=%#v", got1, got2)
 	}
 }

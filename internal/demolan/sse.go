@@ -2,6 +2,8 @@ package demolan
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -122,9 +124,19 @@ func newSSEBroadcasterWithInterval(snapshot snapshotFunc, interval time.Duration
 }
 
 // broadcastKey 把 snapshot 结果映射成"是否需要推送"的判别 key。
-// 三态：报错 → "error"；离线 → "offline"；正常 → "cursor:"+cursor。
-// 不能只看 cursor：source 掉线时 cursor 不变，但必须推送，否则客户端会在
-// 真实故障期间还展示过期的"已连接"数据。
+// 三态：报错 → "error"；离线 → "offline"；正常 → 对完整 agent 列表的可观察
+// 字段做指纹。
+//
+// 真机验证时发现：不能用 snap.Cursor（herdrsource.HerdrCLIAdapter 里定义为
+// "所有 agent revision 的最大值"）作为变化信号。同一个 Herdr 会话里如果有一个
+// 不相关的 agent（比如另一个 workspace 里一直没变化的会话）revision 恰好是
+// 全场最高的，那么全局 max 会被它"钉住"——其它 agent 的 revision/
+// interaction_state 无论怎么变化（比如 working ⇄ ready_input 反复切换），只要
+// 这个最高 revision 的 agent 不变，Cursor 就不变，broadcastKey 就不变，SSE
+// 就永远不会推送新事件，手机端会停在第一帧收到的数据上，只有手动下拉刷新
+// （直接走 REST，不依赖这个 key）才能看到最新状态——这正是实测中遇到的现象。
+// 改成对整个 Agents 切片序列化后取指纹，任何一个 agent 的可观察状态变化
+// 都会让 key 变化，不再被其它 agent 的 revision "压住"。
 func broadcastKey(snap herdrsource.Snapshot, err error) string {
 	if err != nil {
 		return "error"
@@ -132,7 +144,14 @@ func broadcastKey(snap herdrsource.Snapshot, err error) string {
 	if !snap.Online {
 		return "offline"
 	}
-	return "cursor:" + snap.Cursor
+	data, marshalErr := json.Marshal(snap.Agents)
+	if marshalErr != nil {
+		// 序列化失败极不可能发生（纯数据结构），保守起见当作"出错"处理，
+		// 促使客户端重新拉取一次真实状态。
+		return "error"
+	}
+	sum := sha256.Sum256(data)
+	return "agents:" + hex.EncodeToString(sum[:])
 }
 
 // subscribe 返回一个事件 channel 和取消订阅函数。首个订阅者（0→1）启动轮询
