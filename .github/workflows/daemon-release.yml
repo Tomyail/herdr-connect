@@ -34,21 +34,28 @@ jobs:
   build:
     name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
     needs: test
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
+          # macOS builds run on a macOS runner so the binary can be signed,
+          # notarized and stapled with codesign/notarytool/stapler.
           - goos: darwin
             goarch: arm64
+            runner: macos-14
           - goos: darwin
             goarch: amd64
+            runner: macos-13
           - goos: linux
             goarch: arm64
+            runner: ubuntu-latest
           - goos: linux
             goarch: amd64
+            runner: ubuntu-latest
           - goos: windows
             goarch: amd64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -59,7 +66,7 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build release archive
+      - name: Build daemon binary
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -73,9 +80,135 @@ jobs:
           if [[ "$GOOS" == "windows" ]]; then
             binary="herdr-connect.exe"
           fi
-
           mkdir -p "dist/$archive"
           go build -trimpath -ldflags="-s -w -X main.version=$version" -o "dist/$archive/$binary" ./cmd/herdr-connect
+          echo "archive=$archive" >> "$GITHUB_ENV"
+          echo "binary=$binary" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_ENV"
+
+      # The following steps only run for macOS builds. They sign the binary
+      # with a Developer ID Application certificate, submit it to Apple for
+      # notarization, wait for the result, staple the notarization ticket,
+      # and confirm Gatekeeper accepts it. notarytool --wait exits non-zero
+      # on failure, which fails the job so no un-notarized asset is shipped.
+
+      - name: Verify required macOS signing secrets
+        if: matrix.goos == 'darwin'
+        shell: bash
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -z "${MACOS_CERTIFICATE:-}" ]] && missing+=(MACOS_CERTIFICATE)
+          [[ -z "${APP_STORE_CONNECT_API_KEY:-}" ]] && missing+=(APP_STORE_CONNECT_API_KEY)
+          [[ -z "${APP_STORE_CONNECT_API_KEY_ID:-}" ]] && missing+=(APP_STORE_CONNECT_API_KEY_ID)
+          [[ -z "${APP_STORE_CONNECT_API_KEY_ISSUER_ID:-}" ]] && missing+=(APP_STORE_CONNECT_API_KEY_ISSUER_ID)
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "::error::macOS signing/notarization secrets are not configured: ${missing[*]}. Configure them in the repository settings before pushing a release tag."
+            exit 1
+          fi
+
+      - name: Import Developer ID certificate into keychain
+        if: matrix.goos == 'darwin'
+        id: import_cert
+        shell: bash
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        run: |
+          set -euo pipefail
+          keychain_path="$RUNNER_TEMP/signing.keychain-db"
+          keychain_pwd="$(uuidgen)"
+          echo "::add-mask::$keychain_pwd"
+
+          cert_path="$RUNNER_TEMP/developer-id.p12"
+          printf '%s' "$MACOS_CERTIFICATE" | base64 -d > "$cert_path"
+
+          security create-keychain -p "$keychain_pwd" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_pwd" "$keychain_path"
+          security import "$cert_path" -P "${MACOS_CERTIFICATE_PWD:-}" -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-partition-list -S apple-tool:,apple: -k "$keychain_pwd" "$keychain_path" || true
+          # Put the signing keychain first so codesign/notarytool find the identity.
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+
+          echo "KEYCHAIN_PATH=$keychain_path" >> "$GITHUB_ENV"
+
+      - name: Codesign macOS binary
+        if: matrix.goos == 'darwin'
+        shell: bash
+        run: |
+          set -euo pipefail
+          identity="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | awk -F '"' '{print $2}')"
+          if [[ -z "$identity" ]]; then
+            echo "::error::No 'Developer ID Application' identity found in the imported keychain"
+            exit 1
+          fi
+          echo "Using signing identity: $identity"
+
+          bin="dist/$archive/$binary"
+          # hardened runtime + secure timestamp are required by notarization.
+          codesign --force --options runtime --sign "$identity" --timestamp "$bin"
+          codesign --verify --strict --verbose=4 "$bin"
+
+      - name: Notarize and staple macOS binary
+        if: matrix.goos == 'darwin'
+        shell: bash
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          key_path="$RUNNER_TEMP/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY" | base64 -d > "$key_path"
+
+          bin="dist/$archive/$binary"
+          # notarytool requires a zipped upload; ditto preserves permissions/signature.
+          notary_zip="$RUNNER_TEMP/notary-submit.zip"
+          ( cd "dist/$archive" && ditto -c -k --keepParent "$binary" "$notary_zip" )
+
+          echo "Submitting binary to Apple notarization..."
+          xcrun notarytool submit "$notary_zip" \
+            --key "$key_path" \
+            --key-id "$APP_STORE_CONNECT_API_KEY_ID" \
+            --issuer "$APP_STORE_CONNECT_API_KEY_ISSUER_ID" \
+            --wait
+
+          echo "Stapling notarization ticket..."
+          # stapler can return non-zero for a bare (non-.app) Mach-O executable
+          # because Apple only embeds offline tickets into app/dmg/pkg containers.
+          # Notarization is still valid via Gatekeeper's online ticket check,
+          # which spctl verifies below.
+          if ! xcrun stapler staple "$bin"; then
+            echo "::warning::stapler staple returned non-zero for the bare binary (Apple limits offline tickets for non-bundle executables). Notarization remains valid via the online Gatekeeper check; spctl below is the source of truth."
+          fi
+          xcrun stapler validate "$bin" || true
+
+          echo "Gatekeeper assessment:"
+          spctl -a -vvv --type execute "$bin"
+
+      - name: Clean up signing keychain and credentials
+        if: matrix.goos == 'darwin' && always()
+        shell: bash
+        run: |
+          set -e
+          if [[ -n "${KEYCHAIN_PATH:-}" && -f "$KEYCHAIN_PATH" ]]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
+          rm -f "$RUNNER_TEMP/developer-id.p12" "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP/notary-submit.zip" 2>/dev/null || true
+
+      - name: Stage release archive
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        shell: bash
+        run: |
+          set -euo pipefail
           if [[ "$GOOS" == "linux" && "$GOARCH" == "amd64" ]]; then
             "dist/$archive/$binary" --version | grep -Fx "herdr-connect $version"
           fi

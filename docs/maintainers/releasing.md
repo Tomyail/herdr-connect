@@ -12,7 +12,17 @@
 
 `v*` tag 会触发 `.github/workflows/daemon-release.yml`，运行测试并为 macOS、Linux 和 Windows 构建压缩包与 `SHA256SUMS`。工作流通过 Go `ldflags` 把去掉 `v` 前缀的 tag 注入 CLI，并在 Linux AMD64 build 上核对 `herdr-connect --version`；本地未注入 build 显示 `development`。带连字符的 tag 会创建 prerelease。当前公开版本为 `v0.1.0-preview.2`。
 
-工作流目前不执行 Apple notarization 或 Windows code signing。创建后应核对 Release 的 tag、prerelease 状态、五个平台资产、`SHA256SUMS`，并确认压缩包中的 `README.md` 可独立使用。
+macOS（darwin arm64/amd64）在 macOS runner 上原生构建，并执行 Apple 签名与公证：用 Developer ID Application 证书 `codesign`（hardened runtime + secure timestamp），提交 `notarytool submit --wait` 公证，再尝试 `stapler staple` 并用 `spctl` 校验。公证失败（`--wait` 非零退出）会使 build job 失败，从而不发布未公证产物。所需 GitHub Secrets（证书与密钥均为 base64 编码内容）：
+
+- `MACOS_CERTIFICATE`：Developer ID Application 证书导出的 `.p12`，`base64` 编码。
+- `MACOS_CERTIFICATE_PWD`：导出该 `.p12` 时设置的密码。
+- `APP_STORE_CONNECT_API_KEY`：App Store Connect API key 的 `.p8` 文件内容，`base64` 编码（该 key 需有 Developer ID 的公证权限）。
+- `APP_STORE_CONNECT_API_KEY_ID`：API key 的 Key ID。
+- `APP_STORE_CONNECT_API_KEY_ISSUER_ID`：API key 的 Issuer ID。
+
+发布前确认这 5 个 secret 已配置；任一缺失，macOS build job 会在“Verify required macOS signing secrets”一步直接失败并给出提示。注意：裸 Mach-O 可执行文件由 Apple 限制，`stapler staple` 可能无法附加离线票据（workflow 在此情况下仅告警，不中断），但 `spctl` 在线校验是 Gatekeeper 行为的判定依据，公证本身仍然有效。
+
+创建后应核对 Release 的 tag、prerelease 状态、五个平台资产、`SHA256SUMS`，确认压缩包中的 `README.md` 可独立使用，并抽查 macOS 产物的 `codesign`/`spctl` 输出（`source=Notarized Developer ID`）。Windows 产物仍不做 code signing，Homebrew tap 尚未接入（见 issue #28 后续范围）。
 
 ## iOS TestFlight
 
