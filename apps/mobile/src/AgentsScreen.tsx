@@ -86,7 +86,7 @@ function AgentRow({
 }
 
 export function AgentsScreen() {
-  const { state, focusResult, refresh, switchAgent } = useConnection();
+  const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
@@ -147,6 +147,11 @@ export function AgentsScreen() {
             <Text style={styles.statusDetail}>{statusDetail}</Text>
           </View>
           {state.phase === "discovering" ? <ActivityIndicator color={colors.spinner} /> : null}
+          {connected ? (
+            <Text style={[styles.streamPill, streamStatus === "live" ? styles.streamPillLive : styles.streamPillPolling]}>
+              {streamStatus === "live" ? t("connection.live") : t("connection.polling")}
+            </Text>
+          ) : null}
         </View>
 
         {connected ? (
@@ -203,6 +208,9 @@ const createStyles = (colors: ThemeColors) =>
     statusCopy: { flex: 1 },
     statusTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 3 },
     statusDetail: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
+    streamPill: { fontSize: 11, fontWeight: "700", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, overflow: "hidden", letterSpacing: 0.2 },
+    streamPillLive: { color: colors.success, backgroundColor: colors.statusCard },
+    streamPillPolling: { color: colors.textSecondary, backgroundColor: colors.statusCard },
     summaryRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
     sectionTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700" },
     summaryText: { color: colors.textSecondary, fontSize: 12 },

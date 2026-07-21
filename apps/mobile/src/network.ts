@@ -40,6 +40,11 @@ export function demoAgentsUrl(address: string, port: number): string {
   return `https://${formatHost(address)}:${port}/v1/demo/agents`;
 }
 
+/** SSE endpoint for live cursor/online change signals. See daemon sse.go. */
+export function demoAgentsEventsUrl(address: string, port: number): string {
+  return `${demoAgentsUrl(address, port)}/events`;
+}
+
 export function serviceKey(service: DiscoveredService): string {
   return `${service.name}|${service.type}|${service.domain}`;
 }
