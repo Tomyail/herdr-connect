@@ -1,0 +1,8 @@
+{
+  "name": "pinned-stream",
+  "version": "0.1.0",
+  "description": "iOS-only local Expo module: long-lived SSE stream with self-signed certificate fingerprint pinning. Shares PinnedTrustEvaluator with pinned-fetch.",
+  "main": "index.ts",
+  "private": true,
+  "sideEffects": false
+}

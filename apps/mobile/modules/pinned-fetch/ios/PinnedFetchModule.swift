@@ -67,7 +67,7 @@ public final class PinnedFetchModule: Module {
       // and surfaces as `invalid_url` (it is part of addressing/trust, not transport).
       let expectedFingerprint: Data
       do {
-        expectedFingerprint = try Self.decodeFingerprintBase64Url(fingerprintBase64Url)
+        expectedFingerprint = try PinnedTrustEvaluator.decodeFingerprintBase64Url(fingerprintBase64Url)
       } catch {
         promise.reject("invalid_url", "fingerprint is not valid base64url: \(fingerprintBase64Url)")
         return
@@ -136,9 +136,6 @@ public final class PinnedFetchModule: Module {
   // MARK: - Error mapping
 
   private static func mapError(_ error: Error, fingerprintMismatched: Bool) -> String {
-    // The delegate flag is authoritative: if the trust challenge rejected the
-    // certificate, the failure is a fingerprint mismatch regardless of the
-    // URLError code URLSession chose to surface.
     if fingerprintMismatched {
       return "fingerprint_mismatch"
     }
@@ -183,45 +180,9 @@ public final class PinnedFetchModule: Module {
 
   // MARK: - Fingerprint helpers
 
-  /// base64url-decode (no padding) the expected fingerprint. `Base64` on this
-  /// platform accepts URL-alphabet only when configured explicitly.
-  private static func decodeFingerprintBase64Url(_ value: String) throws -> Data {
-    // Convert URL-safe alphabet to standard, then pad to a multiple of 4.
-    var standard = value
-      .replacingOccurrences(of: "-", with: "+")
-      .replacingOccurrences(of: "_", with: "/")
-    while standard.count % 4 != 0 {
-      standard.append("=")
-    }
-    guard let data = Data(base64Encoded: standard) else {
-      throw NSError(domain: "PinnedFetch", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalid base64url fingerprint"])
-    }
-    return data
-  }
-
-  /// SHA-256 of the leaf certificate DER, matching the daemon's fingerprint
-  /// computation (crypto/sha256 of x509 leaf DER). `fileprivate` so the
-  /// per-request delegate in this file can call it without widening the API.
-  fileprivate static func leafFingerprint(of trust: SecTrust) -> Data? {
-    guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate], let leaf = chain.first else {
-      return nil
-    }
-    let der = SecCertificateCopyData(leaf) as Data
-    return Data(SHA256.hash(data: der))
-  }
-
-  /// Constant-time comparison so a mismatching fingerprint never leaks how many
-  /// leading bytes matched.
-  fileprivate static func constantTimeEqual(_ left: Data, _ right: Data) -> Bool {
-    guard left.count == right.count else {
-      return false
-    }
-    var diff: UInt8 = 0
-    for index in 0..<left.count {
-      diff |= left[index] ^ right[index]
-    }
-    return diff == 0
-  }
+  // The trust-evaluation helpers (decode / leafFingerprint / constantTimeEqual
+  // / evaluate) live in PinnedTrustEvaluator.swift, shared with pinned-stream.
+  // `import` not needed: this file is part of the same `PinnedFetch` Swift module.
 
   private static func base64Body(_ data: Data) -> String {
     // Non-UTF-8 bodies are returned base64-encoded so the JS caller can decide
@@ -248,25 +209,14 @@ private final class PinnedFetchSessionDelegate: NSObject, URLSessionDelegate {
     didReceive challenge: URLAuthenticationChallenge,
     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
   ) {
-    guard let serverTrust = challenge.protectionSpace.serverTrust else {
-      completionHandler(.performDefaultHandling, nil)
-      return
-    }
-
-    guard let observed = PinnedFetchModule.leafFingerprint(of: serverTrust) else {
-      // No leaf certificate to evaluate — let URLSession surface the failure,
-      // which will classify as `tls_handshake_failed`.
-      fingerprintMismatched = false
-      completionHandler(.cancelAuthenticationChallenge, nil)
-      return
-    }
-
-    if PinnedFetchModule.constantTimeEqual(observed, expectedFingerprint) {
-      // Fingerprint matches: trust this server. We deliberately do NOT run the
-      // default CA-chain evaluation — the fingerprint IS the trust decision.
-      completionHandler(.useCredential, URLCredential(trust: serverTrust))
-    } else {
+    switch PinnedTrustEvaluator.evaluate(challenge: challenge, expectedFingerprint: expectedFingerprint) {
+    case .trusted(let credential):
+      completionHandler(.useCredential, credential)
+    case .mismatch:
       fingerprintMismatched = true
+      completionHandler(.cancelAuthenticationChallenge, nil)
+    case .unavailable:
+      fingerprintMismatched = false
       completionHandler(.cancelAuthenticationChallenge, nil)
     }
   }
