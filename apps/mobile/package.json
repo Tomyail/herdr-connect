@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start --dev-client",
-    "ios": "expo prebuild --platform ios --no-install && expo run:ios --device",
+    "ios": "expo prebuild --platform ios --no-install && node scripts/strip-push-entitlement.mjs && expo run:ios --device",
     "release:ios:prepare": "node scripts/ios-release.mjs prepare",
     "release:ios:build": "node scripts/ios-release.mjs build",
     "release:ios:upload": "node scripts/ios-release.mjs upload",
@@ -26,7 +26,9 @@
     "expo-audio": "~56.0.12",
     "expo-camera": "~56.0.8",
     "expo-dev-client": "~56.0.23",
+    "expo-haptics": "~56.0.3",
     "expo-localization": "~56.0.6",
+    "expo-notifications": "~56.0.21",
     "expo-secure-store": "~56.0.4",
     "expo-status-bar": "~56.0.4",
     "pinned-fetch": "file:./modules/pinned-fetch",

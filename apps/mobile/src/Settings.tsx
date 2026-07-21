@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Notifications from "expo-notifications";
 import { useMMKVBoolean } from "react-native-mmkv";
 import type { DiscoveredService } from "./discovery";
 
@@ -13,8 +14,10 @@ import type { DemoAgentsResponse } from "./demo-contract";
 import {
   DEFAULT_DONE_SOUND_ENABLED,
   DEFAULT_NOTIFY_WHILE_VIEWING,
+  DEFAULT_LOCAL_NOTIFICATIONS_ENABLED,
   DONE_SOUND_ENABLED_KEY,
   NOTIFY_WHILE_VIEWING_KEY,
+  LOCAL_NOTIFICATIONS_ENABLED_KEY,
   notificationStorage,
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
@@ -131,6 +134,26 @@ function NotificationsCard() {
   const styles = useThemedStyles(createStyles);
   const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
   const [whileViewing, setWhileViewing] = useMMKVBoolean(NOTIFY_WHILE_VIEWING_KEY, notificationStorage);
+  const [localNotifications, setLocalNotifications] = useMMKVBoolean(
+    LOCAL_NOTIFICATIONS_ENABLED_KEY,
+    notificationStorage,
+  );
+
+  const handleLocalNotificationsChange = useCallback(
+    async (newValue: boolean) => {
+      setLocalNotifications(newValue);
+      if (newValue) {
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status === "undetermined") {
+          await Notifications.requestPermissionsAsync().catch((error) => {
+            console.warn("[Settings] requestPermissionsAsync failed:", error);
+          });
+        }
+      }
+    },
+    [setLocalNotifications],
+  );
+
   return (
     <>
       <Text style={styles.sectionTitle}>{t("settings.section.notifications")}</Text>
@@ -147,6 +170,13 @@ function NotificationsCard() {
           label={t("settings.row.notifyWhileViewing")}
           value={whileViewing ?? DEFAULT_NOTIFY_WHILE_VIEWING}
           onChange={setWhileViewing}
+          last={false}
+        />
+        <SwitchRow
+          icon="notifications-outline"
+          label={t("settings.row.localNotifications")}
+          value={localNotifications ?? DEFAULT_LOCAL_NOTIFICATIONS_ENABLED}
+          onChange={handleLocalNotificationsChange}
           last={true}
         />
       </View>

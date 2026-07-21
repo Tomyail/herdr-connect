@@ -99,7 +99,10 @@ const en = {
   "settings.row.language": "Language",
   "settings.row.doneSound": "Completion sound",
   "settings.row.notifyWhileViewing": "Also notify while viewing",
+  "settings.row.localNotifications": "Show OS notification",
   "settings.value.languageSystem": "System default",
+
+  "notifications.waitingForInput": "Waiting for input",
 
   "language.title": "Language",
   "language.option.system": "System default",
@@ -227,7 +230,10 @@ const zhHans: Record<MessageKey, string> = {
   "settings.row.language": "\u8BED\u8A00",
   "settings.row.doneSound": "\u5B8C\u6210\u63D0\u793A\u97F3",
   "settings.row.notifyWhileViewing": "\u67E5\u770B\u65F6\u4E5F\u63D0\u793A",
+  "settings.row.localNotifications": "\u663E\u793A\u7CFB\u7EDF\u901A\u77E5",
   "settings.value.languageSystem": "\u8DDF\u968F\u7CFB\u7EDF",
+
+  "notifications.waitingForInput": "\u7B49\u5F85\u8F93\u5165",
 
   "language.title": "\u8BED\u8A00",
   "language.option.system": "\u8DDF\u968F\u7CFB\u7EDF",

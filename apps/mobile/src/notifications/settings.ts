@@ -10,6 +10,7 @@ export const notificationStorage = createMMKV({ id: "herdr-connect-prefs" });
 
 export const DONE_SOUND_ENABLED_KEY = "doneSoundEnabled";
 export const NOTIFY_WHILE_VIEWING_KEY = "notifyWhileViewing";
+export const LOCAL_NOTIFICATIONS_ENABLED_KEY = "localNotificationsEnabled";
 
 /** Default for the completion-sound master switch. */
 export const DEFAULT_DONE_SOUND_ENABLED = true;
@@ -18,3 +19,5 @@ export const DEFAULT_DONE_SOUND_ENABLED = true;
  * Mobile owners may look away even from the foreground agent, so default on.
  */
 export const DEFAULT_NOTIFY_WHILE_VIEWING = true;
+/** Default for OS banner + haptic notifications when an agent finishes a turn. */
+export const DEFAULT_LOCAL_NOTIFICATIONS_ENABLED = true;
