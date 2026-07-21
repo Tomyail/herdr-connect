@@ -11,7 +11,18 @@ const config: ExpoConfig = {
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
     buildNumber: "4",
-    supportsTablet: false,
+    // Run at native iPad resolution instead of iPhone compatibility scaling.
+    supportsTablet: true,
+    // `requireFullScreen` is intentionally left unset (defaults to false).
+    // With supportsTablet:true and requireFullScreen:false, Expo's RequiresFullScreen
+    // config plugin automatically writes `UISupportedInterfaceOrientations~ipad`
+    // with all four orientations (portrait, portraitUpsideDown, landscapeLeft,
+    // landscapeRight) so iPad can rotate freely and support multitasking.
+    // The root `orientation: "portrait"` field is unchanged, so it keeps driving
+    // the base `UISupportedInterfaceOrientations` (iPhone) key = portrait-only,
+    // and the same field drives Android's portrait lock too.
+    // Verified against @expo/config-plugins@56.0.13: ios/RequiresFullScreen.js
+    // sets the ~ipad key; ios/Orientation.js only writes the base key.
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSBonjourServices: ["_herdr-connect._tcp"],
