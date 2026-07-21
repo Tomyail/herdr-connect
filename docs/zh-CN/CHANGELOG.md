@@ -26,7 +26,8 @@
 
 ### 发布工具
 
-- 已将 iOS TestFlight build `0.1.0 (4)` 上传至 App Store Connect。
+- 已将 iOS TestFlight build `0.1.0 (4)` 上传至 App Store Connect 并分发给测试用户。
+- macOS daemon 发布产物增加了 Developer ID 签名、公证与 staple。
 
 ## [0.1.0-preview.3] - 2026-07-19
 

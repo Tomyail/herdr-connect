@@ -26,7 +26,8 @@ This file records notable user-facing changes to Herdr Connect. The English vers
 
 ### Release tooling
 
-- Uploaded iOS TestFlight build `0.1.0 (4)` to App Store Connect.
+- Uploaded iOS TestFlight build `0.1.0 (4)` to App Store Connect and distributed it to testers.
+- Added Developer ID signing, notarization, and stapling to the macOS daemon release build.
 
 ## [0.1.0-preview.3] - 2026-07-19
 
