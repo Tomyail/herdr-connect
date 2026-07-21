@@ -92,6 +92,25 @@ export function DoneSoundProvider({
     }).catch((error) => console.warn("[done-sound] setAudioModeAsync failed:", error));
   }, []);
 
+  // Request notification permission once on mount if the setting is enabled.
+  // The Settings toggle also requests permission on its own onChange, but that
+  // only fires when the user actually flips the switch — since the default
+  // value is "on" (DEFAULT_LOCAL_NOTIFICATIONS_ENABLED = true) without the user
+  // ever touching it, relying solely on the toggle handler means permission is
+  // never requested for the common case, and scheduleNotificationAsync then
+  // fails silently forever. This mount-time check closes that gap.
+  useEffect(() => {
+    if (!localNotificationsEnabled) return;
+    Notifications.getPermissionsAsync()
+      .then(({ status }) => {
+        if (status === "undetermined") {
+          return Notifications.requestPermissionsAsync();
+        }
+        return undefined;
+      })
+      .catch((error) => console.warn("[done-sound] notification permission request failed:", error));
+  }, [localNotificationsEnabled]);
+
   useEffect(() => {
     const agents = state.phase === "connected" ? state.data.agents : [];
     const newlyDone = detectNewlyCompleted(prevMapRef.current, agents);
