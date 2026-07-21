@@ -1,4 +1,4 @@
-import type { DemoAgent } from "./demo-contract";
+import type { Agent } from "./agent-contract";
 import type { MessageKey } from "./i18n/messages";
 
 /** Semantic color token carrying an agent's displayed status. */
@@ -11,7 +11,7 @@ export type StatusTone = "statusDotConnected" | "statusDot" | "danger" | "textMu
  * live, then the reported turn outcome, then plain "idle" — never the
  * technical "unknown".
  */
-export function agentStatus(agent: DemoAgent, justCompleted: boolean): { textKey: MessageKey; tone: StatusTone } {
+export function agentStatus(agent: Agent, justCompleted: boolean): { textKey: MessageKey; tone: StatusTone } {
   switch (agent.interaction_state) {
     case "working":
       return { textKey: "interaction.working", tone: "statusDotConnected" };

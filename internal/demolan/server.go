@@ -19,13 +19,13 @@ import (
 
 const (
 	DefaultAddress  = ":9808"
-	Path            = "/v1/demo/agents"
+	Path            = "/v1/agents"
 	FocusSuffix     = "/focus"
 	HistorySuffix   = "/history"
 	MessagesSuffix  = "/messages"
 	InterruptSuffix = "/interrupt"
 	ServiceType     = "_herdr-connect._tcp"
-	DemoVersion     = 0
+	APIVersion      = 1
 	HistoryLines    = 120
 	MaxMessageSize  = 4000
 )
@@ -42,7 +42,7 @@ type Agent struct {
 }
 
 type AgentsResponse struct {
-	DemoVersion  int       `json:"demo_version"`
+	APIVersion  int       `json:"api_version"`
 	SourceName   string    `json:"source_name"`
 	SourceOnline bool      `json:"source_online"`
 	RefreshedAt  time.Time `json:"refreshed_at"`
@@ -50,7 +50,7 @@ type AgentsResponse struct {
 }
 
 type ErrorResponse struct {
-	DemoVersion int          `json:"demo_version"`
+	APIVersion int          `json:"api_version"`
 	Error       ErrorDetails `json:"error"`
 }
 
@@ -60,7 +60,7 @@ type ErrorDetails struct {
 }
 
 type HistoryResponse struct {
-	DemoVersion int       `json:"demo_version"`
+	APIVersion int       `json:"api_version"`
 	SourceID    string    `json:"source_id"`
 	Text        string    `json:"text"`
 	Revision    uint64    `json:"revision"`
@@ -111,7 +111,7 @@ func newHandlerWithSnapshotter(source herdrsource.Source, snapshot snapshotFunc)
 func setCommonHeaders(response http.ResponseWriter) {
 	response.Header().Set("Cache-Control", "no-store")
 	response.Header().Set("Content-Type", "application/json; charset=utf-8")
-	response.Header().Set("X-Herdr-Connect-Demo-Version", fmt.Sprintf("%d", DemoVersion))
+	response.Header().Set("X-Herdr-Connect-Api-Version", fmt.Sprintf("%d", APIVersion))
 }
 
 func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -167,7 +167,7 @@ func (h *handler) ServeHTTP(response http.ResponseWriter, request *http.Request)
 		})
 	}
 	writeJSON(response, http.StatusOK, AgentsResponse{
-		DemoVersion:  DemoVersion,
+		APIVersion:  APIVersion,
 		SourceName:   h.source.Name(),
 		SourceOnline: snapshot.Online,
 		RefreshedAt:  h.now().UTC(),
@@ -288,7 +288,7 @@ func (h *handler) readHistory(response http.ResponseWriter, request *http.Reques
 		return
 	}
 	writeJSON(response, http.StatusOK, HistoryResponse{
-		DemoVersion: DemoVersion,
+		APIVersion: APIVersion,
 		SourceID:    sourceID,
 		Text:        history.Text,
 		Revision:    history.Revision,
@@ -358,13 +358,13 @@ func Serve(ctx context.Context, address string, source herdrsource.Source, datab
 	defer listener.Close()
 
 	port := listener.Addr().(*net.TCPAddr).Port
-	instance := "Herdr Connect Demo"
+	instance := "Herdr Connect"
 	if hostname, hostnameErr := os.Hostname(); hostnameErr == nil && hostname != "" {
-		instance = "Herdr Connect Demo on " + hostname
+		instance = "Herdr Connect on " + hostname
 	}
 	bonjour, err := startAdvertisement(ctx, instance, port, []string{
 		"path=" + Path,
-		fmt.Sprintf("demo_version=%d", DemoVersion),
+		fmt.Sprintf("api_version=%d", APIVersion),
 		"fp=" + cert.FingerprintBase64(),
 	})
 	if err != nil {
@@ -400,7 +400,7 @@ func Serve(ctx context.Context, address string, source herdrsource.Source, datab
 
 func writeError(response http.ResponseWriter, status int, code, message string) {
 	writeJSON(response, status, ErrorResponse{
-		DemoVersion: DemoVersion,
+		APIVersion: APIVersion,
 		Error: ErrorDetails{
 			Code:    code,
 			Message: message,

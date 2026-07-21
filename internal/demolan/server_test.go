@@ -47,7 +47,7 @@ func TestAgentsHandler每次读取当前Snapshot并只返回演示字段(t *test
 		if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 			t.Fatalf("解析响应: %v", err)
 		}
-		if body.DemoVersion != 0 || body.SourceName != "测试来源" || !body.SourceOnline {
+		if body.APIVersion != 1 || body.SourceName != "测试来源" || !body.SourceOnline {
 			t.Fatalf("来源元数据 = %#v", body)
 		}
 		if got := body.RefreshedAt.Format(time.RFC3339); got != "2026-07-16T00:30:00Z" {
@@ -251,7 +251,7 @@ func assertErrorCode(t *testing.T, response *httptest.ResponseRecorder, want str
 	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 		t.Fatalf("解析错误响应: %v", err)
 	}
-	if body.DemoVersion != 0 || body.Error.Code != want {
+	if body.APIVersion != 1 || body.Error.Code != want {
 		t.Fatalf("错误响应 = %#v", body)
 	}
 }

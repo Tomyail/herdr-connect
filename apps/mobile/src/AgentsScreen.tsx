@@ -3,7 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { type DemoAgent } from "./demo-contract";
+import { type Agent } from "./agent-contract";
 import { agentStatus } from "./agent-status";
 import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
@@ -24,7 +24,7 @@ const FOCUS_FEEDBACK: Record<FocusPhase, { textKey: MessageKey; icon?: "checkmar
   failed: { textKey: "agents.focus.failed", icon: "alert-circle", color: "danger" },
 };
 
-function StatusPill({ agent, justCompleted }: { agent: DemoAgent; justCompleted: boolean }) {
+function StatusPill({ agent, justCompleted }: { agent: Agent; justCompleted: boolean }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -44,7 +44,7 @@ function AgentRow({
   justCompleted,
   onPress,
 }: {
-  agent: DemoAgent;
+  agent: Agent;
   focusPhase?: FocusPhase;
   justCompleted: boolean;
   onPress: () => void;
@@ -105,9 +105,13 @@ export function AgentsScreen() {
             ? "agents.status.revoked"
             : state.phase === "fingerprint_mismatch"
               ? "agents.status.fingerprintMismatch"
-              : state.phase === "failed"
-                ? "agents.status.failed"
-                : "agents.status.connected";
+              : state.phase === "daemon_outdated"
+                ? "agents.status.daemonOutdated"
+                : state.phase === "app_outdated"
+                  ? "agents.status.appOutdated"
+                  : state.phase === "failed"
+                    ? "agents.status.failed"
+                    : "agents.status.connected";
   const statusDetail =
     state.phase === "discovering"
       ? t("agents.detail.discovering")
@@ -119,9 +123,13 @@ export function AgentsScreen() {
             ? t("agents.detail.revoked")
             : state.phase === "fingerprint_mismatch"
               ? t("agents.detail.fingerprintMismatch")
-              : state.phase === "failed"
-                ? tError(state.code, { status: state.status })
-                : `${state.data.source_name} · ${state.service.name}`;
+              : state.phase === "daemon_outdated"
+                ? t("agents.detail.daemonOutdated")
+                : state.phase === "app_outdated"
+                  ? t("agents.detail.appOutdated")
+                  : state.phase === "failed"
+                    ? tError(state.code, { status: state.status })
+                    : `${state.data.source_name} · ${state.service.name}`;
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safeArea}>

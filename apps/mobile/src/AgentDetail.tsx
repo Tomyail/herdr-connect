@@ -15,12 +15,12 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import type { DiscoveredService } from "./discovery";
 
-import type { DemoAgent } from "./demo-contract";
+import type { Agent } from "./agent-contract";
 import {
-  fetchDemoAgentHistory,
-  interruptDemoAgent,
-  sendDemoAgentMessage,
-  type DemoAgentHistory,
+  fetchAgentHistory,
+  interruptAgent,
+  sendAgentMessage,
+  type AgentHistory,
 } from "./network";
 import { useConnection } from "./connection";
 import { useRecentCompletions } from "./notifications/RecentCompletions";
@@ -68,7 +68,7 @@ export function AgentDetailScreen({ route, navigation }: Props) {
   // Switching in place: update the route param (keeps notify-while-viewing
   // accurate), focus the desktop, and let the key-remount reset local state.
   const selectAgent = useCallback(
-    (next: DemoAgent) => {
+    (next: Agent) => {
       if (!service || next.source_id === agent.source_id) return;
       clearCompleted([next.source_id]);
       navigation.setParams({ agent: next });
@@ -103,9 +103,9 @@ function AgentSwitcher({
   currentId,
   onSelect,
 }: {
-  agents: readonly DemoAgent[];
+  agents: readonly Agent[];
   currentId: string;
-  onSelect: (agent: DemoAgent) => void;
+  onSelect: (agent: Agent) => void;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -183,7 +183,7 @@ function AgentDetail({
   navigation,
   keyboardOffsetExtra,
 }: {
-  agent: DemoAgent;
+  agent: Agent;
   service: DiscoveredService;
   navigation: Props["navigation"];
   /** Height of the persistent switcher strip above this subtree. */
@@ -192,7 +192,7 @@ function AgentDetail({
   const { t, tError } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const [history, setHistory] = useState<DemoAgentHistory>();
+  const [history, setHistory] = useState<AgentHistory>();
   const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
   const [loadError, setLoadError] = useState<Failure>();
   const [draft, setDraft] = useState("");
@@ -211,7 +211,7 @@ function AgentDetail({
   const loadHistory = useCallback(async (showLoading = false) => {
     if (showLoading) setLoadPhase("loading");
     try {
-      const next = await fetchDemoAgentHistory(service, agent.source_id);
+      const next = await fetchAgentHistory(service, agent.source_id);
       if (!mountedRef.current) return;
       setHistory((current) => isSameHistoryContent(current, next) ? current : next);
       setLoadPhase("ready");
@@ -272,7 +272,7 @@ function AgentDetail({
     setSendPhase("sending");
     setSendError(undefined);
     try {
-      await sendDemoAgentMessage(service, agent.source_id, text);
+      await sendAgentMessage(service, agent.source_id, text);
       if (!mountedRef.current) return;
       setDraft("");
       setSendPhase("sent");
@@ -310,7 +310,7 @@ function AgentDetail({
             setInterruptPhase("sending");
             setInterruptError(undefined);
             try {
-              await interruptDemoAgent(service, agent.source_id);
+              await interruptAgent(service, agent.source_id);
               if (!mountedRef.current) return;
               setInterruptPhase("sent");
               await loadHistory();

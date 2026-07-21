@@ -1,4 +1,4 @@
-import { parseDemoAgentsResponse, type DemoAgentsResponse } from "./demo-contract";
+import { assertDaemonSupported, parseAgentsResponse, type AgentsResponse } from "./agent-contract";
 import type { DiscoveredService } from "./discovery";
 import { NetworkError } from "./i18n/errors";
 import type { NetworkErrorCode } from "./i18n/errors";
@@ -9,10 +9,17 @@ import { pairingUrl } from "./pairing";
 import { isIPv4, preferredAddress } from "./address";
 
 const REQUEST_TIMEOUT_MS = 5_000;
-const DEMO_DAEMON_PORT = 9_808;
+const DAEMON_PORT = 9_808;
 
-export interface DemoAgentHistory {
-  demo_version: number;
+/** API/protocol version this app speaks. Sent on every request via
+ *  X-Herdr-Connect-Client-Version so the daemon can reject clients that are
+ *  too old (426 client_outdated). Must stay in sync with the daemon-side
+ *  MinSupportedClientVersion (internal/demolan/auth.go). */
+const CLIENT_API_VERSION = 1;
+const CLIENT_VERSION_HEADER = "X-Herdr-Connect-Client-Version";
+
+export interface AgentHistory {
+  api_version: number;
   source_id: string;
   text: string;
   revision: number;
@@ -22,6 +29,7 @@ export interface DemoAgentHistory {
 
 /** Result of a successful `/v1/pair` call. */
 export interface PairResult {
+  apiVersion: number;
   deviceId: string;
   token: string;
   deviceName: string;
@@ -36,13 +44,13 @@ function formatHost(address: string): string {
     : `[${address.replace("%", "%25")}]`;
 }
 
-export function demoAgentsUrl(address: string, port: number): string {
-  return `https://${formatHost(address)}:${port}/v1/demo/agents`;
+export function agentsUrl(address: string, port: number): string {
+  return `https://${formatHost(address)}:${port}/v1/agents`;
 }
 
 /** SSE endpoint for live cursor/online change signals. See daemon sse.go. */
-export function demoAgentsEventsUrl(address: string, port: number): string {
-  return `${demoAgentsUrl(address, port)}/events`;
+export function agentsEventsUrl(address: string, port: number): string {
+  return `${agentsUrl(address, port)}/events`;
 }
 
 export function serviceKey(service: DiscoveredService): string {
@@ -63,8 +71,8 @@ export function devServerFallbackService(scriptURL: string | undefined): Discove
       domain: "local.",
       hostName: host,
       addresses: [host],
-      port: DEMO_DAEMON_PORT,
-      txt: { path: "/v1/demo/agents", demo_version: "0" },
+      port: DAEMON_PORT,
+      txt: { path: "/v1/agents", api_version: "1" },
     };
   } catch {
     return undefined;
@@ -113,6 +121,7 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
   const headers: Record<string, string> = {
     Accept: "application/json",
     Authorization: `Bearer ${params.token}`,
+    [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
     ...params.extraHeaders,
   };
 
@@ -125,7 +134,7 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
     });
 
     if (response.status === 401) {
-      // 401 时解析 body 中的 error.code 区分"已撤销"(revoked) 和
+      // 401 时解析 body 中的 error.code 区分“已撤销”(revoked) 和
       // 缺失/未知 token (unauthorized)。解析失败回退到 unauthorized。
       try {
         const errorBody = JSON.parse(response.body);
@@ -137,6 +146,11 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
         // JSON 解析失败或缺少 error.code，回退到 unauthorized。
       }
       throw new NetworkError("unauthorized");
+    }
+    if (response.status === 426) {
+      // daemon 声明 app 版本过旧（X-Herdr-Connect-Client-Version 低于 daemon
+      // MinSupportedClientVersion）。这是个终态：重试无意义，用户需要升级 app。
+      throw new NetworkError("app_outdated");
     }
     if (response.status < 200 || response.status >= 300) {
       throw new NetworkError(params.httpErrorCode, response.status);
@@ -159,17 +173,17 @@ async function requireCredentials(): Promise<{ fingerprint: string; token: strin
   return { fingerprint: creds.fingerprint, token: creds.token };
 }
 
-export async function fetchDemoAgents(
+export async function fetchAgents(
   service: DiscoveredService,
   _outerSignal?: AbortSignal,
-): Promise<DemoAgentsResponse> {
+): Promise<AgentsResponse> {
   const address = preferredAddress(service.addresses);
   if (!address) throw new NetworkError("no_address");
 
   const { fingerprint, token } = await requireCredentials();
 
   const response = await authPinnedFetch({
-    url: demoAgentsUrl(address, service.port),
+    url: agentsUrl(address, service.port),
     fingerprint,
     token,
     tlsErrorCode: "daemon_tls",
@@ -177,10 +191,12 @@ export async function fetchDemoAgents(
     httpErrorCode: "daemon_http",
   });
 
-  return parseDemoAgentsResponse(JSON.parse(response.body));
+  const data = parseAgentsResponse(JSON.parse(response.body));
+  assertDaemonSupported(data.api_version);
+  return data;
 }
 
-export async function focusDemoAgent(
+export async function focusAgent(
   service: DiscoveredService,
   sourceID: string,
 ): Promise<void> {
@@ -189,7 +205,7 @@ export async function focusDemoAgent(
 
   const { fingerprint, token } = await requireCredentials();
 
-  const baseURL = demoAgentsUrl(address, service.port);
+  const baseURL = agentsUrl(address, service.port);
 
   await authPinnedFetch({
     url: `${baseURL}/${encodeURIComponent(sourceID)}/focus`,
@@ -202,7 +218,7 @@ export async function focusDemoAgent(
   });
 }
 
-export async function interruptDemoAgent(
+export async function interruptAgent(
   service: DiscoveredService,
   sourceID: string,
 ): Promise<void> {
@@ -211,7 +227,7 @@ export async function interruptDemoAgent(
 
   const { fingerprint, token } = await requireCredentials();
 
-  const baseURL = demoAgentsUrl(address, service.port);
+  const baseURL = agentsUrl(address, service.port);
 
   await authPinnedFetch({
     url: `${baseURL}/${encodeURIComponent(sourceID)}/interrupt`,
@@ -224,16 +240,16 @@ export async function interruptDemoAgent(
   });
 }
 
-export async function fetchDemoAgentHistory(
+export async function fetchAgentHistory(
   service: DiscoveredService,
   sourceID: string,
-): Promise<DemoAgentHistory> {
+): Promise<AgentHistory> {
   const address = preferredAddress(service.addresses);
   if (!address) throw new NetworkError("no_address");
 
   const { fingerprint, token } = await requireCredentials();
 
-  const baseURL = demoAgentsUrl(address, service.port);
+  const baseURL = agentsUrl(address, service.port);
 
   const response = await authPinnedFetch({
     url: `${baseURL}/${encodeURIComponent(sourceID)}/history`,
@@ -247,7 +263,7 @@ export async function fetchDemoAgentHistory(
   const value: unknown = JSON.parse(response.body);
   if (
     typeof value !== "object" || value === null ||
-    typeof (value as Record<string, unknown>).demo_version !== "number" ||
+    typeof (value as Record<string, unknown>).api_version !== "number" ||
     typeof (value as Record<string, unknown>).source_id !== "string" ||
     typeof (value as Record<string, unknown>).text !== "string" ||
     typeof (value as Record<string, unknown>).revision !== "number" ||
@@ -256,10 +272,12 @@ export async function fetchDemoAgentHistory(
   ) {
     throw new NetworkError("history_invalid");
   }
-  return value as DemoAgentHistory;
+  const history = value as AgentHistory;
+  assertDaemonSupported(history.api_version);
+  return history;
 }
 
-export async function sendDemoAgentMessage(
+export async function sendAgentMessage(
   service: DiscoveredService,
   sourceID: string,
   text: string,
@@ -269,7 +287,7 @@ export async function sendDemoAgentMessage(
 
   const { fingerprint, token } = await requireCredentials();
 
-  const baseURL = demoAgentsUrl(address, service.port);
+  const baseURL = agentsUrl(address, service.port);
 
   await authPinnedFetch({
     url: `${baseURL}/${encodeURIComponent(sourceID)}/messages`,
@@ -307,6 +325,7 @@ export async function pairDaemon(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
       },
       body: JSON.stringify({ device_name: deviceName, secret: payload.secret }),
       timeoutMs: REQUEST_TIMEOUT_MS,
@@ -314,6 +333,9 @@ export async function pairDaemon(
 
     if (response.status === 400) {
       throw new NetworkError("pairing_failed");
+    }
+    if (response.status === 426) {
+      throw new NetworkError("app_outdated");
     }
     if (response.status < 200 || response.status >= 300) {
       throw new NetworkError("pairing_failed", response.status);
@@ -323,6 +345,7 @@ export async function pairDaemon(
     if (
       typeof data !== "object" ||
       data === null ||
+      typeof (data as Record<string, unknown>).api_version !== "number" ||
       typeof (data as Record<string, unknown>).device_id !== "string" ||
       typeof (data as Record<string, unknown>).token !== "string" ||
       typeof (data as Record<string, unknown>).device_name !== "string" ||
@@ -332,7 +355,11 @@ export async function pairDaemon(
     }
 
     const record = data as Record<string, unknown>;
+    const apiVersion = record.api_version as number;
+    assertDaemonSupported(apiVersion);
+
     return {
+      apiVersion,
       deviceId: record.device_id as string,
       token: record.token as string,
       deviceName: record.device_name as string,

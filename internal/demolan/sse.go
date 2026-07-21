@@ -37,7 +37,7 @@ const maxStreamsPerDevice = 2
 
 // sseEvent 是推给客户端的事件载荷。故意只带 {cursor, online}：
 // SSE 通道只是"有变化了，当前状态是什么"的轻量信号，客户端收到后走一次
-// 正常 REST GET /v1/demo/agents 拿真实 agent 列表。不在这里塞完整 agent
+// 正常 REST GET /v1/agents 拿真实 agent 列表。不在这里塞完整 agent
 // 数据（序列化逻辑只有一处，线上乱序/丢事件对这一层无害）。
 type sseEvent struct {
 	Cursor string `json:"cursor"`
@@ -323,7 +323,7 @@ func (h *handler) streamEvents(response http.ResponseWriter, request *http.Reque
 	header.Set("Content-Type", "text/event-stream")
 	header.Set("Cache-Control", "no-store")
 	header.Set("Connection", "keep-alive")
-	// X-Herdr-Connect-Demo-Version 由 setCommonHeaders 已设，保留。
+	// X-Herdr-Connect-Api-Version 由 setCommonHeaders 已设，保留。
 	response.WriteHeader(http.StatusOK)
 	flusher.Flush()
 

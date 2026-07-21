@@ -6,7 +6,7 @@ import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import { useMMKVBoolean } from "react-native-mmkv";
 
 import doneSound from "../../assets/sounds/done.mp3";
-import type { DemoAgent } from "../demo-contract";
+import type { Agent } from "../agent-contract";
 import { useConnection } from "../connection";
 import { useI18n } from "../i18n/I18nContext";
 import { detectNewlyActive, detectNewlyCompleted, indexAgents } from "./doneDetection";
@@ -74,8 +74,8 @@ export function DoneSoundProvider({
 
   const player = useAudioPlayer(doneSound);
   const { markCompleted, clearCompleted } = useRecentCompletions();
-  const prevMapRef = useRef<Map<string, DemoAgent>>(new Map());
-  const currentAgentsRef = useRef<DemoAgent[]>([]);
+  const prevMapRef = useRef<Map<string, Agent>>(new Map());
+  const currentAgentsRef = useRef<Agent[]>([]);
 
   useEffect(() => {
     currentAgentsRef.current = state.phase === "connected" ? state.data.agents : [];
@@ -145,7 +145,7 @@ export function DoneSoundProvider({
     // OS banner + haptic (stage 4 of issue #25).
     // Threat model constraint: notification content MUST NOT include agent
     // output or prompt plaintext. See docs/security/lan-tls-pairing.md (or
-    // protocol-v1-threat-model.md) — DemoAgent has no terminal-output fields
+    // protocol-v1-threat-model.md) — Agent has no terminal-output fields
     // by design; only metadata (display_name, workspace_label, etc.) is used.
     if (localNotificationsEnabled && audible.length > 0) {
       const titleKey = "notifications.agentFinished";

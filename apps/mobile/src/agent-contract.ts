@@ -3,7 +3,7 @@ import { NetworkError } from "./i18n/errors";
 export type InteractionState = "working" | "blocked" | "ready_input" | "unknown";
 export type TurnOutcome = "succeeded" | "failed" | "cancelled";
 
-export interface DemoAgent {
+export interface Agent {
   source_id: string;
   display_name: string;
   workspace_label?: string;
@@ -14,12 +14,30 @@ export interface DemoAgent {
   turn_outcome?: TurnOutcome | null;
 }
 
-export interface DemoAgentsResponse {
-  demo_version: number;
+export interface AgentsResponse {
+  api_version: number;
   source_name: string;
   source_online: boolean;
   refreshed_at: string;
-  agents: DemoAgent[];
+  agents: Agent[];
+}
+
+/**
+ * Minimum daemon API version this app can talk to. If a daemon reports a lower
+ * `api_version` we surface a terminal `daemon_outdated` state instead of trying
+ * to render data we may not understand. Bump only when a breaking daemon change
+ * ships that this app can no longer tolerate.
+ */
+export const MIN_SUPPORTED_DAEMON_API_VERSION = 1;
+
+/** Returns true when a daemon-reported api_version is too old for this app. */
+export function isDaemonOutdated(apiVersion: number): boolean {
+  return !Number.isFinite(apiVersion) || apiVersion < MIN_SUPPORTED_DAEMON_API_VERSION;
+}
+
+/** Throw the terminal protocol-version error when a daemon is too old. */
+export function assertDaemonSupported(apiVersion: number): void {
+  if (isDaemonOutdated(apiVersion)) throw new NetworkError("daemon_outdated");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,7 +70,7 @@ function asTurnOutcome(value: unknown): TurnOutcome | null | undefined {
   }
 }
 
-function parseAgent(value: unknown): DemoAgent {
+function parseAgent(value: unknown): Agent {
   if (!isRecord(value)) throw new NetworkError("agent_invalid");
   if (
     typeof value.source_id !== "string" ||
@@ -74,10 +92,10 @@ function parseAgent(value: unknown): DemoAgent {
   };
 }
 
-export function parseDemoAgentsResponse(value: unknown): DemoAgentsResponse {
+export function parseAgentsResponse(value: unknown): AgentsResponse {
   if (!isRecord(value)) throw new NetworkError("response_invalid");
   if (
-    typeof value.demo_version !== "number" ||
+    typeof value.api_version !== "number" ||
     typeof value.source_name !== "string" ||
     typeof value.source_online !== "boolean" ||
     typeof value.refreshed_at !== "string" ||
@@ -87,7 +105,7 @@ export function parseDemoAgentsResponse(value: unknown): DemoAgentsResponse {
   }
 
   return {
-    demo_version: value.demo_version,
+    api_version: value.api_version,
     source_name: value.source_name,
     source_online: value.source_online,
     refreshed_at: value.refreshed_at,

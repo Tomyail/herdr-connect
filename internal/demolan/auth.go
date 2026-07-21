@@ -3,6 +3,7 @@ package demolan
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Tomyail/herdr-connect/internal/lanauth"
@@ -21,11 +22,46 @@ type PairRequest struct {
 }
 
 type PairResponse struct {
-	DemoVersion int    `json:"demo_version"`
+	APIVersion int    `json:"api_version"`
 	DeviceID    string `json:"device_id"`
 	Token       string `json:"token"`
 	DeviceName  string `json:"device_name"`
 	Fingerprint string `json:"fingerprint"`
+}
+
+// MinSupportedClientVersion 是 daemon 能接受的最低客户端版本号。客户端通过
+// X-Herdr-Connect-Client-Version 请求头上报。低于此值的请求被拒绝（426
+// client_outdated），提示用户升级手机端。头缺失时不拒绝（兼容 curl 手测、
+// daemoncli checkPreviewAt 存活探测等不携带此头的合法调用）。
+const MinSupportedClientVersion = 1
+
+// ClientVersionHeader 是客户端上报自身版本的请求头名。
+const ClientVersionHeader = "X-Herdr-Connect-Client-Version"
+
+// enforceClientVersion 在所有其它处理之前检查客户端版本。放在最前面的理由：
+//   - 不被“未配对”401 挡住（旧版客户端即使没配对也能收到 426 提示）；
+//   - 不依赖路径，所有端点（含 /v1/pair）统一覆盖；
+//   - 头缺失放行，兼容 curl 手测、daemoncli checkPreviewAt 存活探测等不携带
+//     此头的合法调用。
+func enforceClientVersion(response http.ResponseWriter, request *http.Request) bool {
+	raw := strings.TrimSpace(request.Header.Get(ClientVersionHeader))
+	if raw == "" {
+		return true // 未声明版本 = 老式/手测客户端，按现有行为放行。
+	}
+	clientVersion, err := strconv.Atoi(raw)
+	if err != nil || clientVersion < MinSupportedClientVersion {
+		setCommonHeaders(response)
+		response.WriteHeader(http.StatusUpgradeRequired)
+		_ = json.NewEncoder(response).Encode(ErrorResponse{
+			APIVersion: APIVersion,
+			Error: ErrorDetails{
+				Code:    "client_outdated",
+				Message: "this client version is no longer supported; please update the Herdr Connect app",
+			},
+		})
+		return false
+	}
+	return true
 }
 
 // secureHandler 是 TLS 监听器背后的组合层：/v1/pair 免 bearer（凭一次性 secret），
@@ -41,6 +77,9 @@ func secureHandler(agents http.Handler, database *store.Store, cert lanauth.Cert
 // 表示完全不限流（保留给未来需要关闭限流的场景，目前 secureHandler 总会带上）。
 func secureHandlerWithLimiter(agents http.Handler, database *store.Store, cert lanauth.Certificate, limiter *rateLimiter) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if !enforceClientVersion(response, request) {
+			return
+		}
 		if request.URL.Path == PairPath {
 			setCommonHeaders(response)
 			if limiter != nil && !limiter.allowIP(clientIP(request)) {
@@ -113,7 +152,7 @@ func handlePair(response http.ResponseWriter, request *http.Request, database *s
 		return
 	}
 	writeJSON(response, http.StatusOK, PairResponse{
-		DemoVersion: DemoVersion,
+		APIVersion: APIVersion,
 		DeviceID:    device.DeviceID,
 		Token:       device.Token,
 		DeviceName:  device.Name,

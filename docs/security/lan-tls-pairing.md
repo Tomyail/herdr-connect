@@ -10,7 +10,7 @@ This covers the HTTPS server in `internal/demolan`, the certificate identity and
 
 ## Trust model
 
-The LAN is untrusted. Other hosts on the same LAN can observe mDNS, scan ports, and block, delay, replay, or modify traffic. mDNS advertises only opaque service metadata: the `_herdr-connect._tcp` service type, the port, a `path` TXT key, a `demo_version` TXT key, and an `fp` TXT key carrying the installation certificate fingerprint. Discovery proves reachability only; it does not establish trust or grant access.
+The LAN is untrusted. Other hosts on the same LAN can observe mDNS, scan ports, and block, delay, replay, or modify traffic. mDNS advertises only opaque service metadata: the `_herdr-connect._tcp` service type, the port, a `path` TXT key, a `api_version` TXT key, and an `fp` TXT key carrying the installation certificate fingerprint. Discovery proves reachability only; it does not establish trust or grant access.
 
 Protection is split into two layers:
 

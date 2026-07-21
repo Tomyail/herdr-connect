@@ -10,7 +10,7 @@ import appConfig from "../app.config";
 import { useI18n } from "./i18n/I18nContext";
 import type { AppLanguage } from "./i18n/locale";
 import type { MessageKey } from "./i18n/messages";
-import type { DemoAgentsResponse } from "./demo-contract";
+import type { AgentsResponse } from "./agent-contract";
 import {
   DEFAULT_DONE_SOUND_ENABLED,
   DEFAULT_NOTIFY_WHILE_VIEWING,
@@ -193,7 +193,7 @@ export function Settings({ connectionState }: SettingsProps) {
 
   const connected = connectionState.phase === "connected" ? connectionState : undefined;
   const service: DiscoveredService | undefined = connected?.service;
-  const data: DemoAgentsResponse | undefined = connected?.data;
+  const data: AgentsResponse | undefined = connected?.data;
 
   // Load credentials eagerly so the Settings screen always shows current pairing
   // state even when not connected (e.g. not_paired / fingerprint_mismatch).

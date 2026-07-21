@@ -10,7 +10,7 @@ import {
 } from "react";
 import { AppState, NativeModules, PermissionsAndroid, Platform, type AppStateStatus } from "react-native";
 
-import type { DemoAgent, DemoAgentsResponse } from "./demo-contract";
+import type { Agent, AgentsResponse } from "./agent-contract";
 import {
   listenForDiscoveredServices,
   listenForDiscoveryFailure,
@@ -19,7 +19,7 @@ import {
   type DiscoveredService,
 } from "./discovery";
 import { discoveryRetryDelay, shouldRestartDiscovery } from "./discovery-lifecycle";
-import { devServerFallbackService, demoAgentsEventsUrl, fetchDemoAgents, focusDemoAgent, preferredAddress, serviceKey } from "./network";
+import { devServerFallbackService, agentsEventsUrl, fetchAgents, focusAgent, preferredAddress, serviceKey } from "./network";
 import { loadCredentials, clearCredentials } from "./credentials";
 import { startStream, type PinnedStreamHandle, type PinnedStreamError } from "pinned-stream";
 import { useI18n } from "./i18n/I18nContext";
@@ -64,8 +64,10 @@ export type ConnectionState =
   | { phase: "not_paired" }
   | { phase: "revoked" }
   | { phase: "fingerprint_mismatch" }
+  | { phase: "daemon_outdated" }
+  | { phase: "app_outdated" }
   | { phase: "failed"; code: NetworkErrorCode; status?: number }
-  | { phase: "connected"; service: DiscoveredService; data: DemoAgentsResponse };
+  | { phase: "connected"; service: DiscoveredService; data: AgentsResponse };
 
 export type FocusPhase = "switching" | "switched" | "failed";
 
@@ -80,7 +82,7 @@ interface ConnectionValue {
    *  SSE event arrives. */
   streamStatus: StreamStatus;
   refresh: () => Promise<void>;
-  switchAgent: (service: DiscoveredService, agent: DemoAgent) => Promise<void>;
+  switchAgent: (service: DiscoveredService, agent: Agent) => Promise<void>;
   /** Clear local pairing credentials and reset to "not_paired" state. */
   unpair: () => Promise<void>;
 }
@@ -121,10 +123,10 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     buttonNegative: t("permission.android.deny"),
   };
 
-  const switchAgent = useCallback(async (service: DiscoveredService, agent: DemoAgent) => {
+  const switchAgent = useCallback(async (service: DiscoveredService, agent: Agent) => {
     setFocusResult({ sourceID: agent.source_id, phase: "switching" });
     try {
-      await focusDemoAgent(service, agent.source_id);
+      await focusAgent(service, agent.source_id);
       setFocusResult({ sourceID: agent.source_id, phase: "switched" });
     } catch {
       setFocusResult({ sourceID: agent.source_id, phase: "failed" });
@@ -146,7 +148,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       clearDiscoveryTimer();
 
       try {
-        const data = await fetchDemoAgents(service, controller.signal);
+        const data = await fetchAgents(service, controller.signal);
         if (mountedRef.current && selectedKeyRef.current === key && !controller.signal.aborted) {
           retryAttemptRef.current = 0;
           setState({ phase: "connected", service, data });
@@ -171,6 +173,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
           }
           if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
             setState({ phase: "fingerprint_mismatch" });
+            return;
+          }
+          if (error instanceof NetworkError && error.code === "daemon_outdated") {
+            setState({ phase: "daemon_outdated" });
+            return;
+          }
+          if (error instanceof NetworkError && error.code === "app_outdated") {
+            setState({ phase: "app_outdated" });
             return;
           }
           setState(failureFrom(error, "connect_failed"));
@@ -238,15 +248,18 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   }, [clearDiscoveryTimer]);
 
   // Retry: back off after non-terminal errors, but do NOT retry from
-  // not_paired / revoked / fingerprint_mismatch — those require user action (pair, or
-  // accept the new daemon identity).
+  // not_paired / revoked / fingerprint_mismatch / daemon_outdated /
+  // app_outdated — those require user action (pair, accept the new daemon
+  // identity, or upgrade one side).
   useEffect(() => {
     if (
       state.phase === "connected" ||
       state.phase === "discovering" ||
       state.phase === "not_paired" ||
       state.phase === "revoked" ||
-      state.phase === "fingerprint_mismatch"
+      state.phase === "fingerprint_mismatch" ||
+      state.phase === "daemon_outdated" ||
+      state.phase === "app_outdated"
     ) return;
 
     const delay = discoveryRetryDelay(retryAttemptRef.current);
@@ -290,7 +303,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       if (pollingInflightRef.current) return;
       pollingInflightRef.current = true;
       try {
-        const data = await fetchDemoAgents(service);
+        const data = await fetchAgents(service);
         if (mountedRef.current && selectedKeyRef.current === key) {
           setState({ phase: "connected", service, data });
         }
@@ -308,6 +321,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
           if (mountedRef.current && selectedKeyRef.current === key) {
             setState({ phase: "fingerprint_mismatch" });
+          }
+        } else if (error instanceof NetworkError && error.code === "daemon_outdated") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "daemon_outdated" });
+          }
+        } else if (error instanceof NetworkError && error.code === "app_outdated") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "app_outdated" });
           }
         }
         // Other errors: silent — keep the last snapshot on transient errors.
@@ -383,7 +404,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         const address = preferredAddress(service.addresses);
         if (!address) return; // nothing to dial
         handle = startStream(
-          demoAgentsEventsUrl(address, service.port),
+          agentsEventsUrl(address, service.port),
           creds.fingerprint,
           creds.token,
         );

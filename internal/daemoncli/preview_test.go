@@ -57,7 +57,7 @@ func TestCheckPreviewPinsTheLocalCertificate(t *testing.T) {
 
 	startServer := func(cert tls.Certificate) *httptest.Server {
 		server := httptest.NewUnstartedServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-			response.Header().Set("X-Herdr-Connect-Demo-Version", "0")
+			response.Header().Set("X-Herdr-Connect-Api-Version", "1")
 			response.WriteHeader(http.StatusUnauthorized)
 		}))
 		server.TLS = &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12}
@@ -85,7 +85,7 @@ func TestCheckPreviewFallsBackToVersionMarkerBeforeCertificateExists(t *testing.
 		t.Fatalf("create server certificate: %v", err)
 	}
 	server := httptest.NewUnstartedServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
-		response.Header().Set("X-Herdr-Connect-Demo-Version", "0")
+		response.Header().Set("X-Herdr-Connect-Api-Version", "1")
 		response.WriteHeader(http.StatusUnauthorized)
 	}))
 	server.TLS = &tls.Config{Certificates: []tls.Certificate{serverCert.TLS}, MinVersion: tls.VersionTLS12}

@@ -41,7 +41,11 @@ export type NetworkErrorCode =
   | "revoked"
   | "pairing_failed"
   | "pairing_qr_invalid"
-  | "not_credentials";
+  | "not_credentials"
+  /** daemon 报告的 api_version 低于 app 支持下限，需升级 daemon。终态，不重试。 */
+  | "daemon_outdated"
+  /** daemon 返回 426 client_outdated——app 版本过旧，需升级。终态，不重试。 */
+  | "app_outdated";
 
 /** All defined error codes (runtime mirror of the union, used for exhaustive tests). */
 export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
@@ -79,6 +83,8 @@ export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
   "pairing_failed",
   "pairing_qr_invalid",
   "not_credentials",
+  "daemon_outdated",
+  "app_outdated",
 ];
 
 /** Error thrown by the daemon/agent data + network layer. Carries a stable code. */

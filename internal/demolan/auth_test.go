@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -74,11 +75,11 @@ func TestUnauthenticatedRequestsGetStructured401(t *testing.T) {
 		}
 		assertErrorCode(t, response, "unauthorized")
 		// 存活探测依赖这两个标记：401 也必须带上。
-		if response.Header().Get("X-Herdr-Connect-Demo-Version") == "" {
-			t.Fatalf("%s: missing demo version header", name)
+		if response.Header().Get("X-Herdr-Connect-Api-Version") == "" {
+			t.Fatalf("%s: missing api version header", name)
 		}
-		if !strings.Contains(response.Body.String(), `"demo_version"`) {
-			t.Fatalf("%s: missing demo_version field: %s", name, response.Body.String())
+		if !strings.Contains(response.Body.String(), `"api_version"`) {
+			t.Fatalf("%s: missing api_version field: %s", name, response.Body.String())
 		}
 	}
 }
@@ -223,4 +224,79 @@ func TestTLSHandshakeMatchesPinnedFingerprint(t *testing.T) {
 	if _, err := wrongPin.Get(server.URL + Path); err == nil {
 		t.Fatal("mismatched pin did not fail the handshake")
 	}
+}
+
+// —— 客户端版本协商（issue #30 阶段A）——
+// 机制：请求携带 X-Herdr-Connect-Client-Version 头；缺失放行，低于
+// MinSupportedClientVersion 返回 426 client_outdated。检查在最外层（鉴权/
+// 限流之前），因此 /v1/pair 与未配对路径都覆盖，且不会被 401 挡住。
+
+func TestClientVersionMissingIsAllowed(t *testing.T) {
+	fixture := newSecureFixture(t)
+	resp := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(resp, httptest.NewRequest(http.MethodGet, Path, nil))
+	// 头缺失 = 老式 / curl / 存活探测 → 不因版本被拒，继续走正常鉴权路径 → 401。
+	if resp.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 (missing version header should be allowed through to normal auth)", resp.Code)
+	}
+	assertErrorCode(t, resp, "unauthorized")
+}
+
+func TestClientVersionOutdatedReturns426(t *testing.T) {
+	fixture := newSecureFixture(t)
+	req := httptest.NewRequest(http.MethodGet, Path, nil)
+	req.Header.Set(ClientVersionHeader, "0")
+	resp := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(resp, req)
+	if resp.Code != http.StatusUpgradeRequired {
+		t.Fatalf("status = %d, want 426", resp.Code)
+	}
+	assertErrorCode(t, resp, "client_outdated")
+	if got := resp.Header().Get("X-Herdr-Connect-Api-Version"); got == "" {
+		t.Fatalf("missing api version header on 426")
+	}
+	if !strings.Contains(resp.Body.String(), `"api_version"`) {
+		t.Fatalf("426 body missing api_version field: %s", resp.Body.String())
+	}
+}
+
+func TestClientVersionOutdatedIsCheckedBeforeAuth(t *testing.T) {
+	// 即使是无 token 的未配对请求，版本过旧也要先于 401 生效——这样旧版客户端
+	// 在配对流程里也能收到升级提示，不会误以为只是“没配对”。
+	fixture := newSecureFixture(t)
+	req := httptest.NewRequest(http.MethodPost, PairPath, strings.NewReader(`{"device_name":"x","secret":"s"}`))
+	req.Header.Set(ClientVersionHeader, "0")
+	resp := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(resp, req)
+	if resp.Code != http.StatusUpgradeRequired {
+		t.Fatalf("status = %d, want 426 (version check must precede pair/auth)", resp.Code)
+	}
+	assertErrorCode(t, resp, "client_outdated")
+}
+
+func TestClientVersionCurrentIsAllowed(t *testing.T) {
+	fixture := newSecureFixture(t)
+	req := httptest.NewRequest(http.MethodGet, Path, nil)
+	req.Header.Set(ClientVersionHeader, strconv.Itoa(MinSupportedClientVersion))
+	resp := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(resp, req)
+	// 版本达标 → 放行进入鉴权 → 无 token 仍返 401，证明版本检查未拒。
+	if resp.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 (current version should pass through to auth)", resp.Code)
+	}
+	assertErrorCode(t, resp, "unauthorized")
+}
+
+func TestClientVersionMalformedIsRejected(t *testing.T) {
+	// 非数字头应被当作不可识别版本拒绝（而非故作“缺失”放行），避免老客户端
+	// 用乱填头绕过检查。
+	fixture := newSecureFixture(t)
+	req := httptest.NewRequest(http.MethodGet, Path, nil)
+	req.Header.Set(ClientVersionHeader, "not-a-number")
+	resp := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(resp, req)
+	if resp.Code != http.StatusUpgradeRequired {
+		t.Fatalf("status = %d, want 426 (malformed version should be rejected, not treated as missing)", resp.Code)
+	}
+	assertErrorCode(t, resp, "client_outdated")
 }

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { DemoAgent } from "../demo-contract";
+import type { Agent } from "../agent-contract";
 import { detectNewlyActive, detectNewlyCompleted, indexAgents, isActive } from "./doneDetection";
 
-function agent(source_id: string, overrides: Partial<DemoAgent> = {}): DemoAgent {
+function agent(source_id: string, overrides: Partial<Agent> = {}): Agent {
   return {
     source_id,
     display_name: source_id,

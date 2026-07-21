@@ -1,4 +1,4 @@
-import type { DemoAgent } from "../demo-contract";
+import type { Agent } from "../agent-contract";
 
 /**
  * An agent is "active" — busy, or blocked waiting on input. These are the
@@ -12,13 +12,13 @@ import type { DemoAgent } from "../demo-contract";
  * anything else` as a completion is what matches herdr's desktop Done chime
  * in practice, instead of only the narrow `ready_input` / `turn_outcome` case.
  */
-export function isActive(agent: DemoAgent): boolean {
+export function isActive(agent: Agent): boolean {
   return agent.interaction_state === "working" || agent.interaction_state === "blocked";
 }
 
 /** Index agents by `source_id` to diff snapshots cheaply. */
-export function indexAgents(agents: readonly DemoAgent[]): Map<string, DemoAgent> {
-  const map = new Map<string, DemoAgent>();
+export function indexAgents(agents: readonly Agent[]): Map<string, Agent> {
+  const map = new Map<string, Agent>();
   for (const agent of agents) map.set(agent.source_id, agent);
   return map;
 }
@@ -30,10 +30,10 @@ export function indexAgents(agents: readonly DemoAgent[]): Map<string, DemoAgent
  * agent that was already inactive when we first connected.
  */
 export function detectNewlyCompleted(
-  prev: ReadonlyMap<string, DemoAgent>,
-  curr: readonly DemoAgent[],
-): DemoAgent[] {
-  const result: DemoAgent[] = [];
+  prev: ReadonlyMap<string, Agent>,
+  curr: readonly Agent[],
+): Agent[] {
+  const result: Agent[] = [];
   for (const agent of curr) {
     const previous = prev.get(agent.source_id);
     if (!previous) continue; // first sight → baseline, no chime
@@ -50,10 +50,10 @@ export function detectNewlyCompleted(
  * finished" is no longer news.
  */
 export function detectNewlyActive(
-  prev: ReadonlyMap<string, DemoAgent>,
-  curr: readonly DemoAgent[],
-): DemoAgent[] {
-  const result: DemoAgent[] = [];
+  prev: ReadonlyMap<string, Agent>,
+  curr: readonly Agent[],
+): Agent[] {
+  const result: Agent[] = [];
   for (const agent of curr) {
     const previous = prev.get(agent.source_id);
     if (!previous) continue;

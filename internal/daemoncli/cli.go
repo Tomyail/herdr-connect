@@ -606,11 +606,11 @@ func checkPreviewAt(ctx context.Context, address string, endpoints []string, cer
 			continue
 		}
 		var marker struct {
-			DemoVersion *int `json:"demo_version"`
+			APIVersion *int `json:"api_version"`
 		}
 		decodeErr := json.NewDecoder(io.LimitReader(response.Body, 4096)).Decode(&marker)
 		_ = response.Body.Close()
-		if response.Header.Get("X-Herdr-Connect-Demo-Version") != "" || (decodeErr == nil && marker.DemoVersion != nil) {
+		if response.Header.Get("X-Herdr-Connect-Api-Version") != "" || (decodeErr == nil && marker.APIVersion != nil) {
 			return classifyPreview(true, nil)
 		}
 	}

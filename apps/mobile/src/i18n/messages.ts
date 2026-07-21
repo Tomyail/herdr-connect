@@ -24,6 +24,8 @@ const en = {
   "agents.status.notPaired": "Not paired",
   "agents.status.fingerprintMismatch": "Identity mismatch",
   "agents.status.revoked": "Device revoked",
+  "agents.status.daemonOutdated": "Daemon update required",
+  "agents.status.appOutdated": "App update required",
   "agents.status.connected": "Connected",
   "connection.live": "Live",
   "connection.polling": "Polling",
@@ -32,6 +34,8 @@ const en = {
   "agents.detail.notPaired": "Go to Settings and pair this device with a daemon to get started.",
   "agents.detail.fingerprintMismatch": "The daemon certificate has changed. Go to Settings to pair again.",
   "agents.detail.revoked": "This device has been revoked from the daemon. Go to Settings to pair again.",
+  "agents.detail.daemonOutdated": "This daemon uses an older API version. Update Herdr Connect on your Mac, then try again.",
+  "agents.detail.appOutdated": "This app is too old for the daemon. Update Herdr Connect on your iPhone, then try again.",
   "agents.summary.sourceOnline": "source online",
   "agents.summary.sourceOffline": "source offline",
   "agents.summary.count": "{count}",
@@ -155,6 +159,8 @@ const zhHans: Record<MessageKey, string> = {
   "agents.status.notPaired": "\u672A\u914D\u5BF9",
   "agents.status.fingerprintMismatch": "\u8EAB\u4EFD\u4E0D\u5339\u914D",
   "agents.status.revoked": "\u8BBE\u5907\u5DF2\u64A4\u9500",
+  "agents.status.daemonOutdated": "需要更新 daemon",
+  "agents.status.appOutdated": "需要更新 App",
   "agents.status.connected": "\u5DF2\u8FDE\u63A5",
   "connection.live": "\u5B9E\u65F6",
   "connection.polling": "\u8F6E\u8BE2\u4E2D",
@@ -163,6 +169,8 @@ const zhHans: Record<MessageKey, string> = {
   "agents.detail.notPaired": "\u524D\u5F80\u8BBE\u7F6E\u914D\u5BF9\u8BBE\u5907\u4EE5\u5F00\u59CB\u4F7F\u7528",
   "agents.detail.fingerprintMismatch": "daemon \u8BC1\u4E66\u5DF2\u53D8\u66F4\u3002\u8BF7\u524D\u5F80\u8BBE\u7F6E\u91CD\u65B0\u914D\u5BF9\u3002",
   "agents.detail.revoked": "\u6B64\u8BBE\u5907\u5DF2\u88AB daemon \u64A4\u9500\u3002\u8BF7\u524D\u5F80\u8BBE\u7F6E\u91CD\u65B0\u914D\u5BF9\u3002",
+  "agents.detail.daemonOutdated": "当前 daemon 使用的 API 版本过旧。请更新 Mac 上的 Herdr Connect 后重试。",
+  "agents.detail.appOutdated": "当前 App 对这个 daemon 来说过旧。请更新 iPhone 上的 Herdr Connect 后重试。",
   "agents.summary.sourceOnline": "\u6765\u6E90\u5728\u7EBF",
   "agents.summary.sourceOffline": "\u6765\u6E90\u79BB\u7EBF",
   "agents.summary.count": "{count} \u4E2A",
@@ -310,6 +318,8 @@ const errorEn: Record<NetworkErrorCode, string> = {
   pairing_failed: "Pairing failed — check the secret and try again",
   pairing_qr_invalid: "Invalid pairing QR code — make sure you are scanning the correct code",
   not_credentials: "No stored device credentials found",
+  daemon_outdated: "This daemon API version is too old — update Herdr Connect on your Mac and try again",
+  app_outdated: "This app version is no longer supported by the daemon — update Herdr Connect and try again",
 };
 
 const errorZhHans: Record<NetworkErrorCode, string> = {
@@ -347,6 +357,8 @@ const errorZhHans: Record<NetworkErrorCode, string> = {
   pairing_failed: "\u914D\u5BF9\u5931\u8D25\u2014\u2014\u8BF7\u68C0\u67E5\u5BC6\u94A5\u540E\u91CD\u8BD5",
   pairing_qr_invalid: "\u914D\u5BF9\u4E8C\u7EF4\u7801\u65E0\u6548\u2014\u2014\u8BF7\u786E\u8BA4\u626B\u63CF\u7684\u662F\u6B63\u786E\u7684\u4E8C\u7EF4\u7801",
   not_credentials: "\u672A\u627E\u5230\u5DF2\u5B58\u50A8\u7684\u8BBE\u5907\u51ED\u636E",
+  daemon_outdated: "daemon API 版本过旧——请更新 Mac 上的 Herdr Connect 后重试",
+  app_outdated: "此 App 版本已不受 daemon 支持——请更新 Herdr Connect 后重试",
 };
 
 export const errorMessageBundles: Record<ResolvedLocale, Record<NetworkErrorCode, string>> = {
