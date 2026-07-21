@@ -62,6 +62,18 @@ The daemon enforces token-bucket rate limits (`/internal/demolan/rate_limit.go`)
 
 Exceeded limits return `429 Too Many Requests` with `Retry-After: 1`.
 
+### Bidirectional API Version Gates
+
+The daemon and mobile client perform mutual version compatibility checks to ensure paired devices can communicate:
+
+**Daemon → Client** (`/internal/demolan/auth.go` — `enforceClientVersion`):
+- Every request may include `X-Herdr-Connect-Client-Version: <n>`. If present and below `MinSupportedClientVersion` (currently 1), the daemon responds with `426 Upgrade Required` + `client_outdated` — **before** auth or rate-limiting checks, so an outdated unpaired client sees "update your app" rather than a misleading auth error. A missing header is allowed through (backward compat for curl and health probes); a non-numeric header is rejected.
+
+**Client → Daemon** (mobile `agent-contract.ts` — `assertDaemonSupported`):
+- Every daemon response includes `api_version` in the JSON body and `X-Herdr-Connect-Api-Version` in headers. The client validates this against `MIN_SUPPORTED_DAEMON_API_VERSION` (currently 1). If the daemon is too old, the client enters a terminal `daemon_outdated` state.
+
+Both checks produce terminal states that require a user upgrade — retry is not attempted.
+
 ### Device Lifecycle
 
 Paired devices are managed via the `herdr-connect devices` CLI (see [CLI Commands](../cli/commands.md)):

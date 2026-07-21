@@ -66,7 +66,7 @@ The daemon (`/cmd/herdr-connect/main.go`) is a long-lived service that:
 
 1. **Adapts Herdr CLI output** — The [Herdr Source Adapter](../domain/herdr-source-adapters.md) invokes `herder agent list --json` and parses the response into domain types
 2. **Projects agent state** — The [Projection Layer](../domain/agent-projection.md) normalizes source observations and persists them to SQLite
-3. **Serves HTTPS API** — The demo LAN server (`/internal/demolan/server.go`) serves agent list, output, focus, messages, and interrupt endpoints over HTTPS with bearer-token auth on TCP port 9808
+3. **Serves HTTPS API** — The LAN server (`/internal/demolan/server.go`) serves agent list, output, focus, messages, interrupt, and SSE endpoints over HTTPS with bearer-token auth on TCP port 9808
 4. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service with a `fp` TXT record containing the TLS certificate fingerprint for mobile pairing verification
 
 The daemon runs as an owner-level service on macOS (launchd) and Linux (systemd user services). Windows service installation is not supported in the current preview.
@@ -86,7 +86,7 @@ The iOS app (`/apps/mobile/`) is a React Native application that:
 
 1. **Pairs with the daemon** — Scans a QR code rendered by `herdr-connect pair` to exchange a one-time secret for per-device bearer credentials, stored in iOS Keychain
 2. **Discovers the daemon** — Uses `@inthepocket/react-native-service-discovery` to browse `_herdr-connect._tcp` services
-3. **Fetches agent state** — Calls `GET /v1/demo/agents` over HTTPS using a pinned-fetch native module that validates the server's TLS certificate fingerprint
+3. **Fetches agent state** — Calls `GET /v1/agents` over HTTPS using a pinned-fetch native module that validates the server's TLS certificate fingerprint; a companion pinned-stream native module consumes SSE signals for real-time updates
 4. **Displays status** — Shows agents with interaction state, outcome, and brand icons
 5. **Interacts with agents** — Calls `/history`, `/focus`, `/messages`, and `/interrupt` endpoints for control
 
@@ -128,14 +128,15 @@ The protocol is **not yet integrated** into the LAN transport. Today's LAN secur
 2. Projection layer normalizes observations and applies batch updates to SQLite
 3. Server reads from SQLite on each authenticated HTTP request
 4. If source is offline, server returns last known state with `source_online: false`
+5. Server emits SSE signals (`{cursor, online}`) to connected mobile clients on real state changes; clients then re-fetch `/v1/agents` for full data
 
 ### Interaction Flow
 
-1. User taps agent → Client calls `GET /v1/demo/agents/{sourceId}/history`
-2. Server invokes Herdr CLI to read last 120 lines of agent output
-3. User sends text → Client calls `POST /v1/demo/agents/{sourceId}/messages`
+1. User taps agent → Client calls `GET /v1/agents/{sourceId}/history`
+2. Server invokes Herdr CLI to read last 120 lines of agent output (with TUI chrome stripping)
+3. User sends text → Client calls `POST /v1/agents/{sourceId}/messages`
 4. Server invokes Herdr CLI to send text to agent pane and submit Enter
-5. User interrupts → Client calls `POST /v1/demo/agents/{sourceId}/interrupt` (requires confirmation dialog on mobile)
+5. User interrupts → Client calls `POST /v1/agents/{sourceId}/interrupt` (requires confirmation dialog on mobile)
 6. Server invokes Herdr CLI to send SIGINT/Ctrl-C to agent pane
 
 ## Design Principles
@@ -185,6 +186,9 @@ The service resolves absolute paths to both Herdr Connect and Herdr binaries at 
 - `react-native-mmkv` — Fast local storage for settings
 - `@react-navigation/*` — Navigation stack and tab bar
 - **pinned-fetch** (custom Expo module) — Native iOS TLS fingerprint pinning via URLSession delegate
+- **pinned-stream** (custom Expo module) — Native iOS TLS-pinned SSE stream consuming `/v1/agents/events`; shares `PinnedTrustEvaluator` with pinned-fetch
+- `expo-notifications` / `expo-haptics` — Foreground local notifications and haptic feedback on agent completion
+- `expo-audio` — Completion sound chime playback
 
 ### Platform Support Matrix
 

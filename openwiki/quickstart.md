@@ -48,6 +48,7 @@ Supported features:
 - ✅ Interrupt a running agent
 - ✅ Real-time status push via SSE for foreground UI freshness
 - ✅ API version negotiation with daemon/app upgrade prompts
+- ✅ Foreground local notifications, haptics, and completion chime on agent finish
 - ✅ Localized UI (English and Chinese)
 - ✅ Light/dark theme
 

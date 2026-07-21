@@ -120,7 +120,21 @@ func (h *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string,
 }
 ```
 
-This is called by the HTTP server when the mobile client requests `/v1/demo/agents/{id}/history`.
+This is called by the HTTP server when the mobile client requests `/v1/agents/{id}/history`.
+
+### TUI Chrome Stripping
+
+Raw pane captures from `herdr agent read --source recent-unwrapped` include terminal UI decorations — input box borders, prompt glyphs, keyboard-hint legends, and status bars — that would clutter the mobile history view. The `stripTUIChrome` function (`/internal/herdrsource/tui_chrome.go`) removes these before returning the text.
+
+The stripper works **backward from the last line**, peeling off contiguous chrome using vendor-agnostic structural classifiers:
+
+- **Frame lines** — Lines dominated by Unicode box-drawing/block-element glyphs (U+2500–259F) or long ASCII rule lines (≥12 chars of `-`, `_`, `=`, `~`)
+- **Box body rows** — Lines bounded by frame glyphs on both sides (Unicode-only, so markdown tables are never misclassified)
+- **Bare prompt lines** — Single prompt glyphs (`❯`, `>`, `›`)
+- **Legend lines** — Keyboard-hint rows requiring both a separator glyph (`│`, `·`, `•`) and keyboard vocabulary (`ctrl+`, `shift+`, `esc`, `tab:`, etc.)
+- **Presumed status lines** (rescue, max 2) — Lines matching no classifier but sitting immediately below chrome (e.g., cwd or token-count bars)
+
+ANSI escape sequences are stripped first; blank-line runs left by removed chrome are collapsed afterward. This design requires no per-agent configuration — the same classifiers work across Claude Code, Grok CLI, Pi/DeepSeek, and other agent CLIs.
 
 ### Message Sending
 
@@ -212,6 +226,7 @@ case "my-source":
 Source behavior is tested via:
 
 - **Unit tests** (`/internal/herdrsource/source_test.go`) — Test normalization and validation
+- **TUI chrome tests** (`/internal/herdrsource/tui_chrome_test.go`) — Test stripping across multiple agent CLI fixtures (`testdata/pane-claude.txt`, `pane-grok.txt`, `pane-pi.txt`)
 - **Integration tests** — Test against a real Herdr CLI in CI
 - **Fake source tests** — Test projection and HTTP layer without dependencies
 

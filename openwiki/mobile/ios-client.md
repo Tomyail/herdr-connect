@@ -46,6 +46,19 @@ The pinned-fetch module (`/apps/mobile/modules/pinned-fetch/`) is an iOS-only Ex
 
 Error codes are deliberately limited (`fingerprint_mismatch`, `tls_handshake_failed`, `timeout`, `network_error`, `invalid_url`, `unsupported_platform`) to avoid leaking server state to unauthenticated callers.
 
+### Pinned-Stream Module
+
+The pinned-stream module (`/apps/mobile/modules/pinned-stream/`) is a companion iOS-only Expo native module that opens a long-lived HTTPS Server-Sent Events (SSE) stream with the same TLS fingerprint pinning as pinned-fetch. It shares the `PinnedTrustEvaluator` Swift class with pinned-fetch for consistent trust decisions.
+
+The module follows a "native only transports, protocol parsing in JS" design: the Swift layer (`PinnedStreamModule.swift`) accumulates bytes, splits on SSE frame boundaries (`\n\n`), extracts `data:` lines, and emits the raw string to JS. The TypeScript layer (`parseStreamEvent.ts`) validates the JSON shape into `{cursor: string, online: boolean}`. Malformed SSE payloads are silently dropped rather than tearing down the stream.
+
+Key characteristics:
+
+- **Dead-connection detection** — 30-second request timeout (daemon sends a 15-second heartbeat; two missed heartbeats trigger `.timedOut`)
+- **One active stream per instance** — A second `startStream` call silently replaces the previous stream
+- **Non-iOS platforms** — Throws `unsupported_platform`, no network touched
+- **Graceful degradation** — Polling always covers freshness if SSE is unavailable
+
 ### Credential Storage
 
 Device credentials are stored in iOS Keychain via `expo-secure-store` (`/apps/mobile/src/credentials.ts`):
@@ -77,6 +90,8 @@ type ConnectionState =
   | { phase: "not_paired" }        // No stored credentials
   | { phase: "revoked" }           // Daemon revoked this device
   | { phase: "fingerprint_mismatch" } // Cert changed since pairing
+  | { phase: "daemon_outdated" }   // Daemon API version too old
+  | { phase: "app_outdated" }      // Client API version too old (426 from daemon)
   | { phase: "failed"; code; status? }
   | { phase: "connected"; service; data }
 ```
@@ -103,13 +118,24 @@ Permission is requested automatically on first discovery; no custom prompt is sh
 | `not_paired` | No stored credentials | Pair device prompt |
 | `revoked` | Daemon revoked this device | Re-pair prompt |
 | `fingerprint_mismatch` | Certificate changed since pairing | Accept new identity prompt |
+| `daemon_outdated` | Daemon API version too old | Update daemon prompt |
+| `app_outdated` | Client version too old for daemon (426) | Update app prompt |
 | `failed` | Network or source error | Error detail, retry |
 
 The `denied` (local network permission) state is handled via discovery errors and shown as a failed state with instructions to enable in Settings.
 
+### Bidirectional API Version Gates
+
+The client and daemon perform mutual version checks to ensure compatibility:
+
+- **Client → Daemon** — Every request includes `X-Herdr-Connect-Client-Version: 1`. The daemon rejects clients below its minimum supported version with `426 Upgrade Required` + `client_outdated`, which the client surfaces as `app_outdated`.
+- **Daemon → Client** — Every daemon response includes `api_version` in the JSON body and `X-Herdr-Connect-Api-Version` in headers. The client validates this via `assertDaemonSupported()` after each response parse; if the daemon is too old, the client enters the terminal `daemon_outdated` state.
+
+Both states are terminal — they require a user upgrade action, not a retry.
+
 ## Agent List
 
-The `AgentsScreen` displays all agents from `/v1/demo/agents`:
+The `AgentsScreen` displays all agents from `/v1/agents`:
 
 ### Row Structure
 
@@ -144,7 +170,9 @@ Tapping an agent opens the detail screen with three sections:
 ### Output Section
 
 - Shows last 120 lines of agent terminal output
-- Monospace font with preserved spacing
+- Rendered through a lightweight inline markdown formatter (`HistoryMarkdown.tsx` / `history-markdown.ts`) that recognizes a safe subset: headers, fenced code blocks, bold, and inline code
+- The formatter preserves line-by-line structure (it is not a CommonMark parser) because tool-call output relies on literal line breaks that paragraph reflow would mangle
+- All lines render inside a single selectable `<Text>` tree to preserve cross-line copy-paste
 - Auto-scrolls to bottom on new data
 - Manually scrollable to review history
 
@@ -154,7 +182,7 @@ A strip at the top allows quick switching between agents:
 
 - Shows current agent in bold
 - Other agents as tappable pills
-- Updates immediately on tap (calls `/v1/demo/agents/{id}/focus`)
+- Updates immediately on tap (calls `/v1/agents/{id}/focus`)
 - Preserves scroll position on switch
 
 ### Input Section
@@ -171,25 +199,44 @@ Text input field with send button:
 An interrupt bar sits above the input composer, enabled only when the agent's interaction state is `working`. Interrupting a `blocked`, `ready_input`, or `unknown` agent is not meaningful and is disabled.
 
 - Tapping shows a two-step confirmation dialog (destructive style)
-- Sends `POST /v1/demo/agents/{sourceId}/interrupt`
+- Sends `POST /v1/agents/{sourceId}/interrupt`
 - Uses a dedicated `InterruptPhase` state machine (`idle`, `sending`, `sent`, `failed`) separate from the message send state
 - Shows success/failure feedback via localized strings
 
 ## Notifications
 
-The app plays a completion chime when an agent finishes:
+The app provides three notification outputs when an agent finishes a turn (transitions to succeeded/failed), all foreground-only:
 
 ### DoneSoundProvider
 
 - Preloads audio file on app launch
-- Plays when agent transitions to succeeded/failed
+- Plays `done.mp3` when agent transitions to succeeded/failed via `expo-audio`
 - Respects iOS silent mode and ringer switch
 - Only plays for agents that were working when the screen was visible
+- Gated by the `doneSoundEnabled` preference (default: on)
+
+### Local Notifications & Haptics
+
+- **OS banner** — `expo-notifications` schedules a foreground banner per completed agent with title (agent display name) and localized "waiting for input" body. No agent output or prompt plaintext is included (per threat model).
+- **Haptic** — `expo-haptics` fires a success notification once per completion batch
+- Gated by the `localNotificationsEnabled` preference (default: on)
+- Notification permission is requested on mount when the setting is on and status is `"undetermined"`, and also when the user toggles the setting on
+- Tap on a notification navigates to the corresponding agent's detail screen
+
+### Notification Settings
+
+All stored in MMKV (`"herdr-connect-prefs"` instance):
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `doneSoundEnabled` | `true` | Master switch for completion sound chime |
+| `notifyWhileViewing` | `true` | Whether to chime/notify for the agent currently open in AgentDetail |
+| `localNotificationsEnabled` | `true` | OS banner + haptic notifications when an agent finishes |
 
 ### RecentCompletionsProvider
 
 - Tracks agents that completed in last 30 seconds
-- Updates "just completed" badge in agent list
+- Updates "just completed" badge in agent list (independent of sound/notification settings)
 - Feeds into sorting logic
 
 ## Localization
@@ -248,11 +295,12 @@ All daemon communication uses the pinned-fetch native module for TLS-pinned HTTP
 ### Endpoints Used
 
 - `POST /v1/pair` — Pair device (no auth, uses one-time secret from QR)
-- `GET /v1/demo/agents` — Agent list and state
-- `GET /v1/demo/agents/{sourceId}/history` — Recent terminal output
-- `POST /v1/demo/agents/{sourceId}/focus` — Switch focus to agent
-- `POST /v1/demo/agents/{sourceId}/messages` — Send text input
-- `POST /v1/demo/agents/{sourceId}/interrupt` — Interrupt running agent
+- `GET /v1/agents` — Agent list and state
+- `GET /v1/agents/{sourceId}/history` — Recent terminal output
+- `POST /v1/agents/{sourceId}/focus` — Switch focus to agent
+- `POST /v1/agents/{sourceId}/messages` — Send text input
+- `POST /v1/agents/{sourceId}/interrupt` — Interrupt running agent
+- `GET /v1/agents/events` — SSE stream of `{cursor, online}` state-change signals
 
 ### Error Handling
 
@@ -263,9 +311,14 @@ All daemon communication uses the pinned-fetch native module for TLS-pinned HTTP
 - **Source offline** — Show warning, serve last known state
 - **429 rate limited** — Respects `Retry-After` header
 
-### Polling
+### Polling & SSE Dual-Channel Freshness
 
-The app polls `/v1/demo/agents` every 2 seconds when connected. This ensures the UI stays up-to-date with agent state changes.
+The client uses a dual-channel strategy to keep the agent list current:
+
+- **Polling (fallback)** — `setInterval` fires every 3 seconds calling the fetch function. Always runs on foreground as a universal fallback regardless of SSE availability.
+- **Pinned SSE stream (iOS optimization)** — The [pinned-stream](#pinned-stream-module) native module opens a long-lived HTTPS SSE connection to `/v1/agents/events`. The daemon emits lightweight `{cursor, online}` signals only on real state changes — never the full agent list. Each SSE event triggers an immediate REST re-fetch of `/v1/agents` for the actual data.
+
+When the SSE stream is live (`streamStatus = "live"`), polling is stopped to save battery. On any SSE error or close, polling resumes immediately (no freshness gap) and reconnection is scheduled with exponential backoff. On non-iOS platforms, the stream module throws `unsupported_platform` and polling covers freshness alone.
 
 ## Brand Icons
 
@@ -315,7 +368,11 @@ See [Development Setup](../development/setup.md) for full instructions.
 Mobile tests cover:
 
 - **Status formatting** — `agent-status.test.ts`
+- **Agent contract parsing & version gates** — `agent-contract.test.ts`
 - **Brand icon detection** — `brand-icons.test.ts`
+- **History markdown parsing** — `history-markdown.test.ts`
+- **Done detection** — `notifications/doneDetection.test.ts`
+- **SSE stream event parsing** — `modules/pinned-stream/src/parseStreamEvent.test.ts`
 - **History scroll logic** — `history-scroll.test.ts`
 - **Localization** — `i18n/*.test.ts`
 - **Theme** — `theme/*.test.ts`
