@@ -30,6 +30,7 @@
     "expo-localization": "~56.0.6",
     "expo-notifications": "~56.0.21",
     "expo-secure-store": "~56.0.4",
+    "expo-speech-recognition": "^56.0.1",
     "expo-status-bar": "~56.0.4",
     "pinned-fetch": "file:./modules/pinned-fetch",
     "pinned-stream": "file:./modules/pinned-stream",

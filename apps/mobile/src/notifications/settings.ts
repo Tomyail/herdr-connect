@@ -11,6 +11,7 @@ export const notificationStorage = createMMKV({ id: "herdr-connect-prefs" });
 export const DONE_SOUND_ENABLED_KEY = "doneSoundEnabled";
 export const NOTIFY_WHILE_VIEWING_KEY = "notifyWhileViewing";
 export const LOCAL_NOTIFICATIONS_ENABLED_KEY = "localNotificationsEnabled";
+export const AUTO_SEND_VOICE_KEY = "autoSendVoice";
 
 /** Default for the completion-sound master switch. */
 export const DEFAULT_DONE_SOUND_ENABLED = true;
@@ -21,3 +22,6 @@ export const DEFAULT_DONE_SOUND_ENABLED = true;
 export const DEFAULT_NOTIFY_WHILE_VIEWING = true;
 /** Default for OS banner + haptic notifications when an agent finishes a turn. */
 export const DEFAULT_LOCAL_NOTIFICATIONS_ENABLED = true;
+/** Default for "auto-send the message right after voice recognition ends". Off
+ *  by default so the owner can review the transcript before sending. */
+export const DEFAULT_AUTO_SEND_VOICE = false;

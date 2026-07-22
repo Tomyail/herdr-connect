@@ -6,6 +6,7 @@ export type RootStackParamList = {
   AgentDetail: { agent: Agent };
   Language: undefined;
   Appearance: undefined;
+  VoiceLanguage: undefined;
   Pairing: undefined;
 };
 

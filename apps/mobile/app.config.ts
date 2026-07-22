@@ -34,6 +34,8 @@ const config: ExpoConfig = {
       },
       NSCameraUsageDescription:
         "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
+      NSSpeechRecognitionUsageDescription:
+        "Herdr Connect uses speech recognition to turn your voice into text in the message composer.",
     },
   },
   android: {
@@ -49,7 +51,22 @@ const config: ExpoConfig = {
     en: "./locales/en.json",
     "zh-Hans": "./locales/zh-Hans.json",
   },
-  plugins: ["expo-localization", "expo-audio", "expo-dev-client", "expo-camera", "expo-notifications", "expo-secure-store", "./plugins/withAndroidCleartextTraffic.cjs"],
+  plugins: [
+    "expo-localization",
+    "expo-audio",
+    "expo-dev-client",
+    "expo-camera",
+    "expo-notifications",
+    "expo-secure-store",
+    [
+      "expo-speech-recognition",
+      {
+        microphonePermission: "Herdr Connect uses the microphone to turn your voice into text in the message composer.",
+        speechRecognitionPermission: "Herdr Connect uses speech recognition to turn your voice into text in the message composer.",
+      },
+    ],
+    "./plugins/withAndroidCleartextTraffic.cjs",
+  ],
 };
 
 export default config;

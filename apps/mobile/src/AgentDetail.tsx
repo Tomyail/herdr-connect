@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -34,6 +35,11 @@ import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 import { isHistoryNearBottom, isSameHistoryContent } from "./history-scroll";
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
+import { useMMKVBoolean } from "react-native-mmkv";
+import { AUTO_SEND_VOICE_KEY, DEFAULT_AUTO_SEND_VOICE, notificationStorage } from "./notifications/settings";
+import { useVoiceLanguage } from "./voice/VoiceLanguageContext";
+import { resolveVoiceLang, loadSupportedVoiceLocales } from "./voice/config";
 
 const HISTORY_REFRESH_MS = 2_000;
 
@@ -60,6 +66,192 @@ export interface AgentDetailHeaderConfig {
   title: string;
   subtitle: string;
   onRefresh: () => void;
+}
+
+interface VoiceInputOptions {
+  /** Current draft text (the shared composer state). */
+  draft: string;
+  /** Replace the draft (same setter used by manual typing). */
+  setDraft: (value: string | ((prev: string) => string)) => void;
+  /** Fire the send action once recognition settles (used for auto-send). */
+  send: () => void;
+  /** TextInput ref — tapped to dismiss the keyboard when mic is pressed. */
+  inputRef: React.RefObject<TextInput | null>;
+}
+
+interface VoiceInputValue {
+  /** True while the recognizer is actively listening. */
+  listening: boolean;
+  /** Toggle recognition on/off, requesting permissions on first start. */
+  toggleVoice: () => void;
+  /** Last error message, shown briefly above the composer; cleared on retry. */
+  errorMessage: string | null;
+}
+
+/**
+ * On-device streaming speech recognition wired into the shared `draft` state.
+ * Partial results update the TextInput live WITHOUT focusing it, so the system
+ * keyboard never opens during voice input. Recognition is fully local (iOS
+ * SFSpeechRecognizer / Android SpeechRecognizer via expo-speech-recognition) —
+ * no audio leaves the device.
+ *
+ * Streaming model: the draft is treated as `baseRef.current + liveTranscript`.
+ * `baseRef` is whatever was in the box when listening started (so you can
+ * dictate after already-typed text). When a final result lands, its transcript
+ * is folded into the base and the live part resets; partials overwrite only
+ * the live tail, so the box always shows coherent text.
+ */
+function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): VoiceInputValue {
+  const { t } = useI18n();
+  const { choice: voiceChoice } = useVoiceLanguage();
+  const [listening, setListening] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Text captured as finalized while listening; partial results append after it.
+  const baseRef = useRef("");
+  const liveRef = useRef("");
+  const autoSendRef = useRef(false);
+  // Distinguishes a user-initiated stop (toggle off) from a system auto-end
+  // (iOS ~60s cap / Android silence timeout). On auto-end we restart so the
+  // user can keep talking across the system boundary without re-tapping the mic.
+  const userStoppedRef = useRef(false);
+  // Guard against runaway auto-restart loops when the system repeatedly
+  // triggers "end" without a corresponding "start" (e.g. audio session
+  // interruption). After MAX_AUTO_RESTARTS consecutive auto-restarts we
+  // surrender and show an error instead of silently hammering the engine.
+  const MAX_AUTO_RESTARTS = 3;
+  const restartCountRef = useRef(0);
+  const [autoSendStored] = useMMKVBoolean(AUTO_SEND_VOICE_KEY, notificationStorage);
+  autoSendRef.current = autoSendStored ?? DEFAULT_AUTO_SEND_VOICE;
+  // lang is computed async in start() and cached here so the auto-restart in
+  // the "end" handler can re-use it without re-running the async work.
+  const langRef = useRef("en-US");
+
+  // Keep draft = base + live whenever the live transcript changes.
+  const commitLive = useCallback(() => {
+    setDraft(baseRef.current + liveRef.current);
+  }, [setDraft]);
+
+  useSpeechRecognitionEvent("start", () => {
+    setListening(true);
+    setErrorMessage(null);
+    // A genuine start resets the auto-restart counter.
+    restartCountRef.current = 0;
+  });
+
+  useSpeechRecognitionEvent("result", (event) => {
+    const transcript = event.results[0]?.transcript ?? "";
+    if (event.isFinal) {
+      // Fold the finalized segment into the base; reset the live tail.
+      baseRef.current = baseRef.current + transcript;
+      liveRef.current = "";
+    } else {
+      liveRef.current = transcript;
+    }
+    commitLive();
+  });
+
+  useSpeechRecognitionEvent("end", () => {
+    // If the last partial never produced a final, fold its text into the base.
+    if (liveRef.current) {
+      baseRef.current = baseRef.current + liveRef.current;
+      liveRef.current = "";
+      commitLive();
+    }
+    if (userStoppedRef.current) {
+      // The owner tapped stop — finish listening for real.
+      userStoppedRef.current = false;
+      setListening(false);
+      if (autoSendRef.current && baseRef.current.trim().length > 0) {
+        send();
+      }
+      return;
+    }
+    // System auto-ended mid-session (iOS time cap / Android silence). Restart
+    // immediately so dictation continues seamlessly until the owner stops it.
+    restartCountRef.current += 1;
+    if (restartCountRef.current > MAX_AUTO_RESTARTS) {
+      setListening(false);
+      userStoppedRef.current = false;
+      setErrorMessage(t("detail.voice.error"));
+      console.warn("[voice] auto-restart limit reached, stopping");
+      return;
+    }
+    try {
+      ExpoSpeechRecognitionModule.start({ lang: langRef.current, interimResults: true, continuous: true });
+    } catch (error) {
+      setListening(false);
+      setErrorMessage(t("detail.voice.error"));
+      console.warn("[voice] auto-restart failed:", error);
+    }
+  });
+
+  useSpeechRecognitionEvent("error", (event) => {
+    setListening(false);
+    setErrorMessage(`${t("detail.voice.error")} (${event.error})`);
+    console.warn("[voice] recognition error:", event.error, event.message);
+  });
+
+  const start = useCallback(async () => {
+    setErrorMessage(null);
+    try {
+      // requestPermissionsAsync covers both mic + speech recognition on iOS/Android.
+      const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!status.granted) {
+        Alert.alert(
+          t("detail.voice.permissionTitle"),
+          t("detail.voice.permissionMessage"),
+          [
+            { text: t("detail.interruptConfirm.cancel"), style: "cancel" },
+            { text: t("detail.voice.permissionGrant"), onPress: () => void ExpoSpeechRecognitionModule.requestPermissionsAsync() },
+          ],
+          { cancelable: true },
+        );
+        return;
+      }
+      baseRef.current = draft;
+      liveRef.current = "";
+      userStoppedRef.current = false;
+      // Dismiss the keyboard if the user had been typing before tapping the
+      // mic — a focused-but-now-non-editable TextInput won't let go of the
+      // keyboard on its own. Keyboard.dismiss() + blur() is the reliable
+      // combination on both iOS and Android.
+      Keyboard.dismiss();
+      inputRef.current?.blur();
+      // Resolve the recognizer locale against the device's supported list so a
+      // script-based tag (e.g. zh-Hans from the system locale) is mapped to the
+      // region form the engine accepts (zh-CN), avoiding language-not-supported.
+      const { locales } = await loadSupportedVoiceLocales();
+      const lang = resolveVoiceLang(voiceChoice, locales);
+      langRef.current = lang;
+      ExpoSpeechRecognitionModule.start({
+        lang,
+        interimResults: true,
+        // Keep the recognizer running across silence gaps so the owner can say
+        // multiple sentences in one session. On iOS the system still caps at
+        // ~60s; the "end" handler auto-restarts to bridge across that cap.
+        continuous: true,
+      });
+    } catch (error) {
+      setListening(false);
+      setErrorMessage(t("detail.voice.error"));
+      console.warn("[voice] failed to start:", error);
+    }
+  }, [draft, t, voiceChoice]);
+
+  const stop = useCallback(() => {
+    userStoppedRef.current = true;
+    ExpoSpeechRecognitionModule.stop();
+  }, []);
+
+  const toggleVoice = useCallback(() => {
+    if (listening) {
+      void stop();
+    } else {
+      void start();
+    }
+  }, [listening, start, stop]);
+
+  return { listening, toggleVoice, errorMessage };
 }
 
 /**
@@ -171,6 +363,11 @@ export function AgentDetailBody({
   }, [agent.source_id, draft, loadHistory, sendPhase, service]);
 
   const canSend = draft.trim().length > 0 && sendPhase !== "sending";
+
+  // Voice input shares the draft state; the recognizer streams partial results
+  // into the TextInput value WITHOUT focusing it, so the keyboard stays hidden.
+  const inputRef = useRef<TextInput>(null);
+  const voice = useVoiceInput({ draft, setDraft, send: () => void send(), inputRef });
 
   // 「仅运行中可叫停」映射：只有 InteractionState === "working" 才算“正在跑、
   // 可以叫停”。blocked 通常意味着 turn 已不在推进（等输入或卡住）、ready_input
@@ -321,10 +518,16 @@ export function AgentDetailBody({
         </View>
         {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
         {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
+        {voice.listening ? <Text style={styles.voiceListening}>{t("detail.voice.listening")}</Text> : null}
+        {voice.errorMessage ? <Text style={styles.sendError}>{voice.errorMessage}</Text> : null}
         <View style={styles.composer}>
           <TextInput
             accessibilityLabel={t("detail.inputA11y")}
+            ref={inputRef}
             blurOnSubmit={false}
+            // While listening the recognizer owns the draft; keep the field
+            // non-editable so tapping it can't pop the keyboard mid-dictation.
+            editable={!voice.listening}
             maxLength={4000}
             multiline
             onChangeText={(value) => {
@@ -338,19 +541,36 @@ export function AgentDetailBody({
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={t("detail.sendA11y")}
-            disabled={!canSend}
-            onPress={() => void send()}
+            accessibilityLabel={voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
+            accessibilityState={voice.listening ? { expanded: true } : undefined}
+            hitSlop={8}
+            onPress={voice.toggleVoice}
             style={({ pressed }) => [
-              styles.sendButton,
-              !canSend && styles.sendButtonDisabled,
-              pressed && canSend && styles.sendButtonPressed,
+              styles.voiceButton,
+              voice.listening && styles.voiceButtonActive,
+              pressed && styles.voiceButtonPressed,
             ]}
+          >
+            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("detail.sendA11y")}
+            disabled={!canSend || voice.listening}
+            onPress={() => void send()}
+            style={({ pressed }) => {
+              const inactive = !canSend || voice.listening;
+              return [
+                styles.sendButton,
+                inactive && styles.sendButtonDisabled,
+                pressed && !inactive && styles.sendButtonPressed,
+              ];
+            }}
           >
             {sendPhase === "sending" ? (
               <ActivityIndicator color={colors.onAction} size="small" />
             ) : (
-              <Text style={[styles.sendButtonText, !canSend && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
+              <Text style={[styles.sendButtonText, (!canSend || voice.listening) && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
             )}
           </Pressable>
         </View>
@@ -595,6 +815,10 @@ const createStyles = (colors: ThemeColors) =>
     interruptButtonTextDisabled: { color: colors.onActionDisabled },
     composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 8 },
     input: { flex: 1, minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
+    voiceButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    voiceButtonActive: { borderColor: colors.danger, backgroundColor: colors.dangerDisabledBg },
+    voiceButtonPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
+    voiceListening: { color: colors.danger, fontSize: 12, marginBottom: 6, paddingHorizontal: 4, fontWeight: "600" },
     sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
     sendButtonDisabled: { backgroundColor: colors.actionDisabledBg },
     sendButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },

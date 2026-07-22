@@ -17,9 +17,11 @@ import {
   DEFAULT_DONE_SOUND_ENABLED,
   DEFAULT_NOTIFY_WHILE_VIEWING,
   DEFAULT_LOCAL_NOTIFICATIONS_ENABLED,
+  DEFAULT_AUTO_SEND_VOICE,
   DONE_SOUND_ENABLED_KEY,
   NOTIFY_WHILE_VIEWING_KEY,
   LOCAL_NOTIFICATIONS_ENABLED_KEY,
+  AUTO_SEND_VOICE_KEY,
   notificationStorage,
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
@@ -28,6 +30,8 @@ import { loadCredentials, type DeviceCredentials } from "./credentials";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { appearanceLabelKey } from "./AppearanceScreen";
+import { useVoiceLanguage, VOICE_LANG_SYSTEM } from "./voice/VoiceLanguageContext";
+import { localeDisplay } from "./voice/config";
 import type { ConnectionState } from "./connection";
 import { useConnection } from "./connection";
 import type { RootStackParamList } from "./navigation";
@@ -136,18 +140,22 @@ function NotificationsCard({
   doneSound,
   whileViewing,
   localNotifications,
+  autoSendVoice,
   onDoneSoundChange,
   onWhileViewingChange,
   onLocalNotificationsChange,
+  onAutoSendVoiceChange,
 }: {
   title: string;
-  labels: { doneSound: string; whileViewing: string; localNotifications: string };
+  labels: { doneSound: string; whileViewing: string; localNotifications: string; autoSendVoice: string };
   doneSound: boolean;
   whileViewing: boolean;
   localNotifications: boolean;
+  autoSendVoice: boolean;
   onDoneSoundChange: (value: boolean) => void;
   onWhileViewingChange: (value: boolean) => void;
   onLocalNotificationsChange: (value: boolean) => void;
+  onAutoSendVoiceChange: (value: boolean) => void;
 }) {
   const styles = useThemedStyles(createStyles);
   return (
@@ -173,6 +181,13 @@ function NotificationsCard({
           label={labels.localNotifications}
           value={localNotifications}
           onChange={onLocalNotificationsChange}
+          last={false}
+        />
+        <SwitchRow
+          icon="mic-outline"
+          label={labels.autoSendVoice}
+          value={autoSendVoice}
+          onChange={onAutoSendVoiceChange}
           last={true}
         />
       </View>
@@ -192,6 +207,7 @@ function NotificationsCard({
 export interface SettingsNavigation {
   onNavigateLanguage: () => void;
   onNavigateAppearance: () => void;
+  onNavigateVoiceLanguage: () => void;
   onRequestPairing: () => void;
 }
 
@@ -219,6 +235,7 @@ export function useSettingsCategories(
   const { t, language } = useI18n();
   const { appearance } = useTheme();
   const { unpair } = useConnection();
+  const { choice: voiceChoice } = useVoiceLanguage();
 
   const connected = connectionState.phase === "connected" ? connectionState : undefined;
   const service: DiscoveredService | undefined = connected?.service;
@@ -248,6 +265,7 @@ export function useSettingsCategories(
     LOCAL_NOTIFICATIONS_ENABLED_KEY,
     notificationStorage,
   );
+  const [autoSendVoice, setAutoSendVoice] = useMMKVBoolean(AUTO_SEND_VOICE_KEY, notificationStorage);
 
   const handleLocalNotificationsChange = useCallback(
     async (newValue: boolean) => {
@@ -320,6 +338,12 @@ export function useSettingsCategories(
               value: t(appearanceLabelKey(appearance)),
               onPress: navigation.onNavigateAppearance,
             },
+            {
+              icon: "mic-outline",
+              label: t("settings.row.voiceLanguage"),
+              value: voiceChoice === VOICE_LANG_SYSTEM ? t("settings.value.voiceLanguageSystem") : localeDisplay(voiceChoice),
+              onPress: navigation.onNavigateVoiceLanguage,
+            },
           ]}
         />
       ),
@@ -335,13 +359,16 @@ export function useSettingsCategories(
             doneSound: t("settings.row.doneSound"),
             whileViewing: t("settings.row.notifyWhileViewing"),
             localNotifications: t("settings.row.localNotifications"),
+            autoSendVoice: t("settings.row.autoSendVoice"),
           }}
           doneSound={enabled ?? DEFAULT_DONE_SOUND_ENABLED}
           whileViewing={whileViewing ?? DEFAULT_NOTIFY_WHILE_VIEWING}
           localNotifications={localNotifications ?? DEFAULT_LOCAL_NOTIFICATIONS_ENABLED}
+          autoSendVoice={autoSendVoice ?? DEFAULT_AUTO_SEND_VOICE}
           onDoneSoundChange={setEnabled}
           onWhileViewingChange={setWhileViewing}
           onLocalNotificationsChange={handleLocalNotificationsChange}
+          onAutoSendVoiceChange={setAutoSendVoice}
         />
       ),
     },
@@ -395,6 +422,7 @@ export function Settings({ connectionState }: { connectionState: ConnectionState
     () => ({
       onNavigateLanguage: () => rootNavigation.navigate("Language"),
       onNavigateAppearance: () => rootNavigation.navigate("Appearance"),
+      onNavigateVoiceLanguage: () => rootNavigation.navigate("VoiceLanguage"),
       onRequestPairing: () => rootNavigation.navigate("Pairing"),
     }),
     [rootNavigation],

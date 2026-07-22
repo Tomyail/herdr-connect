@@ -21,6 +21,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AgentsScreenContent } from "./AgentsScreen";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
+import { VoiceLanguageScreen } from "./VoiceLanguageScreen";
 import {
   useSettingsCategories,
   type SettingsCategoryKey,
@@ -167,6 +168,7 @@ type SettingsDetailStackParamList = {
   CategoryDetail: undefined;
   Language: undefined;
   Appearance: undefined;
+  VoiceLanguage: undefined;
 };
 const SettingsDetailStack = createNativeStackNavigator<SettingsDetailStackParamList>();
 
@@ -283,6 +285,7 @@ function SettingsDetailColumn({
     () => ({
       onNavigateLanguage: () => detailRef.current?.navigate("Language"),
       onNavigateAppearance: () => detailRef.current?.navigate("Appearance"),
+      onNavigateVoiceLanguage: () => detailRef.current?.navigate("VoiceLanguage"),
       onRequestPairing,
     }),
     [detailRef, onRequestPairing],
@@ -306,6 +309,7 @@ function SettingsDetailColumn({
             </SettingsDetailStack.Screen>
             <SettingsDetailStack.Screen name="Language" component={LanguageScreen} />
             <SettingsDetailStack.Screen name="Appearance" component={AppearanceScreen} />
+            <SettingsDetailStack.Screen name="VoiceLanguage" component={VoiceLanguageScreen} />
           </SettingsDetailStack.Navigator>
         </NavigationContainer>
       </NavigationIndependentTree>
@@ -323,6 +327,7 @@ function SettingsColumns({ onRequestPairing }: { onRequestPairing: () => void })
   const listCategories = useSettingsCategories(state, {
     onNavigateLanguage: () => {},
     onNavigateAppearance: () => {},
+    onNavigateVoiceLanguage: () => {},
     onRequestPairing,
   });
 

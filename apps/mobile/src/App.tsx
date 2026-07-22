@@ -22,7 +22,9 @@ import { SettingsScreen } from "./SettingsScreen";
 import { AgentDetailScreen } from "./AgentDetail";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
+import { VoiceLanguageScreen } from "./VoiceLanguageScreen";
 import { PairingScreen } from "./PairingScreen";
+import { VoiceLanguageProvider } from "./voice/VoiceLanguageContext";
 import { SplitLayout } from "./SplitLayout";
 import { useIsWideLayout } from "./layout";
 import { Ionicons } from "./icons";
@@ -174,6 +176,7 @@ function ThemedNavigation({
         <Stack.Screen name="AgentDetail" component={AgentDetailScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen name="Appearance" component={AppearanceScreen} />
+        <Stack.Screen name="VoiceLanguage" component={VoiceLanguageScreen} />
         <Stack.Screen name="Pairing" component={PairingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -314,11 +317,13 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <I18nProvider>
-          <ConnectionProvider>
-            <RecentCompletionsProvider>
-              <AppShell />
-            </RecentCompletionsProvider>
-          </ConnectionProvider>
+          <VoiceLanguageProvider>
+            <ConnectionProvider>
+              <RecentCompletionsProvider>
+                <AppShell />
+              </RecentCompletionsProvider>
+            </ConnectionProvider>
+          </VoiceLanguageProvider>
         </I18nProvider>
       </ThemeProvider>
     </SafeAreaProvider>
