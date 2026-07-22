@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, View } from "react-native";
 import {
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
+  NavigationIndependentTree,
   useNavigationContainerRef,
 } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -183,19 +185,30 @@ function AppShell() {
   // Lifted above the narrow/wide branch so selection survives live resize.
   const [activeDestination, setActiveDestination] = useState<SidebarDestination>("Agents");
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
+  // Wide mode only: Pairing is a focused, one-time task that must cover the
+  // whole app (sidebar + columns included), so it is presented as a full-screen
+  // overlay above <SplitLayout>. Narrow mode keeps its existing push-based
+  // Pairing on the root stack, which already covers the full phone screen.
+  const [pairingRequested, setPairingRequested] = useState(false);
 
   const handleSelectAgentWide = useCallback((sourceId: string | undefined) => {
     setSelectedAgentId(sourceId);
   }, []);
+  const requestPairing = useCallback(() => setPairingRequested(true), []);
+  const dismissPairing = useCallback(() => setPairingRequested(false), []);
 
   if (isWide) {
     return (
-      <SplitLayout
-        activeDestination={activeDestination}
-        onSelectDestination={setActiveDestination}
-        selectedAgentId={selectedAgentId}
-        onSelectAgent={(agent) => setSelectedAgentId(agent.source_id)}
-      />
+      <>
+        <SplitLayout
+          activeDestination={activeDestination}
+          onSelectDestination={setActiveDestination}
+          selectedAgentId={selectedAgentId}
+          onSelectAgent={(agent) => setSelectedAgentId(agent.source_id)}
+          onRequestPairing={requestPairing}
+        />
+        <PairingOverlay visible={pairingRequested} onDismiss={dismissPairing} />
+      </>
     );
   }
 
@@ -206,6 +219,93 @@ function AppShell() {
       onSelectAgent={handleSelectAgentWide}
       onSelectDestination={setActiveDestination}
     />
+  );
+}
+
+/**
+ * Full-screen Pairing presentation for wide mode. Uses RN's native <Modal> for
+ * guaranteed full-screen coverage (covers sidebar + category list + detail
+ * column). PairingScreen is hosted inside its own NavigationIndependentTree +
+ * native-stack as the sole root route (there is no Entry screen) so its
+ * `useNavigation`/`navigation.setOptions` keep working untouched. Because
+ * Pairing is the root, PairingScreen's own `if (canGoBack()) goBack()` is a
+ * no-op here — so the overlay is closed in two explicit ways instead, both
+ * ending in `onDismiss` (which unmounts the whole Modal in a single step, with
+ * no intermediate blank frame):
+ *   - the header's left × button (configured at the Stack level below), and
+ *   - PairingScreen's `onSuccess` callback (passed as a prop), invoked right
+ *     after a successful pairing so the success experience matches the narrow
+ *     push-based flow.
+ */
+type PairingOverlayStackParamList = {
+  Pairing: undefined;
+};
+const PairingOverlayStack = createNativeStackNavigator<PairingOverlayStackParamList>();
+
+function PairingOverlay({ visible, onDismiss }: { visible: boolean; onDismiss: () => void }) {
+  const { theme, colors } = useTheme();
+  const overlayRef = useNavigationContainerRef<PairingOverlayStackParamList>();
+  const { t } = useI18n();
+  const navigationTheme = useMemo(() => {
+    const base = theme === "dark" ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.background,
+        card: colors.background,
+        border: colors.cardBorder,
+        primary: colors.accent,
+        text: colors.textPrimary,
+      },
+    };
+  }, [colors, theme]);
+
+  // Header left button for the Pairing screen: closes the whole overlay. We set
+  // it at the Stack level so PairingScreen's own setOptions (which only sets
+  // title + headerBackTitle) can't clobber it. Pairing is the root route, so
+  // there's no Entry screen to pop through — closing happens in one step with
+  // no intermediate blank frame.
+  const screenOptions = useMemo(
+    () => ({
+      headerShadowVisible: false,
+      headerStyle: { backgroundColor: colors.background },
+      headerTintColor: colors.accent,
+      contentStyle: { backgroundColor: colors.background },
+      headerBackTitleVisible: false,
+      headerLeft: () => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("detail.back")}
+          hitSlop={12}
+          onPress={onDismiss}
+          style={({ pressed }) => pressed && { opacity: 0.5 }}
+        >
+          <Ionicons name="close" size={28} color={colors.accent} />
+        </Pressable>
+      ),
+    }),
+    [colors.accent, colors.background, onDismiss, t],
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onDismiss}
+    >
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <NavigationIndependentTree>
+          <NavigationContainer ref={overlayRef} theme={navigationTheme}>
+            <PairingOverlayStack.Navigator initialRouteName="Pairing" screenOptions={screenOptions}>
+              <PairingOverlayStack.Screen name="Pairing">
+                {() => <PairingScreen onSuccess={onDismiss} />}
+              </PairingOverlayStack.Screen>
+            </PairingOverlayStack.Navigator>
+          </NavigationContainer>
+        </NavigationIndependentTree>
+      </View>
+    </Modal>
   );
 }
 

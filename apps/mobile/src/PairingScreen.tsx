@@ -37,7 +37,7 @@ function pairingErrorDetail(error: unknown, tError: (code: NetworkErrorCode, par
   return String(error);
 }
 
-export function PairingScreen() {
+export function PairingScreen({ onSuccess }: { onSuccess?: () => void } = {}) {
   const { t, tError } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -78,6 +78,10 @@ export function PairingScreen() {
         // Trigger the connection to restart discovery with the new credentials.
         void refresh();
         if (navigation.canGoBack()) navigation.goBack();
+        // Wide-mode overlay hosts Pairing as the sole root route, so canGoBack()
+        // is false there — onSuccess lets the overlay tear itself down so the
+        // success experience matches the narrow push-based flow.
+        onSuccess?.();
       } catch (error) {
         console.error("pairDaemon failed:", error);
         Alert.alert(t("pairing.title"), pairingErrorDetail(error, tError));
@@ -86,7 +90,7 @@ export function PairingScreen() {
         setIsPairing(false);
       }
     },
-    [deviceName, navigation, refresh, t, tError],
+    [deviceName, navigation, onSuccess, refresh, t, tError],
   );
 
   if (!permission) {

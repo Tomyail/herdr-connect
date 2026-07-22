@@ -1,51 +1,50 @@
 /**
  * Wide split-view shell, shown when the window width is at/above
- * {@link SPLIT_BREAKPOINT}. Three regions:
+ * {@link SPLIT_BREAKPOINT}.
  *
- *   ┌─────────┬───────────────┬──────────────────────┐
- *   │ sidebar │  agent list   │  agent detail        │
- *   │ Agents  │  (AgentsScreen│  (AgentDetailBody or │
- *   │ Settings│   reused)     │   empty state)       │
- *   └─────────┴───────────────┴──────────────────────┘
+ * Agents destination: sidebar + agent list + agent detail (phase 2).
+ * Settings destination: sidebar + category list + category detail (phase 3),
+ *   with Language/Appearance pushed inside the detail column's own local
+ *   nested stack, and Pairing presented as a full-app overlay (see App.tsx).
  *
- * - Sidebar replaces the bottom tab bar visually; the same destinations and
- *   icons are used (see {@link sidebarIcons}), just arranged vertically.
- * - Selection state (active destination + selected agent id) is owned above
- *   the narrow/wide branch in App.tsx so it survives live resize across the
- *   breakpoint: dragging a Stage Manager window narrower keeps the same agent
- *   open, just switched from a split pane to a pushed screen and back.
- * - Settings keeps its exact existing screen for now (rendered inside a local
- *   stack so its `navigation.navigate("Pairing"|"Language"|"Appearance")`
- *   calls keep working). A real 3-column Settings redesign is phase 3.
+ * Selection state (active destination + selected agent id) is owned above the
+ * narrow/wide branch in App.tsx so it survives live resize across the
+ * breakpoint.
  */
 
-import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { NavigationContainer, NavigationIndependentTree, DefaultTheme, DarkTheme } from "@react-navigation/native";
+import { NavigationContainer, NavigationIndependentTree, useNavigationContainerRef, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { AgentsScreenContent } from "./AgentsScreen";
-import { SettingsScreen } from "./SettingsScreen";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
-import { PairingScreen } from "./PairingScreen";
+import {
+  useSettingsCategories,
+  type SettingsCategoryKey,
+  type SettingsNavigation,
+} from "./Settings";
 import { AgentDetailBody, AgentDetailTitleBlock, AgentDetailRefreshButton } from "./AgentDetail";
 import { Ionicons } from "./icons";
 import { useI18n } from "./i18n/I18nContext";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
+import { useConnection } from "./connection";
 import type { ThemeColors } from "./theme/tokens";
 import type { SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
 import type { Agent } from "./agent-contract";
-import { useConnection } from "./connection";
 
-/** Sidebar + active-destination props lifted above the narrow/wide branch. */
+/** Sidebar + lifted selection props owned above the narrow/wide branch. */
 export interface SplitLayoutProps {
   activeDestination: SidebarDestination;
   onSelectDestination: (destination: SidebarDestination) => void;
   selectedAgentId: string | undefined;
   onSelectAgent: (agent: Agent) => void;
+  /** Wide mode only: requested from the Discovery category, handled by App.tsx
+   *  as a full-app Pairing overlay. */
+  onRequestPairing: () => void;
 }
 
 function Sidebar({
@@ -134,55 +133,184 @@ function AgentDetailColumn({ agentId }: { agentId: string | undefined }) {
   );
 }
 
-// Settings is hosted inside its own local stack so the existing SettingsScreen
-// (and its `navigation.navigate("Pairing"|"Language"|"Appearance")` calls) keep
-// working unchanged in the wide layout. Phase 3 will redesign this column.
-type SettingsStackParamList = {
-  Settings: undefined;
+// ─── Settings three-column layout ──────────────────────────────────────────
+
+/** Detail column's local nested stack: category content + Language/Appearance. */
+type SettingsDetailStackParamList = {
+  CategoryDetail: undefined;
   Language: undefined;
   Appearance: undefined;
-  Pairing: undefined;
 };
-const SettingsStack = createNativeStackNavigator<SettingsStackParamList>();
+const SettingsDetailStack = createNativeStackNavigator<SettingsDetailStackParamList>();
 
-function SettingsColumn() {
-  const { theme, colors } = useTheme();
-  const navigationTheme = useMemo(
-    () => {
-      const base = theme === "dark" ? DarkTheme : DefaultTheme;
-      return {
-        ...base,
-        colors: {
-          ...base.colors,
-          background: colors.background,
-          card: colors.background,
-          border: colors.cardBorder,
-          primary: colors.accent,
-          text: colors.textPrimary,
-        },
-      };
-    },
-    [colors, theme],
+function SettingsCategoryList({
+  categories,
+  selectedKey,
+  onSelect,
+}: {
+  categories: ReturnType<typeof useSettingsCategories>;
+  selectedKey: SettingsCategoryKey;
+  onSelect: (key: SettingsCategoryKey) => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <SafeAreaView edges={["top"]} style={styles.settingsListSafeArea}>
+      <ScrollView style={styles.settingsList} contentContainerStyle={styles.settingsListContent}>
+        {categories.map((category) => {
+          const selected = category.key === selectedKey;
+          return (
+            <Pressable
+              key={category.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              onPress={() => onSelect(category.key)}
+              style={({ pressed }) => [
+                styles.categoryRow,
+                selected && styles.categoryRowSelected,
+                pressed && styles.categoryRowPressed,
+              ]}
+            >
+              <View style={styles.categoryRowLeading}>
+                <Ionicons name={category.icon} size={20} color={selected ? colors.accent : colors.textMuted} />
+                <Text style={[styles.categoryRowLabel, selected && styles.categoryRowLabelSelected]}>
+                  {t(category.labelKey)}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={15} color={colors.textFaint} />
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </SafeAreaView>
   );
+}
+
+/**
+ * The detail column's root screen: renders the selected category's content,
+ * phone-width and centered (point 6). `navigation` routes Language/Appearance
+ * into this column's local stack and Pairing to the full-app overlay.
+ *
+ * useSettingsCategories is the single source of truth for all Settings state
+ * (MMKV switches / credentials / connection) — the list column builds its own
+ * instance too, but those hooks are idempotent across instances and stay in
+ * sync, so the two columns can never desync (point 3).
+ */
+function SettingsCategoryDetail({
+  selectedKey,
+  navigation,
+}: {
+  selectedKey: SettingsCategoryKey;
+  navigation: SettingsNavigation;
+}) {
+  const { t } = useI18n();
+  const styles = useThemedStyles(createStyles);
+  const { state } = useConnection();
+  const categories = useSettingsCategories(state, navigation);
+  const category = categories.find((candidate) => candidate.key === selectedKey);
+
+  return (
+    <SafeAreaView edges={["top", "right"]} style={styles.detailSafeArea}>
+      <View style={styles.detailColumn}>
+        <View style={styles.settingsDetailCentered}>
+          <Text style={styles.settingsDetailTitle}>{t(category?.labelKey ?? "settings.screenTitle")}</Text>
+          <ScrollView style={styles.settingsDetailScroll} contentContainerStyle={styles.settingsDetailContent}>
+            {category?.render()}
+          </ScrollView>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function SettingsDetailColumn({
+  selectedCategory,
+  onRequestPairing,
+}: {
+  selectedCategory: SettingsCategoryKey;
+  onRequestPairing: () => void;
+}) {
+  const { theme, colors } = useTheme();
+  const { t } = useI18n();
+  const detailRef = useNavigationContainerRef<SettingsDetailStackParamList>();
+
+  const navigationTheme = useMemo(() => {
+    const base = theme === "dark" ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.background,
+        card: colors.background,
+        border: colors.cardBorder,
+        primary: colors.accent,
+        text: colors.textPrimary,
+      },
+    };
+  }, [colors, theme]);
+
+  // Detail column navigation: Language/Appearance push on this column's local
+  // stack; Pairing is the full-app overlay (lifted to App.tsx).
+  const navigation = useMemo<SettingsNavigation>(
+    () => ({
+      onNavigateLanguage: () => detailRef.current?.navigate("Language"),
+      onNavigateAppearance: () => detailRef.current?.navigate("Appearance"),
+      onRequestPairing,
+    }),
+    [detailRef, onRequestPairing],
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <NavigationIndependentTree>
-        <NavigationContainer theme={navigationTheme}>
-          <SettingsStack.Navigator
-          screenOptions={{
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: colors.background },
-            headerTintColor: colors.accent,
-            contentStyle: { backgroundColor: colors.background },
-          }}
-        >
-          <SettingsStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
-          <SettingsStack.Screen name="Language" component={LanguageScreen} />
-          <SettingsStack.Screen name="Appearance" component={AppearanceScreen} />
-          <SettingsStack.Screen name="Pairing" component={PairingScreen} />
-        </SettingsStack.Navigator>
+        <NavigationContainer ref={detailRef} theme={navigationTheme}>
+          <SettingsDetailStack.Navigator
+            screenOptions={{
+              headerShadowVisible: false,
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.accent,
+              headerBackTitle: t("settings.screenTitle"),
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <SettingsDetailStack.Screen name="CategoryDetail" options={{ headerShown: false }}>
+              {() => <SettingsCategoryDetail selectedKey={selectedCategory} navigation={navigation} />}
+            </SettingsDetailStack.Screen>
+            <SettingsDetailStack.Screen name="Language" component={LanguageScreen} />
+            <SettingsDetailStack.Screen name="Appearance" component={AppearanceScreen} />
+          </SettingsDetailStack.Navigator>
         </NavigationContainer>
       </NavigationIndependentTree>
+    </View>
+  );
+}
+
+function SettingsColumns({ onRequestPairing }: { onRequestPairing: () => void }) {
+  const styles = useThemedStyles(createStyles);
+  // Default to General on first entering the wide Settings tab (point 2).
+  const [selectedCategory, setSelectedCategory] = useState<SettingsCategoryKey>("general");
+  const { state } = useConnection();
+  // List column needs only icons/labels; a no-op navigation is fine since the
+  // list itself never triggers row navigation.
+  const listCategories = useSettingsCategories(state, {
+    onNavigateLanguage: () => {},
+    onNavigateAppearance: () => {},
+    onRequestPairing,
+  });
+
+  return (
+    <View style={styles.agentsBody}>
+      <View style={styles.listColumn}>
+        <SettingsCategoryList
+          categories={listCategories}
+          selectedKey={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
+      </View>
+      <View style={styles.detailColumnWrapper}>
+        <SettingsDetailColumn selectedCategory={selectedCategory} onRequestPairing={onRequestPairing} />
+      </View>
     </View>
   );
 }
@@ -192,6 +320,7 @@ export function SplitLayout({
   onSelectDestination,
   selectedAgentId,
   onSelectAgent,
+  onRequestPairing,
 }: SplitLayoutProps) {
   const styles = useThemedStyles(createStyles);
 
@@ -200,9 +329,6 @@ export function SplitLayout({
       <Sidebar active={activeDestination} onSelect={onSelectDestination} />
       {activeDestination === "Agents" ? (
         <View style={styles.agentsBody}>
-          {/* The full AgentsScreen content is reused as the list column.
-              Selection is routed through onSelectAgent into the shared
-              selection state in App.tsx instead of pushing onto a stack. */}
           <View style={styles.listColumn}>
             <AgentsScreenContent onAgentPress={onSelectAgent} selectedAgentId={selectedAgentId} />
           </View>
@@ -211,7 +337,7 @@ export function SplitLayout({
           </View>
         </View>
       ) : (
-        <SettingsColumn />
+        <SettingsColumns onRequestPairing={onRequestPairing} />
       )}
     </View>
   );
@@ -237,4 +363,28 @@ const createStyles = (colors: ThemeColors) =>
     emptyDetail: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 30 },
     emptyDetailTitle: { color: colors.textPrimary, fontSize: 18, fontWeight: "700" },
     emptyDetailText: { color: colors.textSecondary, fontSize: 14, lineHeight: 21, textAlign: "center" },
+    // Settings category list column
+    settingsListSafeArea: { flex: 1, backgroundColor: colors.background },
+    settingsList: { flex: 1 },
+    settingsListContent: { paddingHorizontal: 16, paddingTop: 22, gap: 8 },
+    categoryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+    },
+    categoryRowSelected: { borderColor: colors.selectedCardBorder, backgroundColor: colors.selectedCard },
+    categoryRowPressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
+    categoryRowLeading: { flexDirection: "row", alignItems: "center", gap: 12 },
+    categoryRowLabel: { color: colors.textSecondary, fontSize: 16, fontWeight: "600" },
+    categoryRowLabelSelected: { color: colors.textPrimary },
+    // Settings detail column — phone-width content centered (point 6)
+    settingsDetailCentered: { flex: 1, maxWidth: 520, width: "100%", alignSelf: "center", paddingHorizontal: 20 },
+    settingsDetailTitle: { color: colors.textPrimary, fontSize: 32, fontWeight: "700", letterSpacing: -0.9, marginTop: 18, marginBottom: 22 },
+    settingsDetailScroll: { flex: 1 },
+    settingsDetailContent: { paddingBottom: 28 },
   });
