@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -50,145 +50,44 @@ interface Failure {
   status?: number;
 }
 
-export function AgentDetailScreen({ route, navigation }: Props) {
-  const { state, switchAgent } = useConnection();
-  const { clearCompleted } = useRecentCompletions();
-  const styles = useThemedStyles(createStyles);
-  const service = state.phase === "connected" ? state.service : undefined;
-  const agents = state.phase === "connected" ? state.data.agents : [];
-  // Prefer the live snapshot of the routed agent so the header and switcher
-  // reflect fresh state; fall back to the route param until the next poll.
-  const paramAgent = route.params.agent;
-  const agent = agents.find((candidate) => candidate.source_id === paramAgent.source_id) ?? paramAgent;
-  const [switcherHeight, setSwitcherHeight] = useState(0);
-
-  useEffect(() => {
-    if (!service && navigation.canGoBack()) navigation.goBack();
-  }, [navigation, service]);
-
-  // Switching in place: update the route param (keeps notify-while-viewing
-  // accurate), focus the desktop, and let the key-remount reset local state.
-  const selectAgent = useCallback(
-    (next: Agent) => {
-      if (!service || next.source_id === agent.source_id) return;
-      clearCompleted([next.source_id]);
-      navigation.setParams({ agent: next });
-      void switchAgent(service, next);
-    },
-    [agent.source_id, clearCompleted, navigation, service, switchAgent],
-  );
-
-  if (!service) return null;
-  // The switcher lives outside the keyed subtree so it survives switches
-  // without flicker; only the history/composer state below it resets.
-  return (
-    <View style={styles.screen}>
-      {agents.length > 1 ? (
-        <View onLayout={(event) => setSwitcherHeight(event.nativeEvent.layout.height)}>
-          <AgentSwitcher agents={agents} currentId={agent.source_id} onSelect={selectAgent} />
-        </View>
-      ) : null}
-      <AgentDetail
-        key={agent.source_id}
-        agent={agent}
-        service={service}
-        navigation={navigation}
-        keyboardOffsetExtra={switcherHeight}
-      />
-    </View>
-  );
+/**
+ * Header config produced by {@link AgentDetailBody} so each render mode can
+ * surface the same title/subtitle/refresh affordance in its own chrome — the
+ * narrow native-stack header (via `navigation.setOptions`) and the wide inline
+ * header view both consume exactly this shape.
+ */
+export interface AgentDetailHeaderConfig {
+  title: string;
+  subtitle: string;
+  onRefresh: () => void;
 }
 
-function AgentSwitcher({
-  agents,
-  currentId,
-  onSelect,
-}: {
-  agents: readonly Agent[];
-  currentId: string;
-  onSelect: (agent: Agent) => void;
-}) {
-  const { t } = useI18n();
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  const { completedIds } = useRecentCompletions();
-  const scrollRef = useRef<ScrollView>(null);
-  const viewportWidth = useRef(0);
-  const chipLayouts = useRef(new Map<string, { x: number; width: number }>());
-  const positioned = useRef(false);
-
-  const centerChip = useCallback((id: string, animated: boolean) => {
-    const layout = chipLayouts.current.get(id);
-    if (!layout || viewportWidth.current === 0) return;
-    const target = Math.max(0, layout.x - (viewportWidth.current - layout.width) / 2);
-    scrollRef.current?.scrollTo({ x: target, animated });
-  }, []);
-
-  // Smoothly follow selection changes; the initial position is set from the
-  // selected chip's first onLayout below (layouts aren't known yet on mount).
-  useEffect(() => {
-    if (positioned.current) centerChip(currentId, true);
-  }, [centerChip, currentId]);
-
-  return (
-    <ScrollView
-      ref={scrollRef}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.switcher}
-      contentContainerStyle={styles.switcherContent}
-      onLayout={(event) => {
-        viewportWidth.current = event.nativeEvent.layout.width;
-      }}
-    >
-      {agents.map((candidate) => {
-        const selected = candidate.source_id === currentId;
-        const { tone } = agentStatus(candidate, completedIds.has(candidate.source_id));
-        const title = candidate.workspace_label || candidate.display_name;
-        const label = candidate.tab_label || title;
-        return (
-          <Pressable
-            key={candidate.source_id}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            accessibilityLabel={t("agents.row.switchA11y", { title, tab: candidate.tab_label ?? "" })}
-            onPress={() => onSelect(candidate)}
-            onLayout={(event) => {
-              chipLayouts.current.set(candidate.source_id, event.nativeEvent.layout);
-              if (selected && !positioned.current) {
-                positioned.current = true;
-                centerChip(candidate.source_id, false);
-              }
-            }}
-            style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.chipPressed]}
-          >
-            <View style={[styles.chipDot, { backgroundColor: colors[tone] }]} />
-            <AgentBrandIcon
-              name={candidate.agent_name}
-              size={14}
-              color={selected ? colors.textPrimary : colors.textSecondary}
-            />
-            <Text numberOfLines={1} style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
-  );
-}
-
-function AgentDetail({
+/**
+ * Shared agent-detail body: transcript + composer + the send/interrupt state
+ * machine. It owns no navigation and reads no header-height context, so it runs
+ * identically inside a native-stack screen (narrow) and inside a split-view
+ * column (wide).
+ *
+ * The header is delegated upward via {@link renderHeader} (and mirrored via
+ * {@link onHeaderConfig} for the narrow native-stack header), so each mode
+ * places the same presentational header in its own chrome without the body
+ * having to know which one it is in.
+ */
+export function AgentDetailBody({
   agent,
   service,
-  navigation,
   keyboardOffsetExtra,
+  renderHeader,
+  onHeaderConfig,
 }: {
   agent: Agent;
   service: DiscoveredService;
-  navigation: Props["navigation"];
-  /** Height of the persistent switcher strip above this subtree. */
+  /** Extra height to subtract from the keyboard offset (persistent switcher strip / inline header height). */
   keyboardOffsetExtra: number;
+  /** Renders the header chrome for the current mode; receives the live title/subtitle/refresh. */
+  renderHeader: (config: AgentDetailHeaderConfig) => ReactNode;
+  /** Mode that needs to mirror the header into a non-DOM chrome (the narrow native-stack header) reads this. */
+  onHeaderConfig?: (config: AgentDetailHeaderConfig) => void;
 }) {
   const { t, tError } = useI18n();
   const { colors } = useTheme();
@@ -207,14 +106,13 @@ function AgentDetail({
   const positionedHistoryRef = useRef(false);
   const displayedHistoryRef = useRef(false);
   const mountedRef = useRef(true);
-  const headerHeight = useHeaderHeight();
 
   const loadHistory = useCallback(async (showLoading = false) => {
     if (showLoading) setLoadPhase("loading");
     try {
       const next = await fetchAgentHistory(service, agent.source_id);
       if (!mountedRef.current) return;
-      setHistory((current) => isSameHistoryContent(current, next) ? current : next);
+      setHistory((current) => (isSameHistoryContent(current, next) ? current : next));
       setLoadPhase("ready");
       setLoadError(undefined);
     } catch (error) {
@@ -243,29 +141,14 @@ function AgentDetail({
 
   const title = agent.workspace_label || agent.display_name || "Agent";
   const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
+  const refresh = useCallback(() => void loadHistory(true), [loadHistory]);
 
+  // Surface header config to whichever mode is hosting this body. The narrow
+  // wrapper forwards it to `navigation.setOptions`; the wide wrapper ignores it
+  // (it renders the header inline via `renderHeader` instead).
   useLayoutEffect(() => {
-    navigation.setOptions({
-      headerBackTitle: t("detail.back"),
-      headerTitle: () => (
-        <View style={styles.identity}>
-          <Text numberOfLines={1} style={styles.title}>{title}</Text>
-          {subtitle ? <Text numberOfLines={1} style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-      ),
-      headerRight: () => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("detail.refreshA11y")}
-          hitSlop={10}
-          onPress={() => void loadHistory(true)}
-          style={({ pressed }) => pressed && styles.pressed}
-        >
-          <Ionicons name="refresh" size={ICON_SIZE} color={colors.accent} />
-        </Pressable>
-      ),
-    });
-  }, [colors, loadHistory, navigation, styles, subtitle, t, title]);
+    onHeaderConfig?.({ title, subtitle, onRefresh: refresh });
+  }, [onHeaderConfig, refresh, subtitle, title]);
 
   const send = useCallback(async () => {
     const text = draft.trim();
@@ -327,12 +210,16 @@ function AgentDetail({
     );
   }, [agent.source_id, interruptPhase, loadHistory, service, t]);
 
+  const headerConfig: AgentDetailHeaderConfig = { title, subtitle, onRefresh: refresh };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={headerHeight + keyboardOffsetExtra}
+      keyboardVerticalOffset={keyboardOffsetExtra}
       style={styles.screen}
     >
+      {renderHeader(headerConfig)}
+
       <View style={styles.historyHeader}>
         <Text style={styles.historyTitle}>{t("detail.historyTitle")}</Text>
         <Text style={styles.historyMeta}>
@@ -469,6 +356,191 @@ function AgentDetail({
         </View>
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+/**
+ * Presentational title/subtitle block, shared by the narrow native-stack header
+ * (as `headerTitle`) and the wide inline header view so the two can never drift.
+ */
+export function AgentDetailTitleBlock({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <View style={styles.identity}>
+      <Text numberOfLines={1} style={styles.title}>{title}</Text>
+      {subtitle ? <Text numberOfLines={1} style={styles.subtitle}>{subtitle}</Text> : null}
+    </View>
+  );
+}
+
+/** Refresh affordance shared by both header modes. */
+export function AgentDetailRefreshButton({ onPress }: { onPress: () => void }) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t("detail.refreshA11y")}
+      hitSlop={10}
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}
+    >
+      <Ionicons name="refresh" size={ICON_SIZE} color={colors.accent} />
+    </Pressable>
+  );
+}
+
+export function AgentDetailScreen({ route, navigation }: Props) {
+  const { state, switchAgent } = useConnection();
+  const { clearCompleted } = useRecentCompletions();
+  const styles = useThemedStyles(createStyles);
+  const { t } = useI18n();
+  const headerHeight = useHeaderHeight();
+  const service = state.phase === "connected" ? state.service : undefined;
+  const agents = state.phase === "connected" ? state.data.agents : [];
+  // Prefer the live snapshot of the routed agent so the header and switcher
+  // reflect fresh state; fall back to the route param until the next poll.
+  const paramAgent = route.params.agent;
+  const agent = agents.find((candidate) => candidate.source_id === paramAgent.source_id) ?? paramAgent;
+  const [switcherHeight, setSwitcherHeight] = useState(0);
+
+  useEffect(() => {
+    if (!service && navigation.canGoBack()) navigation.goBack();
+  }, [navigation, service]);
+
+  // Switching in place: update the route param (keeps notify-while-viewing
+  // accurate), focus the desktop, and let the key-remount reset local state.
+  const selectAgent = useCallback(
+    (next: Agent) => {
+      if (!service || next.source_id === agent.source_id) return;
+      clearCompleted([next.source_id]);
+      navigation.setParams({ agent: next });
+      void switchAgent(service, next);
+    },
+    [agent.source_id, clearCompleted, navigation, service, switchAgent],
+  );
+
+  // Mirror the body's header config into the native-stack header. This is the
+  // narrow-mode counterpart to the wide mode's inline header view.
+  const handleHeaderConfig = useCallback(
+    (config: AgentDetailHeaderConfig) => {
+      navigation.setOptions({
+        headerBackTitle: t("detail.back"),
+        headerTitle: () => (
+          <AgentDetailTitleBlock title={config.title} subtitle={config.subtitle} />
+        ),
+        headerRight: () => <AgentDetailRefreshButton onPress={config.onRefresh} />,
+      });
+    },
+    [navigation, t],
+  );
+
+  if (!service) return null;
+  // The switcher lives outside the keyed subtree so it survives switches
+  // without flicker; only the history/composer state below it resets.
+  return (
+    <View style={styles.screen}>
+      {agents.length > 1 ? (
+        <View onLayout={(event) => setSwitcherHeight(event.nativeEvent.layout.height)}>
+          <AgentSwitcher agents={agents} currentId={agent.source_id} onSelect={selectAgent} />
+        </View>
+      ) : null}
+      <AgentDetailBody
+        key={agent.source_id}
+        agent={agent}
+        service={service}
+        keyboardOffsetExtra={headerHeight + switcherHeight}
+        // The narrow mode renders its header in the native-stack bar, not inline.
+        renderHeader={() => null}
+        onHeaderConfig={handleHeaderConfig}
+      />
+    </View>
+  );
+}
+
+function AgentSwitcher({
+  agents,
+  currentId,
+  onSelect,
+}: {
+  agents: readonly Agent[];
+  currentId: string;
+  onSelect: (agent: Agent) => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const { completedIds } = useRecentCompletions();
+  const scrollRef = useRef<ScrollView>(null);
+  const viewportWidth = useRef(0);
+  const chipLayouts = useRef(new Map<string, { x: number; width: number }>());
+  const positioned = useRef(false);
+
+  const centerChip = useCallback((id: string, animated: boolean) => {
+    const layout = chipLayouts.current.get(id);
+    if (!layout || viewportWidth.current === 0) return;
+    const target = Math.max(0, layout.x - (viewportWidth.current - layout.width) / 2);
+    scrollRef.current?.scrollTo({ x: target, animated });
+  }, []);
+
+  // Smoothly follow selection changes; the initial position is set from the
+  // selected chip's first onLayout below (layouts aren't known yet on mount).
+  useEffect(() => {
+    if (positioned.current) centerChip(currentId, true);
+  }, [centerChip, currentId]);
+
+  return (
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.switcher}
+      contentContainerStyle={styles.switcherContent}
+      onLayout={(event) => {
+        viewportWidth.current = event.nativeEvent.layout.width;
+      }}
+    >
+      {agents.map((candidate) => {
+        const selected = candidate.source_id === currentId;
+        const { tone } = agentStatus(candidate, completedIds.has(candidate.source_id));
+        const title = candidate.workspace_label || candidate.display_name;
+        const label = candidate.tab_label || title;
+        return (
+          <Pressable
+            key={candidate.source_id}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            accessibilityLabel={t("agents.row.switchA11y", { title, tab: candidate.tab_label ?? "" })}
+            onPress={() => onSelect(candidate)}
+            onLayout={(event) => {
+              chipLayouts.current.set(candidate.source_id, event.nativeEvent.layout);
+              if (selected && !positioned.current) {
+                positioned.current = true;
+                centerChip(candidate.source_id, false);
+              }
+            }}
+            style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.chipPressed]}
+          >
+            <View style={[styles.chipDot, { backgroundColor: colors[tone] }]} />
+            <AgentBrandIcon
+              name={candidate.agent_name}
+              size={14}
+              color={selected ? colors.textPrimary : colors.textSecondary}
+            />
+            <Text numberOfLines={1} style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
+              {label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 

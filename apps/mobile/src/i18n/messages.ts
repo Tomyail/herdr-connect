@@ -58,6 +58,8 @@ const en = {
   "interaction.cancelled": "Cancelled",
   "interaction.idle": "Idle",
 
+  "detail.empty.title": "No agent selected",
+  "detail.empty.text": "Select an agent from the list to view its history.",
   "detail.historyTitle": "History",
   "detail.historyMeta.truncated": "Recent excerpt",
   "detail.historyMeta.recent": "Recent",
@@ -194,6 +196,8 @@ const zhHans: Record<MessageKey, string> = {
   "interaction.cancelled": "\u5DF2\u53D6\u6D88",
   "interaction.idle": "\u7A7A\u95F2",
 
+  "detail.empty.title": "\u672A\u9009\u62E9 Agent",
+  "detail.empty.text": "\u4ECE\u5217\u8868\u4E2D\u9009\u62E9\u4E00\u4E2A Agent \u4EE5\u67E5\u770B\u5176\u5386\u53F2\u3002",
   "detail.historyTitle": "\u5386\u53F2\u6D88\u606F",
   "detail.historyMeta.truncated": "\u8FD1\u671F\u622A\u9762",
   "detail.historyMeta.recent": "\u8FD1\u671F\u8BB0\u5F55",

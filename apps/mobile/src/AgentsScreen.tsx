@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -42,11 +43,14 @@ function AgentRow({
   agent,
   focusPhase,
   justCompleted,
+  selected,
   onPress,
 }: {
   agent: Agent;
   focusPhase?: FocusPhase;
   justCompleted: boolean;
+  /** Wide split layout only: this row is the one currently shown in the detail column. */
+  selected?: boolean;
   onPress: () => void;
 }) {
   const { t } = useI18n();
@@ -57,12 +61,17 @@ function AgentRow({
   const feedbackColor = feedback?.color ? colors[feedback.color] : undefined;
   const switchA11y = t("agents.row.switchA11y", { title, tab: agent.tab_label ?? "" });
   const a11yLabel = justCompleted ? `${switchA11y}, ${t("agents.row.justCompleted")}` : switchA11y;
+  // Persistent selection (wide layout) and the transient "just switched" feedback
+  // are independent and compose: a row can be the selected one AND briefly show
+  // the switched/switching/failed feedback at the same time.
+  const highlighted = selected || focusPhase === "switched";
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={selected ? { selected: true } : undefined}
       accessibilityLabel={a11yLabel}
       onPress={onPress}
-      style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, focusPhase === "switched" && styles.agentCardSelected]}
+      style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, highlighted && styles.agentCardSelected]}
     >
       <View style={styles.agentAvatar}>
         <AgentBrandIcon name={agent.agent_name} size={20} color={colors.textPrimary} />
@@ -85,13 +94,28 @@ function AgentRow({
   );
 }
 
-export function AgentsScreen() {
+/**
+ * Reusable agent-list content. Takes a resolved `onAgentPress` callback so it
+ * has no navigation dependency and renders identically inside the narrow
+ * bottom-tab shell (where the wrapper pushes `AgentDetail`) and inside the
+ * wide split-view list column (where the wrapper updates shared selection).
+ *
+ * `selectedAgentId` is only meaningful in the wide layout (the detail column
+ * shows one agent persistently); the narrow wrapper has no such concept and
+ * leaves it undefined so no row gets a persistent selected treatment there.
+ */
+export function AgentsScreenContent({
+  onAgentPress,
+  selectedAgentId,
+}: {
+  onAgentPress: (agent: Agent) => void;
+  selectedAgentId?: string;
+}) {
   const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const connected = state.phase === "connected" ? state : undefined;
   const statusTitleKey: MessageKey =
@@ -178,9 +202,10 @@ export function AgentsScreen() {
                   agent={item}
                   focusPhase={focusResult?.sourceID === item.source_id ? focusResult.phase : undefined}
                   justCompleted={completedIds.has(item.source_id)}
+                  selected={selectedAgentId === item.source_id}
                   onPress={() => {
                     clearCompleted([item.source_id]);
-                    navigation.navigate("AgentDetail", { agent: item });
+                    onAgentPress(item);
                     void switchAgent(connected.service, item);
                   }}
                 />
@@ -201,6 +226,16 @@ export function AgentsScreen() {
       </View>
     </SafeAreaView>
   );
+}
+
+/** Narrow-mode screen: pushes `AgentDetail` onto the root stack when a row is tapped. */
+export function AgentsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const onAgentPress = useCallback(
+    (agent: Agent) => navigation.navigate("AgentDetail", { agent }),
+    [navigation],
+  );
+  return <AgentsScreenContent onAgentPress={onAgentPress} />;
 }
 
 const createStyles = (colors: ThemeColors) =>
