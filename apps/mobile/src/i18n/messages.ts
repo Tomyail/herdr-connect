@@ -60,6 +60,8 @@ const en = {
 
   "detail.empty.title": "No agent selected",
   "detail.empty.text": "Select an agent from the list to view its history.",
+  "detail.focusLayoutA11y": "Focus the detail column and hide the sidebar and list",
+  "detail.expandLayoutA11y": "Show the sidebar and list again",
   "detail.historyTitle": "History",
   "detail.historyMeta.truncated": "Recent excerpt",
   "detail.historyMeta.recent": "Recent",
@@ -198,6 +200,8 @@ const zhHans: Record<MessageKey, string> = {
 
   "detail.empty.title": "\u672A\u9009\u62E9 Agent",
   "detail.empty.text": "\u4ECE\u5217\u8868\u4E2D\u9009\u62E9\u4E00\u4E2A Agent \u4EE5\u67E5\u770B\u5176\u5386\u53F2\u3002",
+  "detail.focusLayoutA11y": "\u805A\u7126\u8BE6\u60C5\u5217\uFF0C\u9690\u85CF\u4FA7\u8FB9\u680F\u4E0E\u5217\u8868",
+  "detail.expandLayoutA11y": "\u91CD\u65B0\u663E\u793A\u4FA7\u8FB9\u680F\u4E0E\u5217\u8868",
   "detail.historyTitle": "\u5386\u53F2\u6D88\u606F",
   "detail.historyMeta.truncated": "\u8FD1\u671F\u622A\u9762",
   "detail.historyMeta.recent": "\u8FD1\u671F\u8BB0\u5F55",

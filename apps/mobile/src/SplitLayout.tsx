@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LayoutAnimation, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NavigationContainer, NavigationIndependentTree, useNavigationContainerRef, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -99,7 +99,17 @@ function EmptyDetail() {
   );
 }
 
-function AgentDetailColumn({ agentId }: { agentId: string | undefined }) {
+function AgentDetailColumn({
+  agentId,
+  focused,
+  onToggleFocus,
+}: {
+  agentId: string | undefined;
+  focused: boolean;
+  onToggleFocus: () => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
   const { state } = useConnection();
   const styles = useThemedStyles(createStyles);
   const connected = state.phase === "connected" ? state : undefined;
@@ -108,6 +118,12 @@ function AgentDetailColumn({ agentId }: { agentId: string | undefined }) {
     () => (agentId ? connected?.data.agents.find((candidate) => candidate.source_id === agentId) : undefined),
     [agentId, connected],
   );
+
+  // Focus toggle lives in the detail header: collapses the sidebar + list so the
+  // transcript/composer fill the whole width; tap again to restore three columns.
+  // expand = "expand back to three columns" (shown while focused),
+  // contract = "collapse to focused" (shown while expanded).
+  const focusA11y = focused ? t("detail.expandLayoutA11y") : t("detail.focusLayoutA11y");
 
   return (
     <SafeAreaView edges={["top", "right"]} style={styles.detailSafeArea}>
@@ -121,7 +137,18 @@ function AgentDetailColumn({ agentId }: { agentId: string | undefined }) {
             renderHeader={(config) => (
               <View style={styles.inlineHeader}>
                 <AgentDetailTitleBlock title={config.title} subtitle={config.subtitle} />
-                <AgentDetailRefreshButton onPress={config.onRefresh} />
+                <View style={styles.inlineHeaderActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={focusA11y}
+                    hitSlop={10}
+                    onPress={onToggleFocus}
+                    style={({ pressed }) => [styles.focusButton, pressed && styles.focusButtonPressed]}
+                  >
+                    <Ionicons name={focused ? "expand" : "contract"} size={22} color={colors.accent} />
+                  </Pressable>
+                  <AgentDetailRefreshButton onPress={config.onRefresh} />
+                </View>
               </View>
             )}
           />
@@ -323,17 +350,32 @@ export function SplitLayout({
   onRequestPairing,
 }: SplitLayoutProps) {
   const styles = useThemedStyles(createStyles);
+  // Agents-only focus mode: collapses sidebar + list so the detail/transcript
+  // spans the full width. Local, per-session state — intentionally not lifted
+  // to App.tsx or persisted. Reset automatically when AppShell unmounts this
+  // tree across a narrow/wide resize (phase 2 behavior).
+  const [focused, setFocused] = useState(false);
+  const toggleFocus = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFocused((value) => !value);
+  };
+  // Focus only applies on the Agents destination; Settings always needs the sidebar.
+  const agentsFocused = activeDestination === "Agents" && focused;
 
   return (
     <View style={styles.shell}>
-      <Sidebar active={activeDestination} onSelect={onSelectDestination} />
+      {agentsFocused ? null : (
+        <Sidebar active={activeDestination} onSelect={onSelectDestination} />
+      )}
       {activeDestination === "Agents" ? (
         <View style={styles.agentsBody}>
-          <View style={styles.listColumn}>
-            <AgentsScreenContent onAgentPress={onSelectAgent} selectedAgentId={selectedAgentId} />
-          </View>
+          {agentsFocused ? null : (
+            <View style={styles.listColumn}>
+              <AgentsScreenContent onAgentPress={onSelectAgent} selectedAgentId={selectedAgentId} />
+            </View>
+          )}
           <View style={styles.detailColumnWrapper}>
-            <AgentDetailColumn agentId={selectedAgentId} />
+            <AgentDetailColumn agentId={selectedAgentId} focused={agentsFocused} onToggleFocus={toggleFocus} />
           </View>
         </View>
       ) : (
@@ -360,6 +402,9 @@ const createStyles = (colors: ThemeColors) =>
     detailSafeArea: { flex: 1, backgroundColor: colors.background },
     detailColumn: { flex: 1 },
     inlineHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6 },
+    inlineHeaderActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+    focusButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+    focusButtonPressed: { opacity: 0.5 },
     emptyDetail: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 30 },
     emptyDetailTitle: { color: colors.textPrimary, fontSize: 18, fontWeight: "700" },
     emptyDetailText: { color: colors.textSecondary, fontSize: 14, lineHeight: 21, textAlign: "center" },
