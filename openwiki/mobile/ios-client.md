@@ -12,6 +12,19 @@ The iOS client (`/apps/mobile/`) is a React Native application that pairs with t
 
 ## Architecture
 
+The app adapts to the current window width, not the device type. Below a 768pt breakpoint it uses a phone-style narrow layout; at or above the breakpoint it switches to a three-column split-view layout. Both layouts share the same two top-level destinations (Agents, Settings), and selection state (active destination + selected agent) is lifted into `AppShell` (`App.tsx`) so it survives live resize across the breakpoint.
+
+### Responsive Layout (`layout.ts`, `SplitLayout.tsx`)
+
+The single width threshold is `SPLIT_BREAKPOINT = 768` in `/apps/mobile/src/layout.ts`. The `useIsWideLayout()` hook drives the layout branch in `AppShell`:
+
+- **Narrow mode (< 768pt)** — `ThemedNavigation` uses a bottom tab bar + native-stack detail screens (see below). This is the layout iPhones always see and the layout iPad mini portrait sees by design (744pt is below the breakpoint).
+- **Wide mode (≥ 768pt)** — `SplitLayout` (`SplitLayout.tsx`) renders a fixed 220pt sidebar + 340pt list column + flexible detail column. The sidebar replaces the tab bar; the list and detail are side-by-side instead of push-navigated.
+
+The 768pt threshold was chosen so the fixed columns (220 + 340 = 560pt) leave enough remaining width for a usable detail pane at iPad sizes. It is a width check, not a device-type check, so any window resized across it (iPad Split View, Slide Over, Stage Manager) switches layouts live.
+
+#### Narrow Tab Layout
+
 The app uses React Navigation with a tab-based structure:
 
 ```
@@ -27,12 +40,36 @@ App
            └─ Appearance (theme)
 ```
 
+#### Wide Split Layout
+
+```
+AppShell
+ └─ SplitLayout
+      ├─ Sidebar (220pt) — Agents / Settings destinations
+      ├─ List Column (340pt)
+      │   ├─ AgentsScreenContent (when destination = Agents)
+      │   └─ SettingsCategoryList (when destination = Settings)
+      └─ Detail Column (flex)
+           ├─ AgentDetailColumn — inline header with focus toggle (Agents)
+           └─ SettingsDetailColumn — nested stack for Language/Appearance (Settings)
+```
+
+In wide mode, Pairing is presented as a full-screen `<Modal>` overlay above `SplitLayout` (rather than a stack push), so it covers the sidebar and all columns. The Agents detail column has a focus toggle button (expand/contract icon) that collapses the sidebar and list so the transcript/composer fill the full width; tapping again restores three columns. This is per-session state, intentionally not persisted.
+
+#### Shared Navigation Types (`navigation.ts`)
+
+`SidebarDestination` and `sidebarIcons` are defined once in `/apps/mobile/src/navigation.ts` and consumed by both the narrow bottom tab bar and the wide sidebar, keeping icons and labels in sync.
+
+### iPad Native Resolution
+
+The app runs at native iPad resolution (`supportsTablet: true` in `app.config.ts`) rather than iPhone compatibility scaling mode. `requireFullScreen` is intentionally left unset (defaults to false), which allows iPad multitasking (Split View, Slide Over, Stage Manager) and free rotation. The root `orientation: "portrait"` field still drives iPhone portrait lock and Android's portrait lock.
+
 ### Key Screens
 
-- **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected
-- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input, and interrupt button with confirmation dialog
+- **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected. Exports `AgentsScreenContent` for use inside the split-layout list column.
+- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input, and interrupt button with confirmation dialog. Exports `AgentDetailBody`, `AgentDetailTitleBlock`, and `AgentDetailRefreshButton` so the wide layout can render the same content with an inline header.
 - **PairingScreen** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
-- **SettingsScreen** (`SettingsScreen.tsx`) — Links to language, appearance, pairing, and diagnostics
+- **SettingsScreen** (`Settings.tsx`) — Links to language, appearance, pairing, and diagnostics. Exports `useSettingsCategories` and `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
 - **LanguageScreen** (`LanguageScreen.tsx`) — English/Chinese selection
 - **AppearanceScreen** (`AppearanceScreen.tsx`) — Light/dark theme selection
 
