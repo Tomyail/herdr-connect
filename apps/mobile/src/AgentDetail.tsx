@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState, 
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -42,8 +43,11 @@ import { useVoiceLanguage } from "./voice/VoiceLanguageContext";
 import { resolveVoiceLang, loadSupportedVoiceLocales } from "./voice/config";
 import { silenceThresholdStorage } from "./voice/silenceThreshold";
 import { cReducer, INITIAL_STATE, type CPhase } from "./voice/continuousReducer";
+import { VoiceWaveform } from "./voice/VoiceWaveform";
 
 const HISTORY_REFRESH_MS = 2_000;
+const VOICE_VOLUME_INTERVAL_MS = 100;
+const VOICE_WAVEFORM_BAR_COUNT = 24;
 
 type LoadPhase = "loading" | "ready" | "failed";
 type SendPhase = "idle" | "sending" | "sent" | "failed";
@@ -94,10 +98,11 @@ interface VoiceInputValue {
   toggleVoice: () => void;
   /** Last error message, shown briefly above the composer; cleared on retry. */
   errorMessage: string | null;
-  /** Reset the internal draft bookkeeping (baseRef/liveRef) to the given text.
-   *  Call this after sending so the end handler's commitLive() doesn't restore
-   *  old text back into the input. */
+  /** Reset internal draft bookkeeping and discard native results still arriving
+   *  from the current session after an automatic send has begun. */
   resetDraftRefs: (to?: string) => void;
+  /** Rolling real-time microphone levels used by the listening waveform. */
+  volumeSamples: readonly Animated.Value[];
 }
 
 /**
@@ -125,9 +130,17 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   const voiceMountedRef = useRef(true);
   const sessionActiveRef = useRef(false);
   const startAttemptRef = useRef(0);
+  const volumeSamples = useRef(
+    Array.from({ length: VOICE_WAVEFORM_BAR_COUNT }, () => new Animated.Value(0)),
+  ).current;
+  const volumeHistoryRef = useRef<number[]>(Array(VOICE_WAVEFORM_BAR_COUNT).fill(0));
   // Text captured as finalized while listening; partial results append after it.
   const baseRef = useRef("");
   const liveRef = useRef("");
+  // stop() is asynchronous: iOS can still deliver a final/partial result before
+  // its end event. Auto-send resets the draft first, so ignore those trailing
+  // results until that session has fully ended; manual stop leaves this false.
+  const discardPendingResultsRef = useRef(false);
   // Distinguishes a user-initiated stop (toggle off) from a system auto-end
   // (iOS ~60s cap / Android silence timeout). On auto-end we restart so the
   // user can keep talking across the system boundary without re-tapping the mic.
@@ -147,6 +160,11 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
     setDraft(baseRef.current + liveRef.current);
   }, [setDraft]);
 
+  const resetVolumeSamples = useCallback(() => {
+    volumeHistoryRef.current.fill(0);
+    volumeSamples.forEach((sample) => sample.setValue(0));
+  }, [volumeSamples]);
+
   useSpeechRecognitionEvent("start", () => {
     if (!sessionActiveRef.current) return;
     setListening(true);
@@ -156,7 +174,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   });
 
   useSpeechRecognitionEvent("result", (event) => {
-    if (!sessionActiveRef.current) return;
+    if (!sessionActiveRef.current || discardPendingResultsRef.current) return;
     const transcript = event.results[0]?.transcript ?? "";
     if (event.isFinal) {
       // Fold the finalized segment into the base; reset the live tail.
@@ -169,10 +187,34 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
     onResultActivity?.();
   });
 
+  useSpeechRecognitionEvent("volumechange", (event) => {
+    if (!sessionActiveRef.current) return;
+    // Both native implementations report roughly -2...10 and document values
+    // below zero as inaudible. Keep a short rolling history so adjacent bars
+    // visualize recent real samples instead of moving in lockstep.
+    const normalized = Math.min(1, Math.max(0, event.value) / 10);
+    const history = [...volumeHistoryRef.current.slice(1), normalized];
+    volumeHistoryRef.current = history;
+    volumeSamples.forEach((sample, index) => {
+      Animated.timing(sample, {
+        toValue: history[index] ?? 0,
+        duration: VOICE_VOLUME_INTERVAL_MS,
+        isInteraction: false,
+        useNativeDriver: true,
+      }).start();
+    });
+  });
+
   useSpeechRecognitionEvent("end", () => {
     if (!sessionActiveRef.current) return;
-    // If the last partial never produced a final, fold its text into the base.
-    if (liveRef.current) {
+    if (discardPendingResultsRef.current) {
+      // Auto-send already captured the text. Never let a trailing native result
+      // or partial restore that sent text into the now-empty composer.
+      baseRef.current = "";
+      liveRef.current = "";
+      discardPendingResultsRef.current = false;
+    } else if (liveRef.current) {
+      // Manual/system stop: preserve a last partial that never became final.
       baseRef.current = baseRef.current + liveRef.current;
       liveRef.current = "";
       commitLive();
@@ -182,6 +224,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       // The owner tapped stop — finish listening for real.
       sessionActiveRef.current = false;
       userStoppedRef.current = false;
+      resetVolumeSamples();
       setListening(false);
     }
     // Notify the orchestrator so it can decide whether to auto-send or restart.
@@ -192,6 +235,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       restartCountRef.current += 1;
       if (restartCountRef.current > MAX_AUTO_RESTARTS) {
         sessionActiveRef.current = false;
+        resetVolumeSamples();
         setListening(false);
         userStoppedRef.current = false;
         setErrorMessage(t("detail.voice.error"));
@@ -199,9 +243,15 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         return;
       }
       try {
-        ExpoSpeechRecognitionModule.start({ lang: langRef.current, interimResults: true, continuous: true });
+        ExpoSpeechRecognitionModule.start({
+          lang: langRef.current,
+          interimResults: true,
+          continuous: true,
+          volumeChangeEventOptions: { enabled: true, intervalMillis: VOICE_VOLUME_INTERVAL_MS },
+        });
       } catch (error) {
         sessionActiveRef.current = false;
+        resetVolumeSamples();
         setListening(false);
         setErrorMessage(t("detail.voice.error"));
         console.warn("[voice] auto-restart failed:", error);
@@ -217,11 +267,13 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       // the continuous loop rather than auto-restarting.
       sessionActiveRef.current = false;
       userStoppedRef.current = true;
+      resetVolumeSamples();
       setListening(false);
       onVoiceEnd?.(true);
       return;
     }
     sessionActiveRef.current = false;
+    resetVolumeSamples();
     setListening(false);
     setErrorMessage(`${t("detail.voice.error")} (${event.error})`);
     console.warn("[voice] recognition error:", event.error, event.message);
@@ -253,6 +305,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       }
       baseRef.current = draft;
       liveRef.current = "";
+      discardPendingResultsRef.current = false;
       userStoppedRef.current = false;
       // Dismiss the keyboard if the user had been typing before tapping the
       // mic — a focused-but-now-non-editable TextInput won't let go of the
@@ -268,6 +321,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       const lang = resolveVoiceLang(voiceChoice, locales);
       langRef.current = lang;
       sessionActiveRef.current = true;
+      resetVolumeSamples();
       ExpoSpeechRecognitionModule.start({
         lang,
         interimResults: true,
@@ -275,15 +329,17 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         // multiple sentences in one session. On iOS the system still caps at
         // ~60s; the "end" handler auto-restarts to bridge across that cap.
         continuous: true,
+        volumeChangeEventOptions: { enabled: true, intervalMillis: VOICE_VOLUME_INTERVAL_MS },
       });
     } catch (error) {
       sessionActiveRef.current = false;
       if (!voiceMountedRef.current || attempt !== startAttemptRef.current) return;
+      resetVolumeSamples();
       setListening(false);
       setErrorMessage(t("detail.voice.error"));
       console.warn("[voice] failed to start:", error);
     }
-  }, [draft, inputRef, onVoiceEnd, t, voiceChoice]);
+  }, [draft, inputRef, onVoiceEnd, resetVolumeSamples, t, voiceChoice]);
 
   const stop = useCallback(() => {
     userStoppedRef.current = true;
@@ -300,9 +356,10 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       startAttemptRef.current += 1;
       sessionActiveRef.current = false;
       userStoppedRef.current = true;
+      resetVolumeSamples();
       ExpoSpeechRecognitionModule.stop();
     };
-  }, []);
+  }, [resetVolumeSamples]);
 
   const toggleVoice = useCallback(() => {
     if (listening) {
@@ -315,9 +372,10 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   const resetDraftRefs = useCallback((to: string = "") => {
     baseRef.current = to;
     liveRef.current = "";
+    discardPendingResultsRef.current = true;
   }, []);
 
-  return { listening, toggleVoice, errorMessage, resetDraftRefs };
+  return { listening, toggleVoice, errorMessage, resetDraftRefs, volumeSamples };
 }
 
 function AgentHistorySection({
@@ -489,25 +547,32 @@ function AgentComposer({
       </View>
       {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
       {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
-      {voice.listening ? <Text style={styles.voiceListening}>{t("detail.voice.listening")}</Text> : null}
       {voice.errorMessage ? <Text style={styles.sendError}>{voice.errorMessage}</Text> : null}
       <View style={styles.composer}>
-        <TextInput
-          accessibilityLabel={t("detail.inputA11y")}
-          ref={inputRef}
-          blurOnSubmit={false}
-          editable={!voice.listening}
-          maxLength={4000}
-          multiline
-          onChangeText={(value) => {
-            setDraft(value);
-            if (sendPhase !== "sending") setSendPhase("idle");
-          }}
-          placeholder={t("detail.inputPlaceholder")}
-          placeholderTextColor={colors.textMuted}
-          style={styles.input}
-          value={draft}
-        />
+        <View style={styles.inputColumn}>
+          <TextInput
+            accessibilityLabel={t("detail.inputA11y")}
+            ref={inputRef}
+            blurOnSubmit={false}
+            editable={!voice.listening}
+            maxLength={4000}
+            multiline
+            onChangeText={(value) => {
+              setDraft(value);
+              if (sendPhase !== "sending") setSendPhase("idle");
+            }}
+            placeholder={t("detail.inputPlaceholder")}
+            placeholderTextColor={colors.textMuted}
+            style={styles.input}
+            value={draft}
+          />
+          {voice.listening ? (
+            <VoiceWaveform
+              accessibilityLabel={t("detail.voice.listening")}
+              samples={voice.volumeSamples}
+            />
+          ) : null}
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
@@ -521,9 +586,9 @@ function AgentComposer({
           ]}
         >
           {cPhase === "countingDown" && countdown != null ? (
-            <Text style={[styles.voiceButtonText, { color: colors.danger }]}>{countdown}</Text>
+            <Text style={[styles.voiceButtonText, { color: colors.accent }]}>{countdown}</Text>
           ) : (
-            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
+            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.accent : colors.textSecondary} />
           )}
         </Pressable>
         <Pressable
@@ -1214,12 +1279,12 @@ const createStyles = (colors: ThemeColors) =>
     interruptButtonText: { color: colors.onDanger, fontSize: 13, fontWeight: "700" },
     interruptButtonTextDisabled: { color: colors.onActionDisabled },
     composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 8 },
-    input: { flex: 1, minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
+    inputColumn: { flex: 1, minWidth: 0 },
+    input: { width: "100%", minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
     voiceButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
-    voiceButtonActive: { borderColor: colors.danger, backgroundColor: colors.dangerDisabledBg },
+    voiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.selectedCard },
     voiceButtonText: { fontSize: 16, fontWeight: "700" },
     voiceButtonPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
-    voiceListening: { color: colors.danger, fontSize: 12, marginBottom: 6, paddingHorizontal: 4, fontWeight: "600" },
     sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
     sendButtonDisabled: { backgroundColor: colors.actionDisabledBg },
     sendButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
