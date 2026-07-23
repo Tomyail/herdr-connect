@@ -34,10 +34,12 @@ App
       │   ├─ Agents Screen (agents list)
       │   └─ Settings Screen (settings tabs)
       └─ Stack.Screen (detail screens)
-           ├─ Agent Detail (output, focus, input, interrupt)
+           ├─ Agent Detail (output, focus, input, interrupt, voice)
            ├─ Pairing (QR scanner)
            ├─ Language (localization)
-           └─ Appearance (theme)
+           ├─ Appearance (theme)
+           ├─ VoiceLanguage (voice recognition language)
+           └─ SilenceThreshold (continuous-mode silence gap)
 ```
 
 #### Wide Split Layout
@@ -67,9 +69,9 @@ The app runs at native iPad resolution (`supportsTablet: true` in `app.config.ts
 ### Key Screens
 
 - **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected. Exports `AgentsScreenContent` for use inside the split-layout list column.
-- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, text input, and interrupt button with confirmation dialog. Exports `AgentDetailBody`, `AgentDetailTitleBlock`, and `AgentDetailRefreshButton` so the wide layout can render the same content with an inline header.
+- **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, unified composer bar (send/interrupt), and voice input with optional continuous mode. Exports `AgentDetailBody`, `AgentDetailTitleBlock`, and `AgentDetailRefreshButton` so the wide layout can render the same content with an inline header.
 - **PairingScreen** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
-- **SettingsScreen** (`Settings.tsx`) — Links to language, appearance, pairing, and diagnostics. Exports `useSettingsCategories` and `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
+- **SettingsScreen** (`Settings.tsx`) — Links to language, appearance, pairing, diagnostics, voice recognition language, and silence threshold. Exports `useSettingsCategories` and `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
 - **LanguageScreen** (`LanguageScreen.tsx`) — English/Chinese selection
 - **AppearanceScreen** (`AppearanceScreen.tsx`) — Light/dark theme selection
 
@@ -222,23 +224,77 @@ A strip at the top allows quick switching between agents:
 - Updates immediately on tap (calls `/v1/agents/{id}/focus`)
 - Preserves scroll position on switch
 
-### Input Section
+### Composer Bar
 
-Text input field with send button:
+The input section is a single text field paired with one unified action button whose behavior is resolved by `resolveComposerAction()` (`composerAction.ts`). The button acts as **interrupt** when the agent is `working`, and as **send** otherwise — interrupt always takes priority when available.
 
-- Sends up to 4000 characters (enforced by server)
-- Disables while source is offline
-- Clears after send
-- Shows character count
+- **Send mode** — Active when the agent is not `working`. Sends up to 4000 characters (enforced by server), clears after send, shows character count, disables while source is offline or when voice listening is active.
+- **Interrupt mode** — Active when the agent's interaction state is `working`. The button switches to a destructive style (red background), shows localized "Stop" label, and triggers the two-step confirmation dialog. Tapping sends `POST /v1/agents/{sourceId}/interrupt`.
 
-### Interrupt Button
+The send and interrupt actions use separate, isomorphic state machines (`SendPhase` and `InterruptPhase`, both `idle` → `sending` → `sent` → `failed`) so their feedback messages never overwrite each other. The resolution logic is unit-tested in `composerAction.test.ts`.
 
-An interrupt bar sits above the input composer, enabled only when the agent's interaction state is `working`. Interrupting a `blocked`, `ready_input`, or `unknown` agent is not meaningful and is disabled.
+## Voice Input
 
-- Tapping shows a two-step confirmation dialog (destructive style)
-- Sends `POST /v1/agents/{sourceId}/interrupt`
-- Uses a dedicated `InterruptPhase` state machine (`idle`, `sending`, `sent`, `failed`) separate from the message send state
-- Shows success/failure feedback via localized strings
+The app supports on-device speech recognition so users can dictate messages into the composer instead of typing. Voice input uses `expo-speech-recognition` and requires a development build (not Expo Go).
+
+### Voice Language
+
+The recognition language is configurable and defaults to the device locale:
+
+- **Resolution** (`voice/config.ts`) — `resolveVoiceLang(choice, supportedLocales)` maps the user's choice to a BCP-47 tag. `"system"` follows the device locale via `expo-localization`; script tags are normalized (`zh-Hans` → `zh-CN`) and validated against the device's supported recognizer locales, with graceful fallback (prefix match → `en-US`).
+- **Persistence** (`voice/storage.ts`) — The choice is stored synchronously in the `herdr-connect-prefs` MMKV instance under `voiceRecognitionLanguage`, defaulting to `"system"`.
+- **Context** (`voice/VoiceLanguageContext.tsx`) — `VoiceLanguageProvider` wraps the app in `App.tsx` and exposes `{ choice, setChoice }` via the `useVoiceLanguage()` hook. `AgentDetail.tsx` reads the choice and resolves it before starting recognition; `Settings.tsx` displays the current selection.
+- **Picker screen** (`VoiceLanguageScreen.tsx`) — A radio-list of system + device-supported locales, labeled via `localeDisplay()` using `Intl.DisplayNames`. Reached via the `VoiceLanguage` route.
+
+### Live Waveform
+
+During recording, a lightweight animated waveform (`VoiceWaveform.tsx`) renders below the composer. AgentDetail polls the recognizer's volume at 100ms intervals, feeding 24 animated values into the component, which renders bars at 4px spacing with per-bar visual variation. The waveform is decorative (`pointerEvents="none"`).
+
+## Continuous Voice Mode
+
+Continuous (hands-free) voice mode lets the user carry on a conversation without tapping send after each utterance. When enabled, the app auto-sends recognized text after a silence gap, waits for the agent to finish working, and automatically re-arms listening.
+
+### State Machine (`voice/continuousReducer.ts`)
+
+A pure `useReducer` state machine owns all phase transitions:
+
+```mermaid
+stateDiagram-v2
+    [*] --> idle
+    idle --> listening: USER_START
+    listening --> countingDown: SILENCE_DETECTED
+    countingDown --> listening: RESULT_ACTIVITY
+    countingDown --> waitingForAgent: COUNTDOWN_DONE
+    waitingForAgent --> listening: AGENT_READY (if sawWorking)
+    waitingForAgent --> waitingForAgent: AGENT_WORKING
+    listening --> idle: USER_STOP / NO_SPEECH / PERMISSION_DENIED
+    countingDown --> idle: USER_STOP / NO_SPEECH
+    waitingForAgent --> idle: USER_STOP / RESET
+```
+
+Key design rules:
+
+- **Countdown cancellation** — If the user resumes talking during the 3-2-1 countdown, `RESULT_ACTIVITY` cancels the countdown and returns to `listening`.
+- **"Must see working" guard** — After auto-send, the machine enters `waitingForAgent`. It only auto-restarts listening if it observed the agent enter `working` (`sawWorking = true`) and then return to a ready state. A stale `AGENT_READY` without prior `AGENT_WORKING` keeps the machine in `waitingForAgent` so it does not loop on no-ops.
+- **Readiness** — `isContinuousVoiceAgentReady(state)` returns `true` for `ready_input`, `blocked`, and `unknown`, but `false` for `working`.
+
+### Silence Threshold
+
+The silence gap that triggers the countdown is configurable via `voice/silenceThreshold.ts`, persisted in MMKV under `silenceThreshold`. Presets are `[1000, 1500, 2000, 3000]` ms (default: `1500`). The `SilenceThreshold` route (`SilenceThresholdScreen.tsx`) provides a radio-list picker formatted as seconds (e.g. "1.5s").
+
+### Press-Action Resolution (`voice/continuousControls.ts`)
+
+Two pure functions keep press-handler logic testable:
+
+- `actionForMicPress({ continuousEnabled, phase, listening })` — Decides between toggling manual recording, starting, or stopping a continuous session based on the current state.
+- `actionForContinuousModePress({ continuousEnabled, listening })` — Decides whether to enable, disable, or disable-and-stop continuous mode.
+
+### Audio Cues
+
+When continuous mode is active, speech recognition hijacks the shared iOS `AVAudioSession` (switching to `playAndRecord`/`measurement` mode). Two modules ensure playback audio still works:
+
+- **`audioMode.ts`** — `restorePlaybackAudioMode()` resets the audio session to playback-friendly settings (`playsInSilentMode: true`, `duckOthers`).
+- **`doneSoundPlayback.ts`** — `playSoundFromStart(player, restoreFn)` orchestrates the three-step sequence: restore the audio session → seek to start → play. This guarantees the completion chime and the "sent" cue (`assets/sounds/sent.mp3`) are audible even when speech recognition has altered the audio route.
 
 ## Notifications
 
@@ -247,7 +303,8 @@ The app provides three notification outputs when an agent finishes a turn (trans
 ### DoneSoundProvider
 
 - Preloads audio file on app launch
-- Plays `done.mp3` when agent transitions to succeeded/failed via `expo-audio`
+- Calls `restorePlaybackAudioMode()` on mount to establish a playback-friendly audio session baseline
+- Plays `done.mp3` when agent transitions to succeeded/failed via `playSoundFromStart(player, restorePlaybackAudioMode)` — this restores the audio session before each chime to counteract any speech-recognition audio route changes
 - Respects iOS silent mode and ringer switch
 - Only plays for agents that were working when the screen was visible
 - Gated by the `doneSoundEnabled` preference (default: on)
@@ -409,6 +466,10 @@ Mobile tests cover:
 - **Brand icon detection** — `brand-icons.test.ts`
 - **History markdown parsing** — `history-markdown.test.ts`
 - **Done detection** — `notifications/doneDetection.test.ts`
+- **Done sound playback ordering** — `notifications/doneSoundPlayback.test.ts`
+- **Continuous voice agent state** — `continuousVoiceAgentState.test.ts`
+- **Composer action resolution** — `composerAction.test.ts`
+- **Continuous voice controls** — `continuousVoiceControls.test.ts`
 - **SSE stream event parsing** — `modules/pinned-stream/src/parseStreamEvent.test.ts`
 - **History scroll logic** — `history-scroll.test.ts`
 - **Localization** — `i18n/*.test.ts`
