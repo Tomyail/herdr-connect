@@ -3,7 +3,7 @@ import type { DiscoveredService } from "./discovery";
 import { NetworkError } from "./i18n/errors";
 import type { NetworkErrorCode } from "./i18n/errors";
 import { loadCredentials } from "./credentials";
-import { pinnedFetch, PinnedFetchError } from "../modules/pinned-fetch";
+import { pinnedFetch, PinnedFetchError } from "pinned-fetch";
 import type { PairingQRPayload } from "./pairing";
 import { pairingUrl } from "./pairing";
 import { isIPv4, preferredAddress } from "./address";

@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { AppState, NativeModules, PermissionsAndroid, Platform, type AppStateStatus } from "react-native";
 
@@ -95,9 +97,209 @@ export function useConnection(): ConnectionValue {
   return value;
 }
 
+interface ConnectedSnapshotOptions {
+  mountedRef: RefObject<boolean>;
+  pollingInflightRef: RefObject<boolean>;
+  selectedKeyRef: RefObject<string | undefined>;
+}
+
+/**
+ * Keeps a connected Agent snapshot fresh through polling plus an iOS SSE
+ * signal. Keeping this lifecycle together makes its timer, stream, and
+ * foreground cleanup ownership explicit without burying discovery setup.
+ */
+function useConnectedSnapshot({
+  mountedRef,
+  pollingInflightRef,
+  selectedKeyRef,
+}: ConnectedSnapshotOptions) {
+  const [state, setState] = useState<ConnectionState>({ phase: "discovering" });
+  const [streamStatus, setStreamStatus] = useReducer(
+    (_current: StreamStatus, next: StreamStatus) => next,
+    "polling",
+  );
+  const connectedService = state.phase === "connected" ? state.service : undefined;
+
+  useEffect(() => {
+    if (!connectedService) return;
+    const service = connectedService;
+    const key = serviceKey(service);
+    // Reset to polling on (re)connect; the first SSE event will flip it to live.
+    setStreamStatus("polling");
+
+    const tick = async () => {
+      if (pollingInflightRef.current) return;
+      pollingInflightRef.current = true;
+      try {
+        const data = await fetchAgents(service);
+        if (mountedRef.current && selectedKeyRef.current === key) {
+          setState({ phase: "connected", service, data });
+        }
+      } catch (error) {
+        if (error instanceof NetworkError && error.code === "unauthorized") {
+          await clearCredentials();
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "not_paired" });
+          }
+        } else if (error instanceof NetworkError && error.code === "revoked") {
+          await clearCredentials();
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "revoked" });
+          }
+        } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "fingerprint_mismatch" });
+          }
+        } else if (error instanceof NetworkError && error.code === "daemon_outdated") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "daemon_outdated" });
+          }
+        } else if (error instanceof NetworkError && error.code === "app_outdated") {
+          if (mountedRef.current && selectedKeyRef.current === key) {
+            setState({ phase: "app_outdated" });
+          }
+        }
+        // Other errors: silent — keep the last snapshot on transient errors.
+      } finally {
+        pollingInflightRef.current = false;
+      }
+    };
+
+    let pollTimer: ReturnType<typeof setInterval> | undefined;
+    const startPolling = () => {
+      if (pollTimer) return;
+      pollTimer = setInterval(() => {
+        void tick();
+      }, AGENT_POLL_INTERVAL_MS);
+    };
+    const stopPolling = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = undefined;
+      }
+    };
+
+    // All stream-related mutable state is local to this effect so cleanup is
+    // deterministic. A reconnect attempt counter backs off via discoveryRetryDelay.
+    let streamHandle: PinnedStreamHandle | undefined;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let reconnectAttempt = 0;
+
+    const clearReconnect = () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = undefined;
+      }
+    };
+    const stopStream = () => {
+      clearReconnect();
+      if (streamHandle) {
+        // stop() suppresses the stream's own onClose/onError (quietClose in Swift),
+        // so calling it here won't re-enter handleStreamEnd.
+        try {
+          streamHandle.stop();
+        } catch {
+          // stop() is best-effort; never let it throw the effect.
+        }
+        streamHandle = undefined;
+      }
+    };
+
+    const openStream = async () => {
+      // Guard the async credential-read window so a background transition
+      // cannot leave a newly opened stream without an owner to tear it down.
+      const creds = await loadCredentials();
+      if (!mountedRef.current || selectedKeyRef.current !== key || AppState.currentState !== "active") return;
+      if (!creds) return;
+      if (streamHandle) {
+        try { streamHandle.stop(); } catch { /* ignore */ }
+        streamHandle = undefined;
+      }
+
+      let handle: PinnedStreamHandle;
+      try {
+        const address = preferredAddress(service.addresses);
+        if (!address) return;
+        handle = startStream(
+          agentsEventsUrl(address, service.port),
+          creds.fingerprint,
+          creds.token,
+        );
+      } catch (error) {
+        const code = (error as PinnedStreamError | undefined)?.code;
+        if (code === "unsupported_platform" || code === "invalid_url") return;
+        scheduleReconnect();
+        return;
+      }
+      streamHandle = handle;
+
+      handle.onEvent(() => {
+        if (!mountedRef.current || selectedKeyRef.current !== key) return;
+        clearReconnect();
+        reconnectAttempt = 0;
+        stopPolling();
+        setStreamStatus("live");
+        void tick();
+      });
+
+      handle.onError(() => {
+        if (!mountedRef.current || selectedKeyRef.current !== key) return;
+        handleStreamEnd();
+      });
+      handle.onClose(() => {
+        if (!mountedRef.current || selectedKeyRef.current !== key) return;
+        handleStreamEnd();
+      });
+    };
+
+    const handleStreamEnd = () => {
+      streamHandle = undefined;
+      clearReconnect();
+      setStreamStatus("polling");
+      if (AppState.currentState === "active") startPolling();
+      scheduleReconnect();
+    };
+
+    const scheduleReconnect = () => {
+      clearReconnect();
+      const delay = discoveryRetryDelay(reconnectAttempt);
+      reconnectAttempt += 1;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = undefined;
+        if (mountedRef.current && AppState.currentState === "active" && selectedKeyRef.current === key) {
+          void openStream();
+        }
+      }, delay);
+    };
+
+    const startForeground = () => {
+      startPolling();
+      if (Platform.OS === "ios") void openStream();
+    };
+    const stopForeground = () => {
+      stopPolling();
+      stopStream();
+      setStreamStatus("polling");
+    };
+
+    const subscription = AppState.addEventListener("change", (next: AppStateStatus) => {
+      if (next === "active") startForeground();
+      else stopForeground();
+    });
+    if (AppState.currentState === "active") startForeground();
+
+    return () => {
+      stopPolling();
+      stopStream();
+      subscription.remove();
+    };
+  }, [connectedService, mountedRef, pollingInflightRef, selectedKeyRef]);
+
+  return { state, setState, streamStatus };
+}
+
 export function ConnectionProvider({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const [state, setState] = useState<ConnectionState>({ phase: "discovering" });
   const servicesRef = useRef(new Map<string, DiscoveredService>());
   const selectedKeyRef = useRef<string | undefined>(undefined);
   const requestRef = useRef<AbortController | undefined>(undefined);
@@ -107,7 +309,11 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const retryAttemptRef = useRef(0);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [focusResult, setFocusResult] = useState<{ sourceID: string; phase: FocusPhase }>();
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>("polling");
+  const { state, setState, streamStatus } = useConnectedSnapshot({
+    mountedRef,
+    pollingInflightRef,
+    selectedKeyRef,
+  });
 
   // Keep the latest permission rationale without retriggering the discovery effect.
   const rationaleRef = useRef<PermissionRationale>({
@@ -187,7 +393,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [clearDiscoveryTimer],
+    [clearDiscoveryTimer, setState],
   );
 
   const beginNotFoundCountdown = useCallback(() => {
@@ -206,7 +412,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         }
       }
     }, DISCOVERY_WAIT_MS);
-  }, [clearDiscoveryTimer, connect]);
+  }, [clearDiscoveryTimer, connect, setState]);
 
   const refresh = useCallback(async () => {
     requestRef.current?.abort();
@@ -233,7 +439,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
     }
-  }, [beginNotFoundCountdown, clearDiscoveryTimer]);
+  }, [beginNotFoundCountdown, clearDiscoveryTimer, setState]);
 
   const unpair = useCallback(async () => {
     requestRef.current?.abort();
@@ -245,7 +451,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     if (mountedRef.current) {
       setState({ phase: "not_paired" });
     }
-  }, [clearDiscoveryTimer]);
+  }, [clearDiscoveryTimer, setState]);
 
   // Retry: back off after non-terminal errors, but do NOT retry from
   // not_paired / revoked / fingerprint_mismatch / daemon_outdated /
@@ -291,207 +497,6 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   // On stream error/close we flip to "polling", restart the polling timer so
   // there is no freshness gap, and schedule a reconnect using the same
   // exponential backoff curve as discovery (discoveryRetryDelay).
-  const connectedService = state.phase === "connected" ? state.service : undefined;
-  useEffect(() => {
-    if (!connectedService) return;
-    const service = connectedService;
-    const key = serviceKey(service);
-    // Reset to polling on (re)connect; the first SSE event will flip it to live.
-    setStreamStatus("polling");
-
-    const tick = async () => {
-      if (pollingInflightRef.current) return;
-      pollingInflightRef.current = true;
-      try {
-        const data = await fetchAgents(service);
-        if (mountedRef.current && selectedKeyRef.current === key) {
-          setState({ phase: "connected", service, data });
-        }
-      } catch (error) {
-        if (error instanceof NetworkError && error.code === "unauthorized") {
-          await clearCredentials();
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "not_paired" });
-          }
-        } else if (error instanceof NetworkError && error.code === "revoked") {
-          await clearCredentials();
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "revoked" });
-          }
-        } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "fingerprint_mismatch" });
-          }
-        } else if (error instanceof NetworkError && error.code === "daemon_outdated") {
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "daemon_outdated" });
-          }
-        } else if (error instanceof NetworkError && error.code === "app_outdated") {
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "app_outdated" });
-          }
-        }
-        // Other errors: silent — keep the last snapshot on transient errors.
-      } finally {
-        pollingInflightRef.current = false;
-      }
-    };
-
-    // —— Polling timer management ——
-    let pollTimer: ReturnType<typeof setInterval> | undefined;
-    const startPolling = () => {
-      if (pollTimer) return;
-      pollTimer = setInterval(() => {
-        void tick();
-      }, AGENT_POLL_INTERVAL_MS);
-    };
-    const stopPolling = () => {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = undefined;
-      }
-    };
-
-    // —— SSE stream management ——
-    // All stream-related mutable state is local to this effect so cleanup is
-    // deterministic. A reconnect attempt counter backs off via discoveryRetryDelay.
-    let streamHandle: PinnedStreamHandle | undefined;
-    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-    let reconnectAttempt = 0;
-
-    const clearReconnect = () => {
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = undefined;
-      }
-    };
-    const stopStream = () => {
-      clearReconnect();
-      if (streamHandle) {
-        // stop() suppresses the stream's own onClose/onError (quietClose in Swift),
-        // so calling it here won't re-enter handleStreamEnd.
-        try {
-          streamHandle.stop();
-        } catch {
-          // stop() is best-effort; never let it throw the effect.
-        }
-        streamHandle = undefined;
-      }
-    };
-
-    const openStream = async () => {
-      // No credentials yet → stay on pure polling; the pairing effect will flip
-      // state and re-run this effect when creds appear.
-      // Also guard the await window: loadCredentials() is async (SecureStore read);
-      // the app may have gone background while it was in flight. Re-checking
-      // AppState.currentState here (in addition to mounted/key) closes the race
-      // where startForeground→openStream started before a background transition
-      // but resumed after stopForeground already ran with streamHandle still
-      // undefined — without this check we'd open a background SSE connection that
-      // nothing tears down. The same window exists for the scheduleReconnect
-      // setTimeout path, which calls openStream after its own active check.
-      const creds = await loadCredentials();
-      if (!mountedRef.current || selectedKeyRef.current !== key || AppState.currentState !== "active") return;
-      if (!creds) return;
-      // If a previous attempt is still closing, make room.
-      if (streamHandle) {
-        try { streamHandle.stop(); } catch { /* ignore */ }
-        streamHandle = undefined;
-      }
-
-      let handle: PinnedStreamHandle;
-      try {
-        const address = preferredAddress(service.addresses);
-        if (!address) return; // nothing to dial
-        handle = startStream(
-          agentsEventsUrl(address, service.port),
-          creds.fingerprint,
-          creds.token,
-        );
-      } catch (error) {
-        // Non-iOS or module-not-linked throws synchronously (unsupported_platform).
-        // Treat exactly like a stream error: poll, back off, retry — but there is
-        // no point retrying an unsupported platform forever; a short fixed delay
-        // keeps the behavior uniform without spamming retries.
-        const code = (error as PinnedStreamError | undefined)?.code;
-        if (code === "unsupported_platform" || code === "invalid_url") {
-          // Permanent for this device: don't retry, polling covers freshness.
-          return;
-        }
-        scheduleReconnect();
-        return;
-      }
-      streamHandle = handle;
-
-      handle.onEvent(() => {
-        if (!mountedRef.current || selectedKeyRef.current !== key) return;
-        // Stream is healthy: stop redundant polling, mark live, reset backoff,
-        // and run tick() immediately to pull the new state. The daemon only
-        // emits on real changes, so we don't dedup on cursor here.
-        clearReconnect();
-        reconnectAttempt = 0;
-        stopPolling();
-        setStreamStatus("live");
-        void tick();
-      });
-
-      handle.onError(() => {
-        if (!mountedRef.current || selectedKeyRef.current !== key) return;
-        handleStreamEnd();
-      });
-      handle.onClose(() => {
-        if (!mountedRef.current || selectedKeyRef.current !== key) return;
-        handleStreamEnd();
-      });
-    };
-
-    // Stream broke (onError/onClose) OR an unsupported_platform-style throw was
-    // caught and we want to retry: ensure polling is running so freshness never
-    // gaps, flip UI to "polling", and schedule the next openStream attempt.
-    const handleStreamEnd = () => {
-      streamHandle = undefined; // the native side already tore it down
-      clearReconnect();
-      setStreamStatus("polling");
-      if (AppState.currentState === "active") startPolling();
-      scheduleReconnect();
-    };
-
-    const scheduleReconnect = () => {
-      clearReconnect();
-      const delay = discoveryRetryDelay(reconnectAttempt);
-      reconnectAttempt += 1;
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = undefined;
-        if (mountedRef.current && AppState.currentState === "active" && selectedKeyRef.current === key) {
-          void openStream();
-        }
-      }, delay);
-    };
-
-    // —— Foreground/background gating ——
-    const startForeground = () => {
-      startPolling();
-      if (Platform.OS === "ios") void openStream();
-    };
-    const stopForeground = () => {
-      stopPolling();
-      stopStream();
-      setStreamStatus("polling");
-    };
-
-    const subscription = AppState.addEventListener("change", (next: AppStateStatus) => {
-      if (next === "active") startForeground();
-      else stopForeground();
-    });
-    if (AppState.currentState === "active") startForeground();
-
-    return () => {
-      stopPolling();
-      stopStream();
-      subscription.remove();
-    };
-  }, [connectedService]);
-
   useEffect(() => {
     mountedRef.current = true;
 
@@ -562,7 +567,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       errorListener.remove();
       stopDiscoverySearch();
     };
-  }, [beginNotFoundCountdown, clearDiscoveryTimer, connect]);
+  }, [beginNotFoundCountdown, clearDiscoveryTimer, connect, setState]);
 
   const value = useMemo(
     () => ({ state, focusResult, streamStatus, refresh, switchAgent, unpair }),

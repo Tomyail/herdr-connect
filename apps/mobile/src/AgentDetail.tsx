@@ -61,8 +61,8 @@ interface Failure {
 /**
  * Header config produced by {@link AgentDetailBody} so each render mode can
  * surface the same title/subtitle/refresh affordance in its own chrome — the
- * narrow native-stack header (via `navigation.setOptions`) and the wide inline
- * header view both consume exactly this shape.
+ * wide inline header consumes this shape directly, while the narrow
+ * native-stack header reads the refresh action through a ref.
  */
 export interface AgentDetailHeaderConfig {
   title: string;
@@ -283,7 +283,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       setErrorMessage(t("detail.voice.error"));
       console.warn("[voice] failed to start:", error);
     }
-  }, [draft, t, voiceChoice]);
+  }, [draft, inputRef, onVoiceEnd, t, voiceChoice]);
 
   const stop = useCallback(() => {
     userStoppedRef.current = true;
@@ -320,44 +320,241 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   return { listening, toggleVoice, errorMessage, resetDraftRefs };
 }
 
-/**
- * Shared agent-detail body: transcript + composer + the send/interrupt state
- * machine. It owns no navigation and reads no header-height context, so it runs
- * identically inside a native-stack screen (narrow) and inside a split-view
- * column (wide).
- *
- * The header is delegated upward via {@link renderHeader} (and mirrored via
- * {@link onHeaderConfig} for the narrow native-stack header), so each mode
- * places the same presentational header in its own chrome without the body
- * having to know which one it is in.
- */
-export function AgentDetailBody({
-  agent,
-  service,
-  keyboardOffsetExtra,
-  renderHeader,
-  onHeaderConfig,
+function AgentHistorySection({
+  hasNewContent,
+  history,
+  isNearBottomRef,
+  loadError,
+  loadPhase,
+  positionedHistoryRef,
+  scrollRef,
+  setHasNewContent,
 }: {
-  agent: Agent;
-  service: DiscoveredService;
-  /** Extra height to subtract from the keyboard offset (persistent switcher strip / inline header height). */
-  keyboardOffsetExtra: number;
-  /** Renders the header chrome for the current mode; receives the live title/subtitle/refresh. */
-  renderHeader: (config: AgentDetailHeaderConfig) => ReactNode;
-  /** Mode that needs to mirror the header into a non-DOM chrome (the narrow native-stack header) reads this. */
-  onHeaderConfig?: (config: AgentDetailHeaderConfig) => void;
+  hasNewContent: boolean;
+  history?: AgentHistory;
+  isNearBottomRef: React.RefObject<boolean>;
+  loadError?: Failure;
+  loadPhase: LoadPhase;
+  positionedHistoryRef: React.RefObject<boolean>;
+  scrollRef: React.RefObject<ScrollView | null>;
+  setHasNewContent: (value: boolean) => void;
 }) {
   const { t, tError } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+
+  return (
+    <>
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyTitle}>{t("detail.historyTitle")}</Text>
+        <Text style={styles.historyMeta}>
+          {history?.truncated ? t("detail.historyMeta.truncated") : t("detail.historyMeta.recent")}
+        </Text>
+      </View>
+
+      <View style={styles.historyFrame}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.historyContent}
+          keyboardDismissMode="interactive"
+          onContentSizeChange={() => {
+            if (!history) return;
+            if (!positionedHistoryRef.current) {
+              positionedHistoryRef.current = true;
+              scrollRef.current?.scrollToEnd({ animated: false });
+            } else if (isNearBottomRef.current) {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          onScroll={(event) => {
+            const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+            const nearBottom = isHistoryNearBottom({
+              contentHeight: contentSize.height,
+              offsetY: contentOffset.y,
+              viewportHeight: layoutMeasurement.height,
+            });
+            isNearBottomRef.current = nearBottom;
+            if (nearBottom) setHasNewContent(false);
+          }}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          style={styles.history}
+        >
+          {loadPhase === "loading" && !history ? (
+            <View style={styles.centerState}>
+              <ActivityIndicator color={colors.spinner} />
+              <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
+            </View>
+          ) : loadPhase === "failed" && !history ? (
+            <View style={styles.centerState}>
+              <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
+            </View>
+          ) : (
+            <HistoryMarkdown
+              text={history?.text || t("detail.emptyHistory")}
+              styles={{
+                base: styles.transcript,
+                header: [styles.transcript, styles.transcriptHeader],
+                bold: [styles.transcript, styles.transcriptBold],
+                code: [styles.transcript, styles.transcriptCode],
+              }}
+            />
+          )}
+        </ScrollView>
+        {hasNewContent ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("detail.newContent")}
+            onPress={() => {
+              isNearBottomRef.current = true;
+              setHasNewContent(false);
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }}
+            style={({ pressed }) => [styles.newContentButton, pressed && styles.newContentButtonPressed]}
+          >
+            <Text style={styles.newContentText}>{t("detail.newContent")}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </>
+  );
+}
+
+function AgentComposer({
+  canInterrupt,
+  canSend,
+  countdown,
+  cPhase,
+  draft,
+  handleMicPress,
+  inputRef,
+  interrupt,
+  interruptError,
+  interruptPhase,
+  send,
+  sendError,
+  sendPhase,
+  setDraft,
+  setSendPhase,
+  voice,
+}: {
+  canInterrupt: boolean;
+  canSend: boolean;
+  countdown: number | null;
+  cPhase: CPhase;
+  draft: string;
+  handleMicPress: () => void;
+  inputRef: React.RefObject<TextInput | null>;
+  interrupt: () => Promise<void>;
+  interruptError?: Failure;
+  interruptPhase: InterruptPhase;
+  send: () => Promise<void>;
+  sendError?: Failure;
+  sendPhase: SendPhase;
+  setDraft: VoiceInputOptions["setDraft"];
+  setSendPhase: (phase: SendPhase) => void;
+  voice: VoiceInputValue;
+}) {
+  const { t, tError } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.composerArea}>
+      <View style={styles.interruptBar}>
+        {interruptPhase === "failed" && interruptError ? (
+          <Text style={styles.sendError}>{tError(interruptError.code, { status: interruptError.status })}</Text>
+        ) : interruptPhase === "sent" ? (
+          <Text style={styles.sentText}>{t("detail.interruptSent")}</Text>
+        ) : (
+          <Text style={styles.interruptSpacer} />
+        )}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={canInterrupt ? t("detail.interruptA11y") : t("detail.interruptDisabledA11y")}
+          disabled={!canInterrupt}
+          onPress={() => void interrupt()}
+          style={({ pressed }) => [
+            styles.interruptButton,
+            !canInterrupt && styles.interruptButtonDisabled,
+            pressed && canInterrupt && styles.interruptButtonPressed,
+          ]}
+        >
+          {interruptPhase === "sending" ? (
+            <ActivityIndicator color={colors.onDanger} size="small" />
+          ) : (
+            <Text style={[styles.interruptButtonText, !canInterrupt && styles.interruptButtonTextDisabled]}>{t("detail.interrupt")}</Text>
+          )}
+        </Pressable>
+      </View>
+      {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
+      {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
+      {voice.listening ? <Text style={styles.voiceListening}>{t("detail.voice.listening")}</Text> : null}
+      {voice.errorMessage ? <Text style={styles.sendError}>{voice.errorMessage}</Text> : null}
+      <View style={styles.composer}>
+        <TextInput
+          accessibilityLabel={t("detail.inputA11y")}
+          ref={inputRef}
+          blurOnSubmit={false}
+          editable={!voice.listening}
+          maxLength={4000}
+          multiline
+          onChangeText={(value) => {
+            setDraft(value);
+            if (sendPhase !== "sending") setSendPhase("idle");
+          }}
+          placeholder={t("detail.inputPlaceholder")}
+          placeholderTextColor={colors.textMuted}
+          style={styles.input}
+          value={draft}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
+          accessibilityState={voice.listening ? { expanded: true } : undefined}
+          hitSlop={8}
+          onPress={handleMicPress}
+          style={({ pressed }) => [
+            styles.voiceButton,
+            (voice.listening || cPhase !== "idle") && styles.voiceButtonActive,
+            pressed && styles.voiceButtonPressed,
+          ]}
+        >
+          {cPhase === "countingDown" && countdown != null ? (
+            <Text style={[styles.voiceButtonText, { color: colors.danger }]}>{countdown}</Text>
+          ) : (
+            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
+          )}
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("detail.sendA11y")}
+          disabled={!canSend || voice.listening}
+          onPress={() => void send()}
+          style={({ pressed }) => {
+            const inactive = !canSend || voice.listening;
+            return [
+              styles.sendButton,
+              inactive && styles.sendButtonDisabled,
+              pressed && !inactive && styles.sendButtonPressed,
+            ];
+          }}
+        >
+          {sendPhase === "sending" ? (
+            <ActivityIndicator color={colors.onAction} size="small" />
+          ) : (
+            <Text style={[styles.sendButtonText, (!canSend || voice.listening) && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function useAgentHistory(agent: Agent, service: DiscoveredService) {
   const [history, setHistory] = useState<AgentHistory>();
   const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
   const [loadError, setLoadError] = useState<Failure>();
-  const [draft, setDraft] = useState("");
-  const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
-  const [sendError, setSendError] = useState<Failure>();
-  const [interruptPhase, setInterruptPhase] = useState<InterruptPhase>("idle");
-  const [interruptError, setInterruptError] = useState<Failure>();
   const [hasNewContent, setHasNewContent] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
@@ -397,16 +594,41 @@ export function AgentDetailBody({
     if (hadHistory && !isNearBottomRef.current) setHasNewContent(true);
   }, [history]);
 
-  const title = agent.workspace_label || agent.display_name || "Agent";
-  const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
-  const refresh = useCallback(() => void loadHistory(true), [loadHistory]);
+  return {
+    hasNewContent,
+    history,
+    isNearBottomRef,
+    loadError,
+    loadHistory,
+    loadPhase,
+    mountedRef,
+    positionedHistoryRef,
+    scrollRef,
+    setHasNewContent,
+  };
+}
 
-  // Surface header config to whichever mode is hosting this body. The narrow
-  // wrapper forwards it to `navigation.setOptions`; the wide wrapper ignores it
-  // (it renders the header inline via `renderHeader` instead).
-  useLayoutEffect(() => {
-    onHeaderConfig?.({ title, subtitle, onRefresh: refresh });
-  }, [onHeaderConfig, refresh, subtitle, title]);
+function useAgentMessaging({
+  agent,
+  isNearBottomRef,
+  loadHistory,
+  mountedRef,
+  service,
+  setHasNewContent,
+}: {
+  agent: Agent;
+  isNearBottomRef: React.RefObject<boolean>;
+  loadHistory: (showLoading?: boolean) => Promise<void>;
+  mountedRef: React.RefObject<boolean>;
+  service: DiscoveredService;
+  setHasNewContent: (value: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const [draft, setDraft] = useState("");
+  const [sendPhase, setSendPhase] = useState<SendPhase>("idle");
+  const [sendError, setSendError] = useState<Failure>();
+  const [interruptPhase, setInterruptPhase] = useState<InterruptPhase>("idle");
+  const [interruptError, setInterruptError] = useState<Failure>();
 
   const send = useCallback(async () => {
     const text = draft.trim();
@@ -426,9 +648,123 @@ export function AgentDetailBody({
       setSendPhase("failed");
       setSendError({ code: toErrorCode(error, "send_failed"), status: toErrorStatus(error) });
     }
-  }, [agent.source_id, draft, loadHistory, sendPhase, service]);
+  }, [agent.source_id, draft, isNearBottomRef, loadHistory, mountedRef, sendPhase, service, setHasNewContent]);
 
-  const canSend = draft.trim().length > 0 && sendPhase !== "sending";
+  const interrupt = useCallback(async () => {
+    if (interruptPhase === "sending") return;
+    Alert.alert(
+      t("detail.interruptConfirm.title"),
+      t("detail.interruptConfirm.body"),
+      [
+        { text: t("detail.interruptConfirm.cancel"), style: "cancel" },
+        {
+          text: t("detail.interruptConfirm.confirm"),
+          style: "destructive",
+          onPress: async () => {
+            setInterruptPhase("sending");
+            setInterruptError(undefined);
+            try {
+              await interruptAgent(service, agent.source_id);
+              if (!mountedRef.current) return;
+              setInterruptPhase("sent");
+              await loadHistory();
+            } catch (error) {
+              if (!mountedRef.current) return;
+              setInterruptPhase("failed");
+              setInterruptError({ code: toErrorCode(error, "interrupt_failed"), status: toErrorStatus(error) });
+            }
+          },
+        },
+      ],
+      { cancelable: true },
+    );
+  }, [agent.source_id, interruptPhase, loadHistory, mountedRef, service, t]);
+
+  return {
+    canInterrupt: agent.interaction_state === "working" && interruptPhase !== "sending",
+    canSend: draft.trim().length > 0 && sendPhase !== "sending",
+    draft,
+    interrupt,
+    interruptError,
+    interruptPhase,
+    send,
+    sendError,
+    sendPhase,
+    setDraft,
+    setSendPhase,
+  };
+}
+
+/**
+ * Shared agent-detail body: transcript + composer + the send/interrupt state
+ * machine. It owns no navigation and reads no header-height context, so it runs
+ * identically inside a native-stack screen (narrow) and inside a split-view
+ * column (wide).
+ *
+ * The wide header is delegated through {@link renderHeader}; the narrow header
+ * receives only the current refresh action through {@link refreshRef}.
+ */
+export function AgentDetailBody({
+  agent,
+  service,
+  keyboardOffsetExtra,
+  renderHeader,
+  refreshRef,
+}: {
+  agent: Agent;
+  service: DiscoveredService;
+  /** Extra height to subtract from the keyboard offset (persistent switcher strip / inline header height). */
+  keyboardOffsetExtra: number;
+  /** Renders the header chrome for the current mode; receives the live title/subtitle/refresh. */
+  renderHeader: (config: AgentDetailHeaderConfig) => ReactNode;
+  /** Lets the narrow native-stack header trigger this body's current refresh action. */
+  refreshRef?: React.RefObject<(() => void) | null>;
+}) {
+  const styles = useThemedStyles(createStyles);
+  const {
+    hasNewContent,
+    history,
+    isNearBottomRef,
+    loadError,
+    loadHistory,
+    loadPhase,
+    mountedRef,
+    positionedHistoryRef,
+    scrollRef,
+    setHasNewContent,
+  } = useAgentHistory(agent, service);
+  const {
+    canInterrupt,
+    canSend,
+    draft,
+    interrupt,
+    interruptError,
+    interruptPhase,
+    send,
+    sendError,
+    sendPhase,
+    setDraft,
+    setSendPhase,
+  } = useAgentMessaging({
+    agent,
+    isNearBottomRef,
+    loadHistory,
+    mountedRef,
+    service,
+    setHasNewContent,
+  });
+
+  const title = agent.workspace_label || agent.display_name || "Agent";
+  const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
+  const refresh = useCallback(() => void loadHistory(true), [loadHistory]);
+
+  useLayoutEffect(() => {
+    if (!refreshRef) return;
+    refreshRef.current = refresh;
+    return () => {
+      refreshRef.current = null;
+    };
+  }, [refresh, refreshRef]);
 
   // Voice input shares the draft state; the recognizer streams partial results
   // into the TextInput value WITHOUT focusing it, so the keyboard stays hidden.
@@ -455,7 +791,7 @@ export function AgentDetailBody({
   // onVoiceEnd(true), and the reducer handles the phase transition.
 
   const cancelAllTimers = useCallback(() => {
-    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = undefined; }
+    if (silenceTimerRef.current) { clearInterval(silenceTimerRef.current); silenceTimerRef.current = undefined; }
     if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
   }, []);
 
@@ -469,21 +805,14 @@ export function AgentDetailBody({
   useEffect(() => {
     if (!continuousEnabled || cPhase !== "listening") return;
     const threshold = silenceThresholdStorage.read();
-    let recurring: ReturnType<typeof setTimeout>;
-    const schedule = () => {
-      recurring = setTimeout(() => {
-        // Only enter countdown if there is actual draft content (Rule 2).
-        if (draft.trim().length > 0 && Date.now() - cState.lastActivityAt >= threshold) {
-          dispatch({ type: "SILENCE_DETECTED" });
-        } else {
-          schedule();
-        }
-      }, threshold);
-      silenceTimerRef.current = recurring;
-    };
-    schedule();
+    const recurring = setInterval(() => {
+      if (draft.trim().length > 0 && Date.now() - cState.lastActivityAt >= threshold) {
+        dispatch({ type: "SILENCE_DETECTED" });
+      }
+    }, threshold);
+    silenceTimerRef.current = recurring;
     return () => {
-      if (recurring) clearTimeout(recurring);
+      clearInterval(recurring);
       silenceTimerRef.current = undefined;
     };
   }, [continuousEnabled, cPhase, cState.lastActivityAt, draft]);
@@ -522,11 +851,7 @@ export function AgentDetailBody({
     return () => {
       if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
     };
-    // Dependencies deliberately exclude `draft` — we only need draft at
-    // countdown→0 time, which is read from its current value in the callback.
-    // Including draft here would cause the interval to be torn down and
-    // re-created on every keystroke/voice result, freezing the countdown.
-  }, [continuousEnabled, cPhase, countdown, cancelAllTimers]);
+  }, [agent.source_id, cancelAllTimers, continuousEnabled, countdown, cPhase, draft, isNearBottomRef, loadHistory, mountedRef, service, setDraft, setHasNewContent, setSendPhase]);
 
   // Rule 5: agent state watcher for "waitingForAgent".
   const interactionState = agent.interaction_state;
@@ -615,44 +940,6 @@ export function AgentDetailBody({
   voiceToggleRef.current = voice.toggleVoice;
   voiceResetDraftRefsRef.current = voice.resetDraftRefs;
 
-  // 「仅运行中可叫停」映射：只有 InteractionState === "working" 才算“正在跑、
-  // 可以叫停”。blocked 通常意味着 turn 已不在推进（等输入或卡住）、ready_input
-  // 意味着上一个 turn 已结束等待用户输入、unknown 状态不明——这三者叫停语义上
-  // 都没意义，而且可能让用户误以为能停止一个根本没在跑的 turn。因此按钮只在
-  // working 时启用。
-  const canInterrupt = agent.interaction_state === "working" && interruptPhase !== "sending";
-
-  const interrupt = useCallback(async () => {
-    if (interruptPhase === "sending") return;
-    // 威胁模型要求 interrupt 需二次确认；误触不应直接叫停。
-    Alert.alert(
-      t("detail.interruptConfirm.title"),
-      t("detail.interruptConfirm.body"),
-      [
-        { text: t("detail.interruptConfirm.cancel"), style: "cancel" },
-        {
-          text: t("detail.interruptConfirm.confirm"),
-          style: "destructive",
-          onPress: async () => {
-            setInterruptPhase("sending");
-            setInterruptError(undefined);
-            try {
-              await interruptAgent(service, agent.source_id);
-              if (!mountedRef.current) return;
-              setInterruptPhase("sent");
-              await loadHistory();
-            } catch (error) {
-              if (!mountedRef.current) return;
-              setInterruptPhase("failed");
-              setInterruptError({ code: toErrorCode(error, "interrupt_failed"), status: toErrorStatus(error) });
-            }
-          },
-        },
-      ],
-      { cancelable: true },
-    );
-  }, [agent.source_id, interruptPhase, loadHistory, service, t]);
-
   const headerConfig: AgentDetailHeaderConfig = { title, subtitle, onRefresh: refresh };
 
   return (
@@ -662,169 +949,34 @@ export function AgentDetailBody({
       style={styles.screen}
     >
       {renderHeader(headerConfig)}
-
-      <View style={styles.historyHeader}>
-        <Text style={styles.historyTitle}>{t("detail.historyTitle")}</Text>
-        <Text style={styles.historyMeta}>
-          {history?.truncated ? t("detail.historyMeta.truncated") : t("detail.historyMeta.recent")}
-        </Text>
-      </View>
-
-      <View style={styles.historyFrame}>
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.historyContent}
-          keyboardDismissMode="interactive"
-          onContentSizeChange={() => {
-            if (!history) return;
-            if (!positionedHistoryRef.current) {
-              positionedHistoryRef.current = true;
-              scrollRef.current?.scrollToEnd({ animated: false });
-            } else if (isNearBottomRef.current) {
-              scrollRef.current?.scrollToEnd({ animated: true });
-            }
-          }}
-          onScroll={(event) => {
-            const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-            const nearBottom = isHistoryNearBottom({
-              contentHeight: contentSize.height,
-              offsetY: contentOffset.y,
-              viewportHeight: layoutMeasurement.height,
-            });
-            isNearBottomRef.current = nearBottom;
-            if (nearBottom) setHasNewContent(false);
-          }}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-          style={styles.history}
-        >
-          {loadPhase === "loading" && !history ? (
-            <View style={styles.centerState}>
-              <ActivityIndicator color={colors.spinner} />
-              <Text style={styles.stateText}>{t("detail.loadingHistory")}</Text>
-            </View>
-          ) : loadPhase === "failed" && !history ? (
-            <View style={styles.centerState}>
-              <Text style={styles.errorText}>{loadError ? tError(loadError.code, { status: loadError.status }) : tError("history_read")}</Text>
-            </View>
-          ) : (
-            <HistoryMarkdown
-              text={history?.text || t("detail.emptyHistory")}
-              styles={{
-                base: styles.transcript,
-                header: [styles.transcript, styles.transcriptHeader],
-                bold: [styles.transcript, styles.transcriptBold],
-                code: [styles.transcript, styles.transcriptCode],
-              }}
-            />
-          )}
-        </ScrollView>
-        {hasNewContent ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("detail.newContent")}
-            onPress={() => {
-              isNearBottomRef.current = true;
-              setHasNewContent(false);
-              scrollRef.current?.scrollToEnd({ animated: true });
-            }}
-            style={({ pressed }) => [styles.newContentButton, pressed && styles.newContentButtonPressed]}
-          >
-            <Text style={styles.newContentText}>{t("detail.newContent")}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={styles.composerArea}>
-        <View style={styles.interruptBar}>
-          {interruptPhase === "failed" && interruptError ? (
-            <Text style={styles.sendError}>{tError(interruptError.code, { status: interruptError.status })}</Text>
-          ) : interruptPhase === "sent" ? (
-            <Text style={styles.sentText}>{t("detail.interruptSent")}</Text>
-          ) : (
-            <Text style={styles.interruptSpacer} />
-          )}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={canInterrupt ? t("detail.interruptA11y") : t("detail.interruptDisabledA11y")}
-            disabled={!canInterrupt}
-            onPress={() => void interrupt()}
-            style={({ pressed }) => [
-              styles.interruptButton,
-              !canInterrupt && styles.interruptButtonDisabled,
-              pressed && canInterrupt && styles.interruptButtonPressed,
-            ]}
-          >
-            {interruptPhase === "sending" ? (
-              <ActivityIndicator color={colors.onDanger} size="small" />
-            ) : (
-              <Text style={[styles.interruptButtonText, !canInterrupt && styles.interruptButtonTextDisabled]}>{t("detail.interrupt")}</Text>
-            )}
-          </Pressable>
-        </View>
-        {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
-        {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
-        {voice.listening ? <Text style={styles.voiceListening}>{t("detail.voice.listening")}</Text> : null}
-        {voice.errorMessage ? <Text style={styles.sendError}>{voice.errorMessage}</Text> : null}
-        <View style={styles.composer}>
-          <TextInput
-            accessibilityLabel={t("detail.inputA11y")}
-            ref={inputRef}
-            blurOnSubmit={false}
-            // While listening the recognizer owns the draft; keep the field
-            // non-editable so tapping it can't pop the keyboard mid-dictation.
-            editable={!voice.listening}
-            maxLength={4000}
-            multiline
-            onChangeText={(value) => {
-              setDraft(value);
-              if (sendPhase !== "sending") setSendPhase("idle");
-            }}
-            placeholder={t("detail.inputPlaceholder")}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            value={draft}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
-            accessibilityState={voice.listening ? { expanded: true } : undefined}
-            hitSlop={8}
-            onPress={handleMicPress}
-            style={({ pressed }) => [
-              styles.voiceButton,
-              (voice.listening || cPhase !== "idle") && styles.voiceButtonActive,
-              pressed && styles.voiceButtonPressed,
-            ]}
-          >
-            {cPhase === "countingDown" && countdown != null ? (
-              <Text style={[styles.voiceButtonText, { color: colors.danger }]}>{countdown}</Text>
-            ) : (
-              <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
-            )}
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("detail.sendA11y")}
-            disabled={!canSend || voice.listening}
-            onPress={() => void send()}
-            style={({ pressed }) => {
-              const inactive = !canSend || voice.listening;
-              return [
-                styles.sendButton,
-                inactive && styles.sendButtonDisabled,
-                pressed && !inactive && styles.sendButtonPressed,
-              ];
-            }}
-          >
-            {sendPhase === "sending" ? (
-              <ActivityIndicator color={colors.onAction} size="small" />
-            ) : (
-              <Text style={[styles.sendButtonText, (!canSend || voice.listening) && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
+      <AgentHistorySection
+        hasNewContent={hasNewContent}
+        history={history}
+        isNearBottomRef={isNearBottomRef}
+        loadError={loadError}
+        loadPhase={loadPhase}
+        positionedHistoryRef={positionedHistoryRef}
+        scrollRef={scrollRef}
+        setHasNewContent={setHasNewContent}
+      />
+      <AgentComposer
+        canInterrupt={canInterrupt}
+        canSend={canSend}
+        countdown={countdown}
+        cPhase={cPhase}
+        draft={draft}
+        handleMicPress={handleMicPress}
+        inputRef={inputRef}
+        interrupt={interrupt}
+        interruptError={interruptError}
+        interruptPhase={interruptPhase}
+        send={send}
+        sendError={sendError}
+        sendPhase={sendPhase}
+        setDraft={setDraft}
+        setSendPhase={setSendPhase}
+        voice={voice}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -880,6 +1032,7 @@ export function AgentDetailScreen({ route, navigation }: Props) {
   const paramAgent = route.params.agent;
   const agent = agents.find((candidate) => candidate.source_id === paramAgent.source_id) ?? paramAgent;
   const [switcherHeight, setSwitcherHeight] = useState(0);
+  const bodyRefreshRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!service && navigation.canGoBack()) navigation.goBack();
@@ -897,20 +1050,17 @@ export function AgentDetailScreen({ route, navigation }: Props) {
     [agent.source_id, clearCompleted, navigation, service, switchAgent],
   );
 
-  // Mirror the body's header config into the native-stack header. This is the
-  // narrow-mode counterpart to the wide mode's inline header view.
-  const handleHeaderConfig = useCallback(
-    (config: AgentDetailHeaderConfig) => {
-      navigation.setOptions({
-        headerBackTitle: t("detail.back"),
-        headerTitle: () => (
-          <AgentDetailTitleBlock title={config.title} subtitle={config.subtitle} />
-        ),
-        headerRight: () => <AgentDetailRefreshButton onPress={config.onRefresh} />,
-      });
-    },
-    [navigation, t],
-  );
+  const title = agent.workspace_label || agent.display_name || "Agent";
+  const subtitle = [agent.tab_label, agent.agent_name].filter(Boolean).join(" · ");
+  const refreshBody = useCallback(() => bodyRefreshRef.current?.(), []);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerBackTitle: t("detail.back"),
+      headerTitle: () => <AgentDetailTitleBlock title={title} subtitle={subtitle} />,
+      headerRight: () => <AgentDetailRefreshButton onPress={refreshBody} />,
+    });
+  }, [navigation, refreshBody, subtitle, t, title]);
 
   if (!service) return null;
   // The switcher lives outside the keyed subtree so it survives switches
@@ -929,7 +1079,7 @@ export function AgentDetailScreen({ route, navigation }: Props) {
         keyboardOffsetExtra={headerHeight + switcherHeight}
         // The narrow mode renders its header in the native-stack bar, not inline.
         renderHeader={() => null}
-        onHeaderConfig={handleHeaderConfig}
+        refreshRef={bodyRefreshRef}
       />
     </View>
   );
