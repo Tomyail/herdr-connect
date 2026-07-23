@@ -22,6 +22,7 @@ import { AgentsScreenContent } from "./AgentsScreen";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
 import { VoiceLanguageScreen } from "./VoiceLanguageScreen";
+import { SilenceThresholdScreen } from "./SilenceThresholdScreen";
 import {
   useSettingsCategories,
   type SettingsCategoryKey,
@@ -169,6 +170,7 @@ type SettingsDetailStackParamList = {
   Language: undefined;
   Appearance: undefined;
   VoiceLanguage: undefined;
+  SilenceThreshold: undefined;
 };
 const SettingsDetailStack = createNativeStackNavigator<SettingsDetailStackParamList>();
 
@@ -286,6 +288,7 @@ function SettingsDetailColumn({
       onNavigateLanguage: () => detailRef.current?.navigate("Language"),
       onNavigateAppearance: () => detailRef.current?.navigate("Appearance"),
       onNavigateVoiceLanguage: () => detailRef.current?.navigate("VoiceLanguage"),
+      onNavigateSilenceThreshold: () => detailRef.current?.navigate("SilenceThreshold"),
       onRequestPairing,
     }),
     [detailRef, onRequestPairing],
@@ -310,6 +313,7 @@ function SettingsDetailColumn({
             <SettingsDetailStack.Screen name="Language" component={LanguageScreen} />
             <SettingsDetailStack.Screen name="Appearance" component={AppearanceScreen} />
             <SettingsDetailStack.Screen name="VoiceLanguage" component={VoiceLanguageScreen} />
+            <SettingsDetailStack.Screen name="SilenceThreshold" component={SilenceThresholdScreen} />
           </SettingsDetailStack.Navigator>
         </NavigationContainer>
       </NavigationIndependentTree>
@@ -328,6 +332,7 @@ function SettingsColumns({ onRequestPairing }: { onRequestPairing: () => void })
     onNavigateLanguage: () => {},
     onNavigateAppearance: () => {},
     onNavigateVoiceLanguage: () => {},
+    onNavigateSilenceThreshold: () => {},
     onRequestPairing,
   });
 

@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Language: undefined;
   Appearance: undefined;
   VoiceLanguage: undefined;
+  SilenceThreshold: undefined;
   Pairing: undefined;
 };
 

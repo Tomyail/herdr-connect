@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -40,6 +40,8 @@ import { useMMKVBoolean } from "react-native-mmkv";
 import { AUTO_SEND_VOICE_KEY, DEFAULT_AUTO_SEND_VOICE, notificationStorage } from "./notifications/settings";
 import { useVoiceLanguage } from "./voice/VoiceLanguageContext";
 import { resolveVoiceLang, loadSupportedVoiceLocales } from "./voice/config";
+import { silenceThresholdStorage } from "./voice/silenceThreshold";
+import { cReducer, INITIAL_STATE, type CPhase } from "./voice/continuousReducer";
 
 const HISTORY_REFRESH_MS = 2_000;
 
@@ -73,10 +75,16 @@ interface VoiceInputOptions {
   draft: string;
   /** Replace the draft (same setter used by manual typing). */
   setDraft: (value: string | ((prev: string) => string)) => void;
-  /** Fire the send action once recognition settles (used for auto-send). */
-  send: () => void;
   /** TextInput ref — tapped to dismiss the keyboard when mic is pressed. */
   inputRef: React.RefObject<TextInput | null>;
+  /** Fires every time a speech recognition result arrives (partial or final).
+   *  The orchestrator uses this for silence detection. */
+  onResultActivity?: () => void;
+  /** Fires when the recognition engine emits an "end" event (system auto-end
+   *  or user stop). The orchestrator uses this to distinguish the two cases. */
+  onVoiceEnd?: (userStopped: boolean) => void;
+  /** Fires the send action once recognition completes (used by the orchestrator). */
+  onAutoSend?: () => void;
 }
 
 interface VoiceInputValue {
@@ -86,6 +94,10 @@ interface VoiceInputValue {
   toggleVoice: () => void;
   /** Last error message, shown briefly above the composer; cleared on retry. */
   errorMessage: string | null;
+  /** Reset the internal draft bookkeeping (baseRef/liveRef) to the given text.
+   *  Call this after sending so the end handler's commitLive() doesn't restore
+   *  old text back into the input. */
+  resetDraftRefs: (to?: string) => void;
 }
 
 /**
@@ -101,7 +113,7 @@ interface VoiceInputValue {
  * is folded into the base and the live part resets; partials overwrite only
  * the live tail, so the box always shows coherent text.
  */
-function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): VoiceInputValue {
+function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd, onAutoSend }: VoiceInputOptions): VoiceInputValue {
   const { t } = useI18n();
   const { choice: voiceChoice } = useVoiceLanguage();
   const [listening, setListening] = useState(false);
@@ -109,7 +121,6 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
   // Text captured as finalized while listening; partial results append after it.
   const baseRef = useRef("");
   const liveRef = useRef("");
-  const autoSendRef = useRef(false);
   // Distinguishes a user-initiated stop (toggle off) from a system auto-end
   // (iOS ~60s cap / Android silence timeout). On auto-end we restart so the
   // user can keep talking across the system boundary without re-tapping the mic.
@@ -120,8 +131,6 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
   // surrender and show an error instead of silently hammering the engine.
   const MAX_AUTO_RESTARTS = 3;
   const restartCountRef = useRef(0);
-  const [autoSendStored] = useMMKVBoolean(AUTO_SEND_VOICE_KEY, notificationStorage);
-  autoSendRef.current = autoSendStored ?? DEFAULT_AUTO_SEND_VOICE;
   // lang is computed async in start() and cached here so the auto-restart in
   // the "end" handler can re-use it without re-running the async work.
   const langRef = useRef("en-US");
@@ -148,6 +157,7 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
       liveRef.current = transcript;
     }
     commitLive();
+    onResultActivity?.();
   });
 
   useSpeechRecognitionEvent("end", () => {
@@ -157,35 +167,45 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
       liveRef.current = "";
       commitLive();
     }
-    if (userStoppedRef.current) {
+    const wasUserStopped = userStoppedRef.current;
+    if (wasUserStopped) {
       // The owner tapped stop — finish listening for real.
       userStoppedRef.current = false;
       setListening(false);
-      if (autoSendRef.current && baseRef.current.trim().length > 0) {
-        send();
+    }
+    // Notify the orchestrator so it can decide whether to auto-send or restart.
+    onVoiceEnd?.(wasUserStopped);
+    if (!wasUserStopped) {
+      // System auto-ended mid-session (iOS time cap / Android silence). Restart
+      // immediately so dictation continues seamlessly until the owner stops it.
+      restartCountRef.current += 1;
+      if (restartCountRef.current > MAX_AUTO_RESTARTS) {
+        setListening(false);
+        userStoppedRef.current = false;
+        setErrorMessage(t("detail.voice.error"));
+        console.warn("[voice] auto-restart limit reached, stopping");
+        return;
       }
-      return;
-    }
-    // System auto-ended mid-session (iOS time cap / Android silence). Restart
-    // immediately so dictation continues seamlessly until the owner stops it.
-    restartCountRef.current += 1;
-    if (restartCountRef.current > MAX_AUTO_RESTARTS) {
-      setListening(false);
-      userStoppedRef.current = false;
-      setErrorMessage(t("detail.voice.error"));
-      console.warn("[voice] auto-restart limit reached, stopping");
-      return;
-    }
-    try {
-      ExpoSpeechRecognitionModule.start({ lang: langRef.current, interimResults: true, continuous: true });
-    } catch (error) {
-      setListening(false);
-      setErrorMessage(t("detail.voice.error"));
-      console.warn("[voice] auto-restart failed:", error);
+      try {
+        ExpoSpeechRecognitionModule.start({ lang: langRef.current, interimResults: true, continuous: true });
+      } catch (error) {
+        setListening(false);
+        setErrorMessage(t("detail.voice.error"));
+        console.warn("[voice] auto-restart failed:", error);
+      }
     }
   });
 
   useSpeechRecognitionEvent("error", (event) => {
+    if (event.error === "no-speech") {
+      // No speech was detected at all — a strong signal the owner has stopped
+      // talking. Treat this as an intentional stop so the orchestrator exits
+      // the continuous loop rather than auto-restarting.
+      userStoppedRef.current = true;
+      setListening(false);
+      onVoiceEnd?.(true);
+      return;
+    }
     setListening(false);
     setErrorMessage(`${t("detail.voice.error")} (${event.error})`);
     console.warn("[voice] recognition error:", event.error, event.message);
@@ -206,6 +226,10 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
           ],
           { cancelable: true },
         );
+        // Permission denied during auto-restart — tell the orchestrator to
+        // exit so we don't silently get stuck in "listening" phase.
+        setListening(false);
+        onVoiceEnd?.(true);
         return;
       }
       baseRef.current = draft;
@@ -243,6 +267,10 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
     ExpoSpeechRecognitionModule.stop();
   }, []);
 
+  // When the component is unmounted (e.g. on agent switch via key={}), tear
+  // down the native recognition session so it doesn't silently keep running.
+  useEffect(() => () => { ExpoSpeechRecognitionModule.stop(); }, []);
+
   const toggleVoice = useCallback(() => {
     if (listening) {
       void stop();
@@ -251,7 +279,12 @@ function useVoiceInput({ draft, setDraft, send, inputRef }: VoiceInputOptions): 
     }
   }, [listening, start, stop]);
 
-  return { listening, toggleVoice, errorMessage };
+  const resetDraftRefs = useCallback((to: string = "") => {
+    baseRef.current = to;
+    liveRef.current = "";
+  }, []);
+
+  return { listening, toggleVoice, errorMessage, resetDraftRefs };
 }
 
 /**
@@ -367,7 +400,180 @@ export function AgentDetailBody({
   // Voice input shares the draft state; the recognizer streams partial results
   // into the TextInput value WITHOUT focusing it, so the keyboard stays hidden.
   const inputRef = useRef<TextInput>(null);
-  const voice = useVoiceInput({ draft, setDraft, send: () => void send(), inputRef });
+
+  // ═══ Continuous voice orchestrator (useReducer state machine) ═══
+  const [continuousMode] = useMMKVBoolean(AUTO_SEND_VOICE_KEY, notificationStorage);
+  const continuousEnabled = continuousMode ?? DEFAULT_AUTO_SEND_VOICE;
+  const [cState, dispatch] = useReducer(cReducer, INITIAL_STATE);
+  const cPhase = cState.phase;
+  const countdown = cState.countdown;
+
+  // Refs for timers and voice hook access (declared before effects).
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const voiceToggleRef = useRef<() => void>(() => {});
+  const voiceResetDraftRefsRef = useRef<(to?: string) => void>(() => {});
+  const { choice: storedVoiceChoice } = useVoiceLanguage();
+  const voiceChoiceRef = useRef(storedVoiceChoice);
+  voiceChoiceRef.current = storedVoiceChoice;
+
+  // userStoppedRef stays in useVoiceInput — the orchestrator no longer needs
+  // its own copy. The voice hook tells us about intentional stops via
+  // onVoiceEnd(true), and the reducer handles the phase transition.
+
+  const cancelAllTimers = useCallback(() => {
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = undefined; }
+    if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
+  }, []);
+
+  // ── Effects: one per concern, driven purely by cState ──
+
+  // Rule 1 (idle→listening): user start triggers voice.toggleVoice() in
+  // handleMicPress; this effect just starts the silence timer once we land
+  // in "listening".
+  // Rule 2: silence detection — only fires if countdown != null (which the
+  // reducer only sets to 3 when entering countingDown).
+  useEffect(() => {
+    if (!continuousEnabled || cPhase !== "listening") return;
+    const threshold = silenceThresholdStorage.read();
+    let recurring: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      recurring = setTimeout(() => {
+        // Only enter countdown if there is actual draft content (Rule 2).
+        if (draft.trim().length > 0 && Date.now() - cState.lastActivityAt >= threshold) {
+          dispatch({ type: "SILENCE_DETECTED" });
+        } else {
+          schedule();
+        }
+      }, threshold);
+      silenceTimerRef.current = recurring;
+    };
+    schedule();
+    return () => {
+      if (recurring) clearTimeout(recurring);
+      silenceTimerRef.current = undefined;
+    };
+  }, [continuousEnabled, cPhase, cState.lastActivityAt, draft]);
+
+  // Rule 3/4: countdown → tick every 1s; when it hits 0, stop engine & send.
+  useEffect(() => {
+    if (!continuousEnabled || cPhase !== "countingDown") return;
+    if (countdown !== null && countdown <= 0) {
+      cancelAllTimers();
+      // Rule 4: stop engine + clear refs SYNCHRONOUSLY, then fire-and-forget send.
+      voiceResetDraftRefsRef.current();
+      voiceToggleRef.current(); // listening=true → stop() → userStoppedRef=true → end → onVoiceEnd(true)
+      dispatch({ type: "COUNTDOWN_DONE" });
+      if (draft.trim().length > 0) {
+        const text = draft.trim();
+        void (async () => {
+          try {
+            await sendAgentMessage(service, agent.source_id, text);
+            if (!mountedRef.current) return;
+            setDraft("");
+            setSendPhase("sent");
+            isNearBottomRef.current = true;
+            setHasNewContent(false);
+            await loadHistory();
+          } catch (_err) { /* fall through */ }
+        })();
+      }
+      return;
+    }
+    countdownTimerRef.current = setInterval(() => {
+      dispatch({ type: "COUNTDOWN_TICK" });
+    }, 1000);
+    return () => {
+      if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
+    };
+  }, [continuousEnabled, cPhase, countdown, draft, agent.source_id, service, setDraft, loadHistory, cancelAllTimers]);
+
+  // Rule 5: agent state watcher for "waitingForAgent".
+  const interactionState = agent.interaction_state;
+  useEffect(() => {
+    if (!continuousEnabled || cPhase !== "waitingForAgent") return;
+    if (interactionState === "working") {
+      dispatch({ type: "AGENT_WORKING" });
+    } else if (interactionState === "ready_input" || interactionState === "blocked") {
+      dispatch({ type: "AGENT_READY" });
+    }
+  }, [continuousEnabled, cPhase, interactionState]);
+
+  // When we (re-)enter "listening" (either from idle-start or from
+  // waitingForAgent→listening), restart the voice engine.
+  const prevPhaseRef = useRef<CPhase>("idle");
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = cPhase;
+    if (!continuousEnabled) return;
+    if (cPhase === "listening" && prev !== "listening") {
+      // The engine may already be running (idle→listening via handleMicPress
+      // already called toggleVoice). Only restart if coming from waitingForAgent.
+      if (prev === "waitingForAgent") {
+        voiceToggleRef.current(); // listening=false → start()
+      }
+    }
+    if (cPhase !== "listening") {
+      cancelAllTimers();
+    }
+  }, [continuousEnabled, cPhase, cancelAllTimers]);
+
+  // Rule 7: unmount → full cleanup (voice hook unmount effect handles engine stop).
+  useEffect(() => () => { cancelAllTimers(); dispatch({ type: "RESET" }); }, [cancelAllTimers]);
+
+  // ── Callbacks bridging voice hook ↔ reducer ──
+
+  // Every recognition result → update silence timestamp + abort countdown.
+  const handleResultActivity = useCallback(() => {
+    dispatch({ type: "RESULT_ACTIVITY", at: Date.now() });
+  }, []);
+
+  // Voice hook end event. userStopped=true only when voice.toggleVoice()
+  // called stop() (the only path that sets userStoppedRef in the hook).
+  // The reducer ignores system auto-ends (userStopped=false) — the voice
+  // hook's own auto-restart logic handles those.
+  const handleVoiceEnd = useCallback((userStopped: boolean) => {
+    if (!continuousEnabled) return;
+    if (!userStopped) return;
+    // The engine was stopped intentionally. If the stop wasn't preceded by a
+    // COUNTDOWN_DONE or USER_STOP dispatch (e.g. no-speech or permission
+    // denied while listening), exit to idle now.
+    cancelAllTimers();
+    if (cPhase === "listening" || cPhase === "countingDown") {
+      dispatch({ type: "USER_STOP" });
+    }
+  }, [continuousEnabled, cancelAllTimers, cPhase]);
+
+  // ── Voice input hook ─────────────────────────────────────────
+  const voice = useVoiceInput({
+    draft,
+    setDraft,
+    inputRef,
+    onResultActivity: handleResultActivity,
+    onVoiceEnd: handleVoiceEnd,
+  });
+
+  // Must be after voice + cancelAllTimers so it can reference both.
+  const handleMicPress = useCallback(() => {
+    if (continuousEnabled && cPhase !== "idle") {
+      // Rule 6: exit continuous mode from any phase.
+      dispatch({ type: "USER_STOP" });
+      cancelAllTimers();
+      if (voice.listening) {
+        void voice.toggleVoice(); // stop engine via proper path
+      }
+    } else if (continuousEnabled) {
+      // Rule 1: idle → listening.
+      dispatch({ type: "USER_START" });
+      void voice.toggleVoice(); // listening=false → start()
+    } else {
+      void voice.toggleVoice();
+    }
+  }, [continuousEnabled, cPhase, cancelAllTimers, voice]);
+
+  // Backfill the refs for the effects that run before voice is declared.
+  voiceToggleRef.current = voice.toggleVoice;
+  voiceResetDraftRefsRef.current = voice.resetDraftRefs;
 
   // 「仅运行中可叫停」映射：只有 InteractionState === "working" 才算“正在跑、
   // 可以叫停”。blocked 通常意味着 turn 已不在推进（等输入或卡住）、ready_input
@@ -541,17 +747,21 @@ export function AgentDetailBody({
           />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
+            accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
             accessibilityState={voice.listening ? { expanded: true } : undefined}
             hitSlop={8}
-            onPress={voice.toggleVoice}
+            onPress={handleMicPress}
             style={({ pressed }) => [
               styles.voiceButton,
-              voice.listening && styles.voiceButtonActive,
+              (voice.listening || cPhase !== "idle") && styles.voiceButtonActive,
               pressed && styles.voiceButtonPressed,
             ]}
           >
-            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
+            {cPhase === "countingDown" && countdown != null ? (
+              <Text style={[styles.voiceButtonText, { color: colors.danger }]}>{countdown}</Text>
+            ) : (
+              <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.danger : colors.textSecondary} />
+            )}
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -817,6 +1027,7 @@ const createStyles = (colors: ThemeColors) =>
     input: { flex: 1, minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
     voiceButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
     voiceButtonActive: { borderColor: colors.danger, backgroundColor: colors.dangerDisabledBg },
+    voiceButtonText: { fontSize: 16, fontWeight: "700" },
     voiceButtonPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
     voiceListening: { color: colors.danger, fontSize: 12, marginBottom: 6, paddingHorizontal: 4, fontWeight: "600" },
     sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },

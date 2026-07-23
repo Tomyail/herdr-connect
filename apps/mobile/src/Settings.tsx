@@ -32,6 +32,7 @@ import type { ThemeColors } from "./theme/tokens";
 import { appearanceLabelKey } from "./AppearanceScreen";
 import { useVoiceLanguage, VOICE_LANG_SYSTEM } from "./voice/VoiceLanguageContext";
 import { localeDisplay } from "./voice/config";
+import { silenceThresholdStorage } from "./voice/silenceThreshold";
 import type { ConnectionState } from "./connection";
 import { useConnection } from "./connection";
 import type { RootStackParamList } from "./navigation";
@@ -208,6 +209,7 @@ export interface SettingsNavigation {
   onNavigateLanguage: () => void;
   onNavigateAppearance: () => void;
   onNavigateVoiceLanguage: () => void;
+  onNavigateSilenceThreshold: () => void;
   onRequestPairing: () => void;
 }
 
@@ -344,6 +346,12 @@ export function useSettingsCategories(
               value: voiceChoice === VOICE_LANG_SYSTEM ? t("settings.value.voiceLanguageSystem") : localeDisplay(voiceChoice),
               onPress: navigation.onNavigateVoiceLanguage,
             },
+            {
+              icon: "time-outline",
+              label: t("settings.row.silenceThreshold"),
+              value: t("settings.value.silenceThreshold", { n: (silenceThresholdStorage.read() / 1000).toFixed(1) }),
+              onPress: navigation.onNavigateSilenceThreshold,
+            },
           ]}
         />
       ),
@@ -423,6 +431,7 @@ export function Settings({ connectionState }: { connectionState: ConnectionState
       onNavigateLanguage: () => rootNavigation.navigate("Language"),
       onNavigateAppearance: () => rootNavigation.navigate("Appearance"),
       onNavigateVoiceLanguage: () => rootNavigation.navigate("VoiceLanguage"),
+      onNavigateSilenceThreshold: () => rootNavigation.navigate("SilenceThreshold"),
       onRequestPairing: () => rootNavigation.navigate("Pairing"),
     }),
     [rootNavigation],

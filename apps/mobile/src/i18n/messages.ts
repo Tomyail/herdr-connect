@@ -116,7 +116,8 @@ const en = {
   "settings.row.doneSound": "Completion sound",
   "settings.row.notifyWhileViewing": "Also notify while viewing",
   "settings.row.localNotifications": "Show OS notification",
-  "settings.row.autoSendVoice": "Auto-send after voice input",
+  "settings.row.autoSendVoice": "Continuous voice mode",
+  "settings.row.silenceThreshold": "Silence threshold",
   "settings.value.languageSystem": "System default",
 
   "notifications.waitingForInput": "Waiting for input",
@@ -136,6 +137,9 @@ const en = {
   "settings.value.voiceLanguageSystem": "Follow system",
   "voice.language.title": "Voice recognition language",
   "voice.language.system": "Follow system",
+  "voice.countdownA11y": "Will send in {n} seconds",
+  "voice.silenceThreshold.title": "Silence threshold",
+  "settings.value.silenceThreshold": "{n}s",
 
   "pairing.title": "Pair device",
   "pairing.deviceNameLabel": "Device name",
@@ -269,7 +273,8 @@ const zhHans: Record<MessageKey, string> = {
   "settings.row.doneSound": "\u5B8C\u6210\u63D0\u793A\u97F3",
   "settings.row.notifyWhileViewing": "\u67E5\u770B\u65F6\u4E5F\u63D0\u793A",
   "settings.row.localNotifications": "\u663E\u793A\u7CFB\u7EDF\u901A\u77E5",
-  "settings.row.autoSendVoice": "\u8BED\u97F3\u8F93\u5165\u540E\u81EA\u52A8\u53D1\u9001",
+  "settings.row.autoSendVoice": "\u8FDE\u7EED\u8BED\u97F3\u6A21\u5F0F",
+  "settings.row.silenceThreshold": "\u9759\u97F3\u9608\u503C",
   "settings.value.languageSystem": "\u8DDF\u968F\u7CFB\u7EDF",
 
   "notifications.waitingForInput": "\u7B49\u5F85\u8F93\u5165",
@@ -289,6 +294,9 @@ const zhHans: Record<MessageKey, string> = {
   "settings.value.voiceLanguageSystem": "\u8DDF\u968F\u7CFB\u7EDF",
   "voice.language.title": "\u8BED\u97F3\u8BC6\u522B\u8BED\u8A00",
   "voice.language.system": "\u8DDF\u968F\u7CFB\u7EDF",
+  "voice.countdownA11y": "{n} 秒后自动发送",
+  "voice.silenceThreshold.title": "\u9759\u97F3\u9608\u503C",
+  "settings.value.silenceThreshold": "{n}秒",
 
   "pairing.title": "\u914D\u5BF9\u8BBE\u5907",
   "pairing.deviceNameLabel": "\u8BBE\u5907\u540D\u79F0",

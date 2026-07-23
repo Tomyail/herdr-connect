@@ -23,6 +23,7 @@ import { AgentDetailScreen } from "./AgentDetail";
 import { LanguageScreen } from "./LanguageScreen";
 import { AppearanceScreen } from "./AppearanceScreen";
 import { VoiceLanguageScreen } from "./VoiceLanguageScreen";
+import { SilenceThresholdScreen } from "./SilenceThresholdScreen";
 import { PairingScreen } from "./PairingScreen";
 import { VoiceLanguageProvider } from "./voice/VoiceLanguageContext";
 import { SplitLayout } from "./SplitLayout";
@@ -177,6 +178,7 @@ function ThemedNavigation({
         <Stack.Screen name="Language" component={LanguageScreen} />
         <Stack.Screen name="Appearance" component={AppearanceScreen} />
         <Stack.Screen name="VoiceLanguage" component={VoiceLanguageScreen} />
+        <Stack.Screen name="SilenceThreshold" component={SilenceThresholdScreen} />
         <Stack.Screen name="Pairing" component={PairingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
