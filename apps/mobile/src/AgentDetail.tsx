@@ -36,8 +36,10 @@ import type { ThemeColors } from "./theme/tokens";
 import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 import { isHistoryNearBottom, isSameHistoryContent } from "./history-scroll";
+import { resolveComposerAction } from "./composerAction";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import { useAudioPlayer } from "expo-audio";
+import * as Haptics from "expo-haptics";
 import { useMMKVBoolean } from "react-native-mmkv";
 import {
   AUTO_SEND_VOICE_KEY,
@@ -56,6 +58,10 @@ import {
   type CPhase,
 } from "./voice/continuousReducer";
 import { VoiceWaveform } from "./voice/VoiceWaveform";
+import {
+  actionForContinuousModePress,
+  actionForMicPress,
+} from "./voice/continuousControls";
 import { restorePlaybackAudioMode } from "./audioMode";
 import { playSoundFromStart } from "./notifications/doneSoundPlayback";
 import sentSound from "../assets/sounds/sent.mp3";
@@ -66,6 +72,7 @@ const VOICE_WAVEFORM_BAR_COUNT = 24;
 
 type LoadPhase = "loading" | "ready" | "failed";
 type SendPhase = "idle" | "sending" | "sent" | "failed";
+type VoiceModeNotice = { kind: "enabled" | "disabled"; id: number };
 // 叫停状态机与 SendPhase 同构但不共用：发消息与叫停是两个独立动作，各自的
 // “已发送 / 已叫停”提示和错误不应互相覆盖。
 type InterruptPhase = "idle" | "sending" | "sent" | "failed";
@@ -523,7 +530,9 @@ function AgentComposer({
   canSend,
   countdown,
   cPhase,
+  continuousEnabled,
   draft,
+  handleContinuousModePress,
   handleMicPress,
   inputRef,
   interrupt,
@@ -535,12 +544,16 @@ function AgentComposer({
   setDraft,
   setSendPhase,
   voice,
+  voiceModeNotice,
+  onVoiceModeNoticeDismiss,
 }: {
   canInterrupt: boolean;
   canSend: boolean;
   countdown: number | null;
   cPhase: CPhase;
+  continuousEnabled: boolean;
   draft: string;
+  handleContinuousModePress: () => void;
   handleMicPress: () => void;
   inputRef: React.RefObject<TextInput | null>;
   interrupt: () => Promise<void>;
@@ -552,41 +565,78 @@ function AgentComposer({
   setDraft: VoiceInputOptions["setDraft"];
   setSendPhase: (phase: SendPhase) => void;
   voice: VoiceInputValue;
+  voiceModeNotice: VoiceModeNotice | null;
+  onVoiceModeNoticeDismiss: (id: number) => void;
 }) {
   const { t, tError } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const voiceModeNoticeOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!voiceModeNotice) return;
+    const noticeId = voiceModeNotice.id;
+    voiceModeNoticeOpacity.stopAnimation();
+    voiceModeNoticeOpacity.setValue(1);
+    const holdTimer = setTimeout(() => {
+      Animated.timing(voiceModeNoticeOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) onVoiceModeNoticeDismiss(noticeId);
+      });
+    }, 2700);
+    return () => {
+      clearTimeout(holdTimer);
+      voiceModeNoticeOpacity.stopAnimation();
+    };
+  }, [onVoiceModeNoticeDismiss, voiceModeNotice, voiceModeNoticeOpacity]);
+
+  const composerAction = resolveComposerAction({
+    canInterrupt,
+    canSend,
+    interruptPending: interruptPhase === "sending",
+    sendPending: sendPhase === "sending",
+    voiceListening: voice.listening,
+  });
 
   return (
     <View style={styles.composerArea}>
-      <View style={styles.interruptBar}>
-        {interruptPhase === "failed" && interruptError ? (
-          <Text style={styles.sendError}>{tError(interruptError.code, { status: interruptError.status })}</Text>
+      <View style={styles.composerFeedbackSlot}>
+        {voiceModeNotice ? (
+          <Animated.Text
+            numberOfLines={2}
+            style={[
+              styles.voiceModeNoticeText,
+              styles.composerFeedbackText,
+              { opacity: voiceModeNoticeOpacity },
+            ]}
+          >
+            {t(
+              voiceModeNotice.kind === "enabled"
+                ? "detail.voice.continuousModeEnabled"
+                : "detail.voice.continuousModeDisabled",
+            )}
+          </Animated.Text>
+        ) : interruptPhase === "failed" && interruptError ? (
+          <Text numberOfLines={2} style={[styles.sendError, styles.composerFeedbackText]}>
+            {tError(interruptError.code, { status: interruptError.status })}
+          </Text>
         ) : interruptPhase === "sent" ? (
-          <Text style={styles.sentText}>{t("detail.interruptSent")}</Text>
-        ) : (
-          <Text style={styles.interruptSpacer} />
-        )}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={canInterrupt ? t("detail.interruptA11y") : t("detail.interruptDisabledA11y")}
-          disabled={!canInterrupt}
-          onPress={() => void interrupt()}
-          style={({ pressed }) => [
-            styles.interruptButton,
-            !canInterrupt && styles.interruptButtonDisabled,
-            pressed && canInterrupt && styles.interruptButtonPressed,
-          ]}
-        >
-          {interruptPhase === "sending" ? (
-            <ActivityIndicator color={colors.onDanger} size="small" />
-          ) : (
-            <Text style={[styles.interruptButtonText, !canInterrupt && styles.interruptButtonTextDisabled]}>{t("detail.interrupt")}</Text>
-          )}
-        </Pressable>
+          <Text style={[styles.sentText, styles.composerFeedbackText]}>
+            {t("detail.interruptSent")}
+          </Text>
+        ) : sendPhase === "failed" && sendError ? (
+          <Text numberOfLines={2} style={[styles.sendError, styles.composerFeedbackText]}>
+            {tError(sendError.code, { status: sendError.status })}
+          </Text>
+        ) : sendPhase === "sent" ? (
+          <Text style={[styles.sentText, styles.composerFeedbackText]}>
+            {t("detail.sentToDesktop")}
+          </Text>
+        ) : null}
       </View>
-      {sendPhase === "failed" && sendError ? <Text style={styles.sendError}>{tError(sendError.code, { status: sendError.status })}</Text> : null}
-      {sendPhase === "sent" ? <Text style={styles.sentText}>{t("detail.sentToDesktop")}</Text> : null}
       {voice.errorMessage ? <Text style={styles.sendError}>{voice.errorMessage}</Text> : null}
       <View style={styles.composer}>
         <View style={styles.inputColumn}>
@@ -606,49 +656,101 @@ function AgentComposer({
             style={styles.input}
             value={draft}
           />
-          {voice.listening ? (
-            <VoiceWaveform
-              accessibilityLabel={t("detail.voice.listening")}
-              samples={voice.volumeSamples}
+          <View style={styles.voiceWaveformSlot}>
+            {voice.listening ? (
+              <VoiceWaveform
+                accessibilityLabel={t("detail.voice.listening")}
+                samples={voice.volumeSamples}
+              />
+            ) : null}
+          </View>
+        </View>
+        <View
+          accessibilityRole="none"
+          style={[
+            styles.voiceControl,
+            (voice.listening || cPhase !== "idle") && styles.voiceControlActive,
+          ]}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
+            accessibilityState={voice.listening ? { expanded: true } : undefined}
+            hitSlop={{ top: 8, bottom: 8, left: 8 }}
+            onPress={handleMicPress}
+            style={({ pressed }) => [
+              styles.voiceControlSegment,
+              styles.voiceMicSegment,
+              (voice.listening || cPhase !== "idle") && styles.voiceMicSegmentActive,
+              pressed && styles.voiceControlSegmentPressed,
+            ]}
+          >
+            {cPhase === "countingDown" && countdown != null ? (
+              <Text style={[styles.voiceButtonText, { color: colors.accent }]}>{countdown}</Text>
+            ) : (
+              <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening || cPhase !== "idle" ? colors.accent : colors.textSecondary} />
+            )}
+          </Pressable>
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityLabel={t("detail.voice.continuousModeA11y")}
+            accessibilityState={{ checked: continuousEnabled }}
+            hitSlop={{ top: 8, bottom: 8, right: 8 }}
+            onPress={handleContinuousModePress}
+            style={({ pressed }) => [
+              styles.voiceControlSegment,
+              styles.voiceModeSegment,
+              continuousEnabled && styles.voiceModeSegmentActive,
+              pressed && styles.voiceControlSegmentPressed,
+            ]}
+          >
+            <Ionicons
+              name={continuousEnabled ? "repeat" : "repeat-outline"}
+              size={21}
+              color={continuousEnabled ? colors.accent : colors.textMuted}
             />
-          ) : null}
+          </Pressable>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={cPhase === "countingDown" ? t("voice.countdownA11y", { n: countdown ?? 0 }) : voice.listening ? t("detail.voice.stopA11y") : t("detail.voice.startA11y")}
-          accessibilityState={voice.listening ? { expanded: true } : undefined}
-          hitSlop={8}
-          onPress={handleMicPress}
+          accessibilityLabel={t(
+            composerAction.mode === "interrupt" ? "detail.interruptA11y" : "detail.sendA11y",
+          )}
+          disabled={composerAction.disabled}
+          onPress={() => {
+            if (composerAction.mode === "interrupt") void interrupt();
+            else void send();
+          }}
           style={({ pressed }) => [
-            styles.voiceButton,
-            (voice.listening || cPhase !== "idle") && styles.voiceButtonActive,
-            pressed && styles.voiceButtonPressed,
+            styles.sendButton,
+            composerAction.mode === "interrupt" && styles.composerActionInterrupt,
+            composerAction.mode === "send" && composerAction.disabled && styles.sendButtonDisabled,
+            composerAction.mode === "interrupt" && composerAction.disabled && styles.composerActionInterruptDisabled,
+            pressed && !composerAction.disabled &&
+              (composerAction.mode === "interrupt"
+                ? styles.composerActionInterruptPressed
+                : styles.sendButtonPressed),
           ]}
         >
-          {cPhase === "countingDown" && countdown != null ? (
-            <Text style={[styles.voiceButtonText, { color: colors.accent }]}>{countdown}</Text>
+          {composerAction.pending ? (
+            <ActivityIndicator
+              color={composerAction.mode === "interrupt" ? colors.onDanger : colors.onAction}
+              size="small"
+            />
           ) : (
-            <Ionicons name={voice.listening ? "stop" : "mic"} size={22} color={voice.listening ? colors.accent : colors.textSecondary} />
-          )}
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("detail.sendA11y")}
-          disabled={!canSend || voice.listening}
-          onPress={() => void send()}
-          style={({ pressed }) => {
-            const inactive = !canSend || voice.listening;
-            return [
-              styles.sendButton,
-              inactive && styles.sendButtonDisabled,
-              pressed && !inactive && styles.sendButtonPressed,
-            ];
-          }}
-        >
-          {sendPhase === "sending" ? (
-            <ActivityIndicator color={colors.onAction} size="small" />
-          ) : (
-            <Text style={[styles.sendButtonText, (!canSend || voice.listening) && styles.sendButtonTextDisabled]}>{t("detail.send")}</Text>
+            <Text
+              style={[
+                composerAction.mode === "interrupt"
+                  ? styles.composerActionInterruptText
+                  : styles.sendButtonText,
+                composerAction.disabled &&
+                  (composerAction.mode === "interrupt"
+                    ? styles.composerActionInterruptTextDisabled
+                    : styles.sendButtonTextDisabled),
+              ]}
+            >
+              {t(composerAction.mode === "interrupt" ? "detail.interrupt" : "detail.send")}
+            </Text>
           )}
         </Pressable>
       </View>
@@ -737,9 +839,15 @@ function useAgentMessaging({
   const [interruptPhase, setInterruptPhase] = useState<InterruptPhase>("idle");
   const [interruptError, setInterruptError] = useState<Failure>();
 
+  const resetInterruptFeedback = useCallback(() => {
+    setInterruptPhase("idle");
+    setInterruptError(undefined);
+  }, []);
+
   const send = useCallback(async () => {
     const text = draft.trim();
     if (!text || sendPhase === "sending") return;
+    resetInterruptFeedback();
     setSendPhase("sending");
     setSendError(undefined);
     try {
@@ -756,7 +864,7 @@ function useAgentMessaging({
       setSendPhase("failed");
       setSendError({ code: toErrorCode(error, "send_failed"), status: toErrorStatus(error) });
     }
-  }, [agent.source_id, draft, isNearBottomRef, loadHistory, mountedRef, onSent, sendPhase, service, setHasNewContent]);
+  }, [agent.source_id, draft, isNearBottomRef, loadHistory, mountedRef, onSent, resetInterruptFeedback, sendPhase, service, setHasNewContent]);
 
   const interrupt = useCallback(async () => {
     if (interruptPhase === "sending") return;
@@ -769,6 +877,8 @@ function useAgentMessaging({
           text: t("detail.interruptConfirm.confirm"),
           style: "destructive",
           onPress: async () => {
+            setSendPhase("idle");
+            setSendError(undefined);
             setInterruptPhase("sending");
             setInterruptError(undefined);
             try {
@@ -789,12 +899,15 @@ function useAgentMessaging({
   }, [agent.source_id, interruptPhase, loadHistory, mountedRef, service, t]);
 
   return {
-    canInterrupt: agent.interaction_state === "working" && interruptPhase !== "sending",
+    // Keep the combined action in its danger/interrupt presentation while the
+    // request is pending; the button itself handles the temporary disabled state.
+    canInterrupt: agent.interaction_state === "working",
     canSend: draft.trim().length > 0 && sendPhase !== "sending",
     draft,
     interrupt,
     interruptError,
     interruptPhase,
+    resetInterruptFeedback,
     send,
     sendError,
     sendPhase,
@@ -849,6 +962,7 @@ export function AgentDetailBody({
     interrupt,
     interruptError,
     interruptPhase,
+    resetInterruptFeedback,
     send,
     sendError,
     sendPhase,
@@ -881,8 +995,20 @@ export function AgentDetailBody({
   const inputRef = useRef<TextInput>(null);
 
   // ═══ Continuous voice orchestrator (useReducer state machine) ═══
-  const [continuousMode] = useMMKVBoolean(AUTO_SEND_VOICE_KEY, notificationStorage);
+  const [continuousMode, setContinuousMode] = useMMKVBoolean(
+    AUTO_SEND_VOICE_KEY,
+    notificationStorage,
+  );
   const continuousEnabled = continuousMode ?? DEFAULT_AUTO_SEND_VOICE;
+  const [voiceModeNotice, setVoiceModeNotice] = useState<VoiceModeNotice | null>(null);
+  const voiceModeNoticeIdRef = useRef(0);
+  const dismissVoiceModeNotice = useCallback((id: number) => {
+    setVoiceModeNotice((current) => (current?.id === id ? null : current));
+  }, []);
+  const showVoiceModeNotice = useCallback((kind: VoiceModeNotice["kind"]) => {
+    voiceModeNoticeIdRef.current += 1;
+    setVoiceModeNotice({ kind, id: voiceModeNoticeIdRef.current });
+  }, []);
   const [cState, dispatch] = useReducer(cReducer, INITIAL_STATE);
   const cPhase = cState.phase;
   const countdown = cState.countdown;
@@ -941,6 +1067,7 @@ export function AgentDetailBody({
       // by unrelated draft changes.
       const text = draft.trim();
       if (text.length > 0) {
+        resetInterruptFeedback();
         void (async () => {
           try {
             await sendAgentMessage(service, agent.source_id, text);
@@ -962,7 +1089,7 @@ export function AgentDetailBody({
     return () => {
       if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
     };
-  }, [agent.source_id, cancelAllTimers, continuousEnabled, countdown, cPhase, draft, isNearBottomRef, loadHistory, mountedRef, playSentSound, service, setDraft, setHasNewContent, setSendPhase]);
+  }, [agent.source_id, cancelAllTimers, continuousEnabled, countdown, cPhase, draft, isNearBottomRef, loadHistory, mountedRef, playSentSound, resetInterruptFeedback, service, setDraft, setHasNewContent, setSendPhase]);
 
   // Rule 5: agent state watcher for "waitingForAgent".
   const interactionState = agent.interaction_state;
@@ -1030,22 +1157,57 @@ export function AgentDetailBody({
   });
 
   // Must be after voice + cancelAllTimers so it can reference both.
+  const stopContinuousSession = useCallback(() => {
+    dispatch({ type: "USER_STOP" });
+    cancelAllTimers();
+    if (voice.listening) {
+      void voice.toggleVoice(); // stop engine via proper path
+    }
+  }, [cancelAllTimers, voice]);
+
   const handleMicPress = useCallback(() => {
-    if (continuousEnabled && cPhase !== "idle") {
-      // Rule 6: exit continuous mode from any phase.
-      dispatch({ type: "USER_STOP" });
-      cancelAllTimers();
-      if (voice.listening) {
-        void voice.toggleVoice(); // stop engine via proper path
-      }
-    } else if (continuousEnabled) {
-      // Rule 1: idle → listening.
+    const action = actionForMicPress({
+      continuousEnabled,
+      phase: cPhase,
+      listening: voice.listening,
+    });
+    if (action === "startContinuousSession") {
       dispatch({ type: "USER_START" });
       void voice.toggleVoice(); // listening=false → start()
+    } else if (action === "stopContinuousSession") {
+      stopContinuousSession();
     } else {
+      // Starts or stops a manual recording. Stopping preserves the recognized
+      // draft for review, including a recording that began before mode changed.
       void voice.toggleVoice();
     }
-  }, [continuousEnabled, cPhase, cancelAllTimers, voice]);
+  }, [continuousEnabled, cPhase, stopContinuousSession, voice]);
+
+  const handleContinuousModePress = useCallback(() => {
+    void Haptics.selectionAsync().catch((error) => {
+      console.warn("[voice] mode-selection haptic failed:", error);
+    });
+
+    const action = actionForContinuousModePress({
+      continuousEnabled,
+      listening: voice.listening,
+    });
+    if (sendPhase === "sent") setSendPhase("idle");
+    if (action === "enableContinuousMode") {
+      // Selecting a mode never starts recognition or sends an existing draft.
+      setContinuousMode(true);
+      showVoiceModeNotice("enabled");
+      return;
+    }
+
+    setContinuousMode(false);
+    showVoiceModeNotice("disabled");
+    dispatch({ type: "USER_STOP" });
+    cancelAllTimers();
+    if (action === "disableContinuousModeAndStop") {
+      void voice.toggleVoice();
+    }
+  }, [cancelAllTimers, continuousEnabled, sendPhase, setContinuousMode, setSendPhase, showVoiceModeNotice, voice]);
 
   // Backfill the refs for the effects that run before voice is declared.
   voiceToggleRef.current = voice.toggleVoice;
@@ -1075,7 +1237,9 @@ export function AgentDetailBody({
         canSend={canSend}
         countdown={countdown}
         cPhase={cPhase}
+        continuousEnabled={continuousEnabled}
         draft={draft}
+        handleContinuousModePress={handleContinuousModePress}
         handleMicPress={handleMicPress}
         inputRef={inputRef}
         interrupt={interrupt}
@@ -1087,6 +1251,8 @@ export function AgentDetailBody({
         setDraft={setDraft}
         setSendPhase={setSendPhase}
         voice={voice}
+        voiceModeNotice={voiceModeNotice}
+        onVoiceModeNoticeDismiss={dismissVoiceModeNotice}
       />
     </KeyboardAvoidingView>
   );
@@ -1317,25 +1483,47 @@ const createStyles = (colors: ThemeColors) =>
     stateText: { color: colors.textSecondary, fontSize: 13 },
     errorText: { color: colors.danger, fontSize: 13, textAlign: "center" },
     composerArea: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
-    interruptBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 30, marginBottom: 6, paddingHorizontal: 4 },
-    interruptSpacer: { flex: 1 },
-    interruptButton: { minHeight: 30, borderRadius: 12, backgroundColor: colors.danger, alignItems: "center", justifyContent: "center", paddingHorizontal: 14, paddingVertical: 5 },
-    interruptButtonDisabled: { backgroundColor: colors.dangerDisabledBg },
-    interruptButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
-    interruptButtonText: { color: colors.onDanger, fontSize: 13, fontWeight: "700" },
-    interruptButtonTextDisabled: { color: colors.onActionDisabled },
+    composerFeedbackSlot: { height: 34, justifyContent: "flex-start", marginBottom: 6 },
+    composerFeedbackText: { marginBottom: 0, lineHeight: 16 },
     composer: { flexDirection: "row", alignItems: "flex-end", gap: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 8 },
-    inputColumn: { flex: 1, minWidth: 0 },
-    input: { width: "100%", minHeight: 40, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 9 },
-    voiceButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
-    voiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.selectedCard },
+    inputColumn: { flex: 1, minWidth: 0, minHeight: 44, position: "relative" },
+    input: { width: "100%", minHeight: 44, maxHeight: 112, color: colors.textPrimary, fontSize: 15, lineHeight: 20, paddingHorizontal: 8, paddingTop: 9, paddingBottom: 14 },
+    voiceWaveformSlot: { position: "absolute", left: 0, right: 0, bottom: 0, height: 13, overflow: "hidden" },
+    voiceControl: {
+      height: 44,
+      flexDirection: "row",
+      overflow: "hidden",
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+    },
+    voiceControlActive: { borderColor: colors.accent },
+    voiceControlSegment: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    voiceMicSegment: {
+      borderRightWidth: StyleSheet.hairlineWidth,
+      borderRightColor: colors.cardBorder,
+    },
+    voiceMicSegmentActive: { backgroundColor: colors.selectedCard },
+    voiceModeSegment: { backgroundColor: colors.card },
+    voiceModeSegmentActive: { backgroundColor: colors.selectedCard },
     voiceButtonText: { fontSize: 16, fontWeight: "700" },
-    voiceButtonPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
-    sendButton: { minWidth: 66, height: 40, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
+    voiceControlSegmentPressed: { opacity: 0.68, transform: [{ scale: 0.96 }] },
+    sendButton: { minWidth: 66, height: 44, borderRadius: 14, backgroundColor: colors.actionBg, alignItems: "center", justifyContent: "center", paddingHorizontal: 13 },
     sendButtonDisabled: { backgroundColor: colors.actionDisabledBg },
     sendButtonPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
     sendButtonText: { color: colors.onAction, fontSize: 14, fontWeight: "700" },
     sendButtonTextDisabled: { color: colors.onActionDisabled },
+    composerActionInterrupt: { backgroundColor: colors.danger },
+    composerActionInterruptDisabled: { backgroundColor: colors.dangerDisabledBg },
+    composerActionInterruptPressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+    composerActionInterruptText: { color: colors.onDanger, fontSize: 14, fontWeight: "700" },
+    composerActionInterruptTextDisabled: { color: colors.onActionDisabled },
     sendError: { color: colors.danger, fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
     sentText: { color: colors.success, fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
+    voiceModeNoticeText: { color: colors.accent, fontSize: 12, marginBottom: 6, paddingHorizontal: 4 },
   });
