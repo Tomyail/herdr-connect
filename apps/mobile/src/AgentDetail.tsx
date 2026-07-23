@@ -37,13 +37,28 @@ import { ICON_SIZE, Ionicons } from "./icons";
 import type { RootStackParamList } from "./navigation";
 import { isHistoryNearBottom, isSameHistoryContent } from "./history-scroll";
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
+import { useAudioPlayer } from "expo-audio";
 import { useMMKVBoolean } from "react-native-mmkv";
-import { AUTO_SEND_VOICE_KEY, DEFAULT_AUTO_SEND_VOICE, notificationStorage } from "./notifications/settings";
+import {
+  AUTO_SEND_VOICE_KEY,
+  DEFAULT_AUTO_SEND_VOICE,
+  DEFAULT_SENT_SOUND_ENABLED,
+  SENT_SOUND_ENABLED_KEY,
+  notificationStorage,
+} from "./notifications/settings";
 import { useVoiceLanguage } from "./voice/VoiceLanguageContext";
 import { resolveVoiceLang, loadSupportedVoiceLocales } from "./voice/config";
 import { silenceThresholdStorage } from "./voice/silenceThreshold";
-import { cReducer, INITIAL_STATE, type CPhase } from "./voice/continuousReducer";
+import {
+  cReducer,
+  INITIAL_STATE,
+  isContinuousVoiceAgentReady,
+  type CPhase,
+} from "./voice/continuousReducer";
 import { VoiceWaveform } from "./voice/VoiceWaveform";
+import { restorePlaybackAudioMode } from "./audioMode";
+import { playSoundFromStart } from "./notifications/doneSoundPlayback";
+import sentSound from "../assets/sounds/sent.mp3";
 
 const HISTORY_REFRESH_MS = 2_000;
 const VOICE_VOLUME_INTERVAL_MS = 100;
@@ -165,6 +180,12 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
     volumeSamples.forEach((sample) => sample.setValue(0));
   }, [volumeSamples]);
 
+  const restoreAudioAfterRecognition = useCallback(() => {
+    void restorePlaybackAudioMode().catch((error) => {
+      console.warn("[voice] failed to restore playback audio mode:", error);
+    });
+  }, []);
+
   useSpeechRecognitionEvent("start", () => {
     if (!sessionActiveRef.current) return;
     setListening(true);
@@ -226,6 +247,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       userStoppedRef.current = false;
       resetVolumeSamples();
       setListening(false);
+      restoreAudioAfterRecognition();
     }
     // Notify the orchestrator so it can decide whether to auto-send or restart.
     onVoiceEnd?.(wasUserStopped);
@@ -238,6 +260,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         resetVolumeSamples();
         setListening(false);
         userStoppedRef.current = false;
+        restoreAudioAfterRecognition();
         setErrorMessage(t("detail.voice.error"));
         console.warn("[voice] auto-restart limit reached, stopping");
         return;
@@ -253,6 +276,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         sessionActiveRef.current = false;
         resetVolumeSamples();
         setListening(false);
+        restoreAudioAfterRecognition();
         setErrorMessage(t("detail.voice.error"));
         console.warn("[voice] auto-restart failed:", error);
       }
@@ -269,12 +293,14 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       userStoppedRef.current = true;
       resetVolumeSamples();
       setListening(false);
+      restoreAudioAfterRecognition();
       onVoiceEnd?.(true);
       return;
     }
     sessionActiveRef.current = false;
     resetVolumeSamples();
     setListening(false);
+    restoreAudioAfterRecognition();
     setErrorMessage(`${t("detail.voice.error")} (${event.error})`);
     console.warn("[voice] recognition error:", event.error, event.message);
   });
@@ -336,10 +362,11 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       if (!voiceMountedRef.current || attempt !== startAttemptRef.current) return;
       resetVolumeSamples();
       setListening(false);
+      restoreAudioAfterRecognition();
       setErrorMessage(t("detail.voice.error"));
       console.warn("[voice] failed to start:", error);
     }
-  }, [draft, inputRef, onVoiceEnd, resetVolumeSamples, t, voiceChoice]);
+  }, [draft, inputRef, onVoiceEnd, resetVolumeSamples, restoreAudioAfterRecognition, t, voiceChoice]);
 
   const stop = useCallback(() => {
     userStoppedRef.current = true;
@@ -376,6 +403,19 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   }, []);
 
   return { listening, toggleVoice, errorMessage, resetDraftRefs, volumeSamples };
+}
+
+function useSentSound() {
+  const [enabledRaw] = useMMKVBoolean(SENT_SOUND_ENABLED_KEY, notificationStorage);
+  const enabled = enabledRaw ?? DEFAULT_SENT_SOUND_ENABLED;
+  const player = useAudioPlayer(sentSound);
+
+  return useCallback(() => {
+    if (!enabled) return;
+    void playSoundFromStart(player, restorePlaybackAudioMode).catch((error) => {
+      console.warn("[sent-sound] playback failed:", error);
+    });
+  }, [enabled, player]);
 }
 
 function AgentHistorySection({
@@ -680,6 +720,7 @@ function useAgentMessaging({
   mountedRef,
   service,
   setHasNewContent,
+  onSent,
 }: {
   agent: Agent;
   isNearBottomRef: React.RefObject<boolean>;
@@ -687,6 +728,7 @@ function useAgentMessaging({
   mountedRef: React.RefObject<boolean>;
   service: DiscoveredService;
   setHasNewContent: (value: boolean) => void;
+  onSent: () => void;
 }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState("");
@@ -703,6 +745,7 @@ function useAgentMessaging({
     try {
       await sendAgentMessage(service, agent.source_id, text);
       if (!mountedRef.current) return;
+      onSent();
       setDraft("");
       setSendPhase("sent");
       isNearBottomRef.current = true;
@@ -713,7 +756,7 @@ function useAgentMessaging({
       setSendPhase("failed");
       setSendError({ code: toErrorCode(error, "send_failed"), status: toErrorStatus(error) });
     }
-  }, [agent.source_id, draft, isNearBottomRef, loadHistory, mountedRef, sendPhase, service, setHasNewContent]);
+  }, [agent.source_id, draft, isNearBottomRef, loadHistory, mountedRef, onSent, sendPhase, service, setHasNewContent]);
 
   const interrupt = useCallback(async () => {
     if (interruptPhase === "sending") return;
@@ -798,6 +841,7 @@ export function AgentDetailBody({
     scrollRef,
     setHasNewContent,
   } = useAgentHistory(agent, service);
+  const playSentSound = useSentSound();
   const {
     canInterrupt,
     canSend,
@@ -817,6 +861,7 @@ export function AgentDetailBody({
     mountedRef,
     service,
     setHasNewContent,
+    onSent: playSentSound,
   });
 
   const title = agent.workspace_label || agent.display_name || "Agent";
@@ -900,6 +945,7 @@ export function AgentDetailBody({
           try {
             await sendAgentMessage(service, agent.source_id, text);
             if (!mountedRef.current) return;
+            playSentSound();
             setDraft("");
             setSendPhase("sent");
             isNearBottomRef.current = true;
@@ -916,7 +962,7 @@ export function AgentDetailBody({
     return () => {
       if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
     };
-  }, [agent.source_id, cancelAllTimers, continuousEnabled, countdown, cPhase, draft, isNearBottomRef, loadHistory, mountedRef, service, setDraft, setHasNewContent, setSendPhase]);
+  }, [agent.source_id, cancelAllTimers, continuousEnabled, countdown, cPhase, draft, isNearBottomRef, loadHistory, mountedRef, playSentSound, service, setDraft, setHasNewContent, setSendPhase]);
 
   // Rule 5: agent state watcher for "waitingForAgent".
   const interactionState = agent.interaction_state;
@@ -924,7 +970,7 @@ export function AgentDetailBody({
     if (!continuousEnabled || cPhase !== "waitingForAgent") return;
     if (interactionState === "working") {
       dispatch({ type: "AGENT_WORKING" });
-    } else if (interactionState === "ready_input" || interactionState === "blocked") {
+    } else if (isContinuousVoiceAgentReady(interactionState)) {
       dispatch({ type: "AGENT_READY" });
     }
   }, [continuousEnabled, cPhase, interactionState]);

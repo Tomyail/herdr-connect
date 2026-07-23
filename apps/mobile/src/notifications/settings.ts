@@ -9,12 +9,15 @@ import { createMMKV } from "react-native-mmkv";
 export const notificationStorage = createMMKV({ id: "herdr-connect-prefs" });
 
 export const DONE_SOUND_ENABLED_KEY = "doneSoundEnabled";
+export const SENT_SOUND_ENABLED_KEY = "sentSoundEnabled";
 export const NOTIFY_WHILE_VIEWING_KEY = "notifyWhileViewing";
 export const LOCAL_NOTIFICATIONS_ENABLED_KEY = "localNotificationsEnabled";
 export const AUTO_SEND_VOICE_KEY = "autoSendVoice";
 
 /** Default for the completion-sound master switch. */
 export const DEFAULT_DONE_SOUND_ENABLED = true;
+/** Default for the short confirmation sound after a message is accepted. */
+export const DEFAULT_SENT_SOUND_ENABLED = true;
 /**
  * Default for "also chime for the agent currently open in AgentDetail".
  * Mobile owners may look away even from the foreground agent, so default on.

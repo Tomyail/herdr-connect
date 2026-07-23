@@ -31,6 +31,7 @@ import { useIsWideLayout } from "./layout";
 import { Ionicons } from "./icons";
 import type { RootStackParamList, TabParamList, SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
+import type { Agent } from "./agent-contract";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -201,10 +202,18 @@ function AppShell() {
   }, []);
   const requestPairing = useCallback(() => setPairingRequested(true), []);
   const dismissPairing = useCallback(() => setPairingRequested(false), []);
+  const openCompletedAgentWide = useCallback((agent: Agent) => {
+    setActiveDestination("Agents");
+    setSelectedAgentId(agent.source_id);
+  }, []);
 
   if (isWide) {
     return (
       <>
+        <DoneSoundProvider
+          viewingSourceId={activeDestination === "Agents" ? selectedAgentId : undefined}
+          onOpenAgent={openCompletedAgentWide}
+        />
         <SplitLayout
           activeDestination={activeDestination}
           onSelectDestination={setActiveDestination}

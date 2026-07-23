@@ -8,7 +8,7 @@
  * signal chains that kept drifting out of sync.
  */
 
-import { useReducer } from "react";
+import type { InteractionState } from "../agent-contract";
 
 export type CPhase = "idle" | "listening" | "countingDown" | "waitingForAgent";
 
@@ -40,6 +40,11 @@ const INITIAL_CSTATE: CState = {
   lastActivityAt: 0,
   sawWorking: false,
 };
+
+/** States that permit another spoken turn after this turn was observed working. */
+export function isContinuousVoiceAgentReady(state: InteractionState): boolean {
+  return state === "ready_input" || state === "blocked" || state === "unknown";
+}
 
 function cReducer(state: CState, action: CAction): CState {
   switch (state.phase) {

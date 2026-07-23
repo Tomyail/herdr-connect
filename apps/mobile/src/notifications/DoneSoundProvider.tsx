@@ -2,7 +2,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import type { NavigationContainerRef } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
 import * as Haptics from "expo-haptics";
-import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
+import { useAudioPlayer } from "expo-audio";
 import { useMMKVBoolean } from "react-native-mmkv";
 
 import doneSound from "../../assets/sounds/done.mp3";
@@ -21,6 +21,8 @@ import {
   notificationStorage,
 } from "./settings";
 import type { RootStackParamList } from "../navigation";
+import { restorePlaybackAudioMode } from "../audioMode";
+import { playCompletionSound } from "./doneSoundPlayback";
 
 interface AgentDetailParams {
   agent?: { source_id?: string };
@@ -56,8 +58,14 @@ Notifications.setNotificationHandler({
  */
 export function DoneSoundProvider({
   navigationRef,
+  viewingSourceId,
+  onOpenAgent,
 }: {
-  navigationRef: RefObject<NavigationContainerRef<RootStackParamList> | null>;
+  navigationRef?: RefObject<NavigationContainerRef<RootStackParamList> | null>;
+  /** Wide layout has no root navigation route for the selected Agent. */
+  viewingSourceId?: string;
+  /** Wide layout opens a notification target by updating its lifted selection. */
+  onOpenAgent?: (agent: Agent) => void;
 }) {
   const { state } = useConnection();
   const { t } = useI18n();
@@ -85,11 +93,9 @@ export function DoneSoundProvider({
   // switch (default ambient session is muted by it). Duck other audio briefly;
   // keep background playback off since we only chime in the foreground.
   useEffect(() => {
-    setAudioModeAsync({
-      playsInSilentMode: true,
-      interruptionMode: "duckOthers",
-      shouldPlayInBackground: false,
-    }).catch((error) => console.warn("[done-sound] setAudioModeAsync failed:", error));
+    restorePlaybackAudioMode().catch((error) => {
+      console.warn("[done-sound] restorePlaybackAudioMode failed:", error);
+    });
   }, []);
 
   // Request notification permission once on mount if the setting is enabled.
@@ -113,8 +119,9 @@ export function DoneSoundProvider({
 
   useEffect(() => {
     const agents = state.phase === "connected" ? state.data.agents : [];
-    const newlyDone = detectNewlyCompleted(prevMapRef.current, agents);
-    const newlyActive = detectNewlyActive(prevMapRef.current, agents);
+    const previous = prevMapRef.current;
+    const newlyDone = detectNewlyCompleted(previous, agents);
+    const newlyActive = detectNewlyActive(previous, agents);
     // Always advance the baseline so toggling the switch never backfills old transitions.
     prevMapRef.current = indexAgents(agents);
 
@@ -129,13 +136,14 @@ export function DoneSoundProvider({
 
     let audible = newlyDone;
     if (!notifyWhileViewing) {
-      const route = navigationRef.current?.getCurrentRoute();
-      const viewingSourceId =
+      const route = navigationRef?.current?.getCurrentRoute();
+      const routedSourceId =
         route?.name === "AgentDetail"
           ? (route.params as AgentDetailParams | undefined)?.agent?.source_id
           : undefined;
-      if (viewingSourceId) {
-        audible = newlyDone.filter((agent) => agent.source_id !== viewingSourceId);
+      const currentSourceId = viewingSourceId ?? routedSourceId;
+      if (currentSourceId) {
+        audible = newlyDone.filter((agent) => agent.source_id !== currentSourceId);
         if (audible.length === 0) return;
       }
     }
@@ -176,10 +184,11 @@ export function DoneSoundProvider({
 
     // Play sound only when the sound switch is enabled.
     if (enabled) {
-      player.seekTo(0);
-      player.play();
+      void playCompletionSound(player, restorePlaybackAudioMode).catch((error) => {
+        console.warn("[done-sound] playback failed:", error);
+      });
     }
-  }, [state, enabled, notifyWhileViewing, localNotificationsEnabled, player, navigationRef, markCompleted, clearCompleted, t]);
+  }, [state, enabled, notifyWhileViewing, localNotificationsEnabled, player, navigationRef, viewingSourceId, markCompleted, clearCompleted, t]);
 
   // Handle notification tap: navigate to the corresponding AgentDetail.
   useEffect(() => {
@@ -194,13 +203,14 @@ export function DoneSoundProvider({
       const agents = currentAgentsRef.current;
       const agent = agents.find((a) => a.source_id === sourceId);
       if (agent) {
-        navigationRef.current?.navigate("AgentDetail", { agent });
+        if (onOpenAgent) onOpenAgent(agent);
+        else navigationRef?.current?.navigate("AgentDetail", { agent });
       }
     });
     return () => {
       subscription.remove();
     };
-  }, [navigationRef]);
+  }, [navigationRef, onOpenAgent]);
 
   return null;
 }

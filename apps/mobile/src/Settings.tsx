@@ -15,10 +15,12 @@ import type { MessageKey } from "./i18n/messages";
 import type { AgentsResponse } from "./agent-contract";
 import {
   DEFAULT_DONE_SOUND_ENABLED,
+  DEFAULT_SENT_SOUND_ENABLED,
   DEFAULT_NOTIFY_WHILE_VIEWING,
   DEFAULT_LOCAL_NOTIFICATIONS_ENABLED,
   DEFAULT_AUTO_SEND_VOICE,
   DONE_SOUND_ENABLED_KEY,
+  SENT_SOUND_ENABLED_KEY,
   NOTIFY_WHILE_VIEWING_KEY,
   LOCAL_NOTIFICATIONS_ENABLED_KEY,
   AUTO_SEND_VOICE_KEY,
@@ -139,21 +141,25 @@ function NotificationsCard({
   title,
   labels,
   doneSound,
+  sentSound,
   whileViewing,
   localNotifications,
   autoSendVoice,
   onDoneSoundChange,
+  onSentSoundChange,
   onWhileViewingChange,
   onLocalNotificationsChange,
   onAutoSendVoiceChange,
 }: {
   title: string;
-  labels: { doneSound: string; whileViewing: string; localNotifications: string; autoSendVoice: string };
+  labels: { doneSound: string; sentSound: string; whileViewing: string; localNotifications: string; autoSendVoice: string };
   doneSound: boolean;
+  sentSound: boolean;
   whileViewing: boolean;
   localNotifications: boolean;
   autoSendVoice: boolean;
   onDoneSoundChange: (value: boolean) => void;
+  onSentSoundChange: (value: boolean) => void;
   onWhileViewingChange: (value: boolean) => void;
   onLocalNotificationsChange: (value: boolean) => void;
   onAutoSendVoiceChange: (value: boolean) => void;
@@ -168,6 +174,13 @@ function NotificationsCard({
           label={labels.doneSound}
           value={doneSound}
           onChange={onDoneSoundChange}
+          last={false}
+        />
+        <SwitchRow
+          icon="paper-plane-outline"
+          label={labels.sentSound}
+          value={sentSound}
+          onChange={onSentSoundChange}
           last={false}
         />
         <SwitchRow
@@ -262,6 +275,7 @@ export function useSettingsCategories(
 
   // Notifications switches — single MMKV subscription set shared by both modes.
   const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
+  const [sentSound, setSentSound] = useMMKVBoolean(SENT_SOUND_ENABLED_KEY, notificationStorage);
   const [whileViewing, setWhileViewing] = useMMKVBoolean(NOTIFY_WHILE_VIEWING_KEY, notificationStorage);
   const [localNotifications, setLocalNotifications] = useMMKVBoolean(
     LOCAL_NOTIFICATIONS_ENABLED_KEY,
@@ -365,15 +379,18 @@ export function useSettingsCategories(
           title={t("settings.section.notifications")}
           labels={{
             doneSound: t("settings.row.doneSound"),
+            sentSound: t("settings.row.sentSound"),
             whileViewing: t("settings.row.notifyWhileViewing"),
             localNotifications: t("settings.row.localNotifications"),
             autoSendVoice: t("settings.row.autoSendVoice"),
           }}
           doneSound={enabled ?? DEFAULT_DONE_SOUND_ENABLED}
+          sentSound={sentSound ?? DEFAULT_SENT_SOUND_ENABLED}
           whileViewing={whileViewing ?? DEFAULT_NOTIFY_WHILE_VIEWING}
           localNotifications={localNotifications ?? DEFAULT_LOCAL_NOTIFICATIONS_ENABLED}
           autoSendVoice={autoSendVoice ?? DEFAULT_AUTO_SEND_VOICE}
           onDoneSoundChange={setEnabled}
+          onSentSoundChange={setSentSound}
           onWhileViewingChange={setWhileViewing}
           onLocalNotificationsChange={handleLocalNotificationsChange}
           onAutoSendVoiceChange={setAutoSendVoice}
