@@ -2,6 +2,31 @@
 
 本文档记录 Herdr Connect 面向用户的重要变更。英文版 [`CHANGELOG.md`](../../CHANGELOG.md) 为 canonical 文档，本文件为简体中文翻译。
 
+## [0.1.0-preview.5] - 2026-07-23
+
+### 新增
+
+- 增加 iPad 原生支持：App 现在以 iPad 原生分辨率运行，不再是放大版的 iPhone 界面，并支持自由横竖屏。
+- 增加宽屏分栏布局：Agents 和 Settings 页面在宽屏下都变成侧边栏 + 列表 + 详情三栏，可以同时浏览列表和查看详情，不用整屏切换。实时拖动窗口宽度（分屏、Slide Over、Stage Manager）时会在这个布局和手机式布局之间平滑切换。
+- 在宽屏 Agents 页增加聚焦按钮，可以收起侧边栏和列表，让历史记录铺满整个窗口宽度。
+- 增加设备本地语音输入：点击 Send 旁边的麦克风即可直接口述消息，文字实时流入输入框，下方有根据你说话音量实时起伏的波形——全程不会弹出系统键盘，聊天记录始终可见。
+- 增加免手动操作的「连续语音」模式：说完话后会出现一个明显的倒计时，倒计时结束自动发送（倒计时期间继续说话可以取消发送），发送后麦克风静默等待 agent 处理，agent 处理完毕后自动重新开始监听——点击循环图标开启，随时再点一下可以停止。
+- 增加语音识别语言设置（默认跟随设备系统语言，可在设置中手动覆盖）。
+- 增加静音时长设置，用来调整连续语音模式下等待多久才开始倒计时。
+- 增加发送提示音。
+
+### 修复
+
+- 修复使用语音输入后完成提示音失效的问题——语音识别会让音频会话停留在一个阻止正常播放的状态。
+
+### 变更
+
+- Send 按钮在 agent 正在处理任务时会切换为叫停控件，腾出了原本单独一条叫停横条占用的空间。
+
+### 发布工具
+
+- 已将 iOS TestFlight build `0.1.0 (5)` 上传至 App Store Connect 并分发给测试用户。
+
 ## [0.1.0-preview.4] - 2026-07-20
 
 ### 新增
@@ -49,5 +74,6 @@
 - 已将 iOS TestFlight build `0.1.0 (3)` 上传至 App Store Connect；尚待分发给测试用户。
 - IPA 导出时向 Xcode 传递 App Store Connect API 凭据，使自动签名能够刷新 provisioning profile。
 
+[0.1.0-preview.5]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.4...v0.1.0-preview.5
 [0.1.0-preview.4]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.3...v0.1.0-preview.4
 [0.1.0-preview.3]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.2...v0.1.0-preview.3

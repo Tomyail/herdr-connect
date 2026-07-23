@@ -2,6 +2,31 @@
 
 This file records notable user-facing changes to Herdr Connect. The English version is canonical; a Simplified Chinese translation is available at [`docs/zh-CN/CHANGELOG.md`](docs/zh-CN/CHANGELOG.md).
 
+## [0.1.0-preview.5] - 2026-07-23
+
+### Added
+
+- Added native iPad support: the app now runs at full iPad resolution instead of a scaled-up iPhone layout, and rotates freely.
+- Added a wide-screen split-view layout: a sidebar plus list-and-detail columns for both Agents and Settings, so you can browse a list and read its detail side by side instead of pushing full-screen. Live-resizing the window (Split View, Slide Over, Stage Manager) switches smoothly between this and the phone-style layout.
+- Added a focus toggle on the wide Agents view to collapse the sidebar and list and give the transcript the full window width.
+- Added on-device voice input: tap the mic next to Send to dictate directly into the message, with live streaming transcription and a real-time waveform driven by your actual voice level — the system keyboard never opens, so your conversation history stays visible the whole time.
+- Added a hands-free "continuous voice" mode: after you stop talking, a visible countdown auto-sends what you said (speak again to cancel it), the mic goes quiet while the agent works, and starts listening again automatically once the agent is ready for your next message — tap the loop icon to turn it on, tap again anytime to stop.
+- Added a voice recognition language setting (defaults to your device's system language, overridable in Settings).
+- Added a silence-duration setting to tune how long the app waits before the continuous-mode countdown starts.
+- Added a send confirmation sound.
+
+### Fixed
+
+- Fixed the completion chime going silent after using voice input — voice recognition was leaving the audio session in a state that blocked playback.
+
+### Changed
+
+- The Send button now doubles as the interrupt control while an agent turn is running, freeing up space previously used by a separate interrupt bar.
+
+### Release tooling
+
+- Uploaded iOS TestFlight build `0.1.0 (5)` to App Store Connect and distributed it to testers.
+
 ## [0.1.0-preview.4] - 2026-07-20
 
 ### Added
@@ -49,5 +74,6 @@ This file records notable user-facing changes to Herdr Connect. The English vers
 - Uploaded iOS TestFlight build `0.1.0 (3)` to App Store Connect; tester distribution remains pending.
 - Passed App Store Connect API credentials to Xcode during IPA export so automatic signing can refresh the provisioning profile.
 
+[0.1.0-preview.5]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.4...v0.1.0-preview.5
 [0.1.0-preview.4]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.3...v0.1.0-preview.4
 [0.1.0-preview.3]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.2...v0.1.0-preview.3

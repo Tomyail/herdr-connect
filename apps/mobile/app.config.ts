@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
-    buildNumber: "4",
+    buildNumber: "5",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
     // `requireFullScreen` is intentionally left unset (defaults to false).
