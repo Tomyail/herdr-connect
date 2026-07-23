@@ -86,14 +86,13 @@ function cReducer(state: CState, action: CAction): CState {
         case "RESULT_ACTIVITY":
           return { ...state, phase: "listening", countdown: null, lastActivityAt: action.at };
         // Decrement every 1s interval tick.
-        case "COUNTDOWN_TICK":
-          if (state.countdown !== null && state.countdown > 1) {
-            return { ...state, countdown: state.countdown - 1 };
-          }
-          if (state.countdown === 1) {
-            return { ...state, countdown: 0 };
-          }
-          return state;
+        case "COUNTDOWN_TICK": {
+          const nextCountdown = state.countdown !== null && state.countdown > 0
+            ? state.countdown - 1
+            : state.countdown;
+          if (nextCountdown === state.countdown) return state;
+          return { ...state, countdown: nextCountdown };
+        }
         // Rule 4: countdown reached 0 → waitingForAgent.
         case "COUNTDOWN_DONE":
           return { ...INITIAL_CSTATE, phase: "waitingForAgent", sawWorking: false };

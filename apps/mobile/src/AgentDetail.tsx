@@ -118,6 +118,13 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   const { choice: voiceChoice } = useVoiceLanguage();
   const [listening, setListening] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Native speech events are module-global and can arrive after the Agent
+  // detail that started them has unmounted. Only process events while this
+  // hook owns an active session; otherwise an old Agent's delayed end/start
+  // event can make the newly mounted Agent appear to be listening.
+  const voiceMountedRef = useRef(true);
+  const sessionActiveRef = useRef(false);
+  const startAttemptRef = useRef(0);
   // Text captured as finalized while listening; partial results append after it.
   const baseRef = useRef("");
   const liveRef = useRef("");
@@ -141,6 +148,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   }, [setDraft]);
 
   useSpeechRecognitionEvent("start", () => {
+    if (!sessionActiveRef.current) return;
     setListening(true);
     setErrorMessage(null);
     // A genuine start resets the auto-restart counter.
@@ -148,6 +156,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   });
 
   useSpeechRecognitionEvent("result", (event) => {
+    if (!sessionActiveRef.current) return;
     const transcript = event.results[0]?.transcript ?? "";
     if (event.isFinal) {
       // Fold the finalized segment into the base; reset the live tail.
@@ -161,6 +170,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   });
 
   useSpeechRecognitionEvent("end", () => {
+    if (!sessionActiveRef.current) return;
     // If the last partial never produced a final, fold its text into the base.
     if (liveRef.current) {
       baseRef.current = baseRef.current + liveRef.current;
@@ -170,6 +180,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
     const wasUserStopped = userStoppedRef.current;
     if (wasUserStopped) {
       // The owner tapped stop — finish listening for real.
+      sessionActiveRef.current = false;
       userStoppedRef.current = false;
       setListening(false);
     }
@@ -180,6 +191,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       // immediately so dictation continues seamlessly until the owner stops it.
       restartCountRef.current += 1;
       if (restartCountRef.current > MAX_AUTO_RESTARTS) {
+        sessionActiveRef.current = false;
         setListening(false);
         userStoppedRef.current = false;
         setErrorMessage(t("detail.voice.error"));
@@ -189,6 +201,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       try {
         ExpoSpeechRecognitionModule.start({ lang: langRef.current, interimResults: true, continuous: true });
       } catch (error) {
+        sessionActiveRef.current = false;
         setListening(false);
         setErrorMessage(t("detail.voice.error"));
         console.warn("[voice] auto-restart failed:", error);
@@ -197,25 +210,30 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
   });
 
   useSpeechRecognitionEvent("error", (event) => {
+    if (!sessionActiveRef.current) return;
     if (event.error === "no-speech") {
       // No speech was detected at all — a strong signal the owner has stopped
       // talking. Treat this as an intentional stop so the orchestrator exits
       // the continuous loop rather than auto-restarting.
+      sessionActiveRef.current = false;
       userStoppedRef.current = true;
       setListening(false);
       onVoiceEnd?.(true);
       return;
     }
+    sessionActiveRef.current = false;
     setListening(false);
     setErrorMessage(`${t("detail.voice.error")} (${event.error})`);
     console.warn("[voice] recognition error:", event.error, event.message);
   });
 
   const start = useCallback(async () => {
+    const attempt = ++startAttemptRef.current;
     setErrorMessage(null);
     try {
       // requestPermissionsAsync covers both mic + speech recognition on iOS/Android.
       const status = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!voiceMountedRef.current || attempt !== startAttemptRef.current) return;
       if (!status.granted) {
         Alert.alert(
           t("detail.voice.permissionTitle"),
@@ -228,6 +246,7 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         );
         // Permission denied during auto-restart — tell the orchestrator to
         // exit so we don't silently get stuck in "listening" phase.
+        sessionActiveRef.current = false;
         setListening(false);
         onVoiceEnd?.(true);
         return;
@@ -245,8 +264,10 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
       // script-based tag (e.g. zh-Hans from the system locale) is mapped to the
       // region form the engine accepts (zh-CN), avoiding language-not-supported.
       const { locales } = await loadSupportedVoiceLocales();
+      if (!voiceMountedRef.current || attempt !== startAttemptRef.current) return;
       const lang = resolveVoiceLang(voiceChoice, locales);
       langRef.current = lang;
+      sessionActiveRef.current = true;
       ExpoSpeechRecognitionModule.start({
         lang,
         interimResults: true,
@@ -256,6 +277,8 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
         continuous: true,
       });
     } catch (error) {
+      sessionActiveRef.current = false;
+      if (!voiceMountedRef.current || attempt !== startAttemptRef.current) return;
       setListening(false);
       setErrorMessage(t("detail.voice.error"));
       console.warn("[voice] failed to start:", error);
@@ -267,9 +290,19 @@ function useVoiceInput({ draft, setDraft, inputRef, onResultActivity, onVoiceEnd
     ExpoSpeechRecognitionModule.stop();
   }, []);
 
-  // When the component is unmounted (e.g. on agent switch via key={}), tear
-  // down the native recognition session so it doesn't silently keep running.
-  useEffect(() => () => { ExpoSpeechRecognitionModule.stop(); }, []);
+  // When the component is unmounted (e.g. on agent switch via key={}), cancel
+  // any async start still in flight, relinquish ownership before delayed native
+  // events arrive, and tear down the native recognition session.
+  useEffect(() => {
+    voiceMountedRef.current = true;
+    return () => {
+      voiceMountedRef.current = false;
+      startAttemptRef.current += 1;
+      sessionActiveRef.current = false;
+      userStoppedRef.current = true;
+      ExpoSpeechRecognitionModule.stop();
+    };
+  }, []);
 
   const toggleVoice = useCallback(() => {
     if (listening) {
@@ -464,8 +497,11 @@ export function AgentDetailBody({
       voiceResetDraftRefsRef.current();
       voiceToggleRef.current(); // listening=true → stop() → userStoppedRef=true → end → onVoiceEnd(true)
       dispatch({ type: "COUNTDOWN_DONE" });
-      if (draft.trim().length > 0) {
-        const text = draft.trim();
+      // Read draft via ref to avoid adding it to the effect's dependency
+      // array — we want the interval to keep ticking without being torn down
+      // by unrelated draft changes.
+      const text = draft.trim();
+      if (text.length > 0) {
         void (async () => {
           try {
             await sendAgentMessage(service, agent.source_id, text);
@@ -486,7 +522,11 @@ export function AgentDetailBody({
     return () => {
       if (countdownTimerRef.current) { clearInterval(countdownTimerRef.current); countdownTimerRef.current = undefined; }
     };
-  }, [continuousEnabled, cPhase, countdown, draft, agent.source_id, service, setDraft, loadHistory, cancelAllTimers]);
+    // Dependencies deliberately exclude `draft` — we only need draft at
+    // countdown→0 time, which is read from its current value in the callback.
+    // Including draft here would cause the interval to be torn down and
+    // re-created on every keystroke/voice result, freezing the countdown.
+  }, [continuousEnabled, cPhase, countdown, cancelAllTimers]);
 
   // Rule 5: agent state watcher for "waitingForAgent".
   const interactionState = agent.interaction_state;
@@ -513,10 +553,10 @@ export function AgentDetailBody({
         voiceToggleRef.current(); // listening=false → start()
       }
     }
-    if (cPhase !== "listening") {
-      cancelAllTimers();
-    }
-  }, [continuousEnabled, cPhase, cancelAllTimers]);
+    // Do not clear timers merely because the phase is not listening:
+    // countingDown owns an active interval. Each timer-producing effect
+    // cleans up its own timer when its phase changes.
+  }, [continuousEnabled, cPhase]);
 
   // Rule 7: unmount → full cleanup (voice hook unmount effect handles engine stop).
   useEffect(() => () => { cancelAllTimers(); dispatch({ type: "RESET" }); }, [cancelAllTimers]);
