@@ -2,6 +2,22 @@
 
 This file records notable user-facing changes to Herdr Connect. The English version is canonical; a Simplified Chinese translation is available at [`docs/zh-CN/CHANGELOG.md`](docs/zh-CN/CHANGELOG.md).
 
+## [0.1.0-preview.6] - 2026-07-26
+
+### Fixed
+
+- Declared the photo library usage description required when pairing by picking a QR image from the library (App Store compliance).
+- Stabilized continuous voice sessions so listening, auto-send countdown, and re-arm after an agent turn recover more reliably.
+- Restored continuous-mode audio cues that could drop out after session transitions.
+
+### Changed
+
+- Replaced the plain recording status text with a live waveform while dictating.
+
+### Release tooling
+
+- Uploaded iOS TestFlight build `0.1.0 (6)` to App Store Connect.
+
 ## [0.1.0-preview.5] - 2026-07-23
 
 ### Added
@@ -74,6 +90,7 @@ This file records notable user-facing changes to Herdr Connect. The English vers
 - Uploaded iOS TestFlight build `0.1.0 (3)` to App Store Connect; tester distribution remains pending.
 - Passed App Store Connect API credentials to Xcode during IPA export so automatic signing can refresh the provisioning profile.
 
+[0.1.0-preview.6]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.5...v0.1.0-preview.6
 [0.1.0-preview.5]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.4...v0.1.0-preview.5
 [0.1.0-preview.4]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.3...v0.1.0-preview.4
 [0.1.0-preview.3]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.2...v0.1.0-preview.3

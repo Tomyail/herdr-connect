@@ -2,6 +2,22 @@
 
 本文档记录 Herdr Connect 面向用户的重要变更。英文版 [`CHANGELOG.md`](../../CHANGELOG.md) 为 canonical 文档，本文件为简体中文翻译。
 
+## [0.1.0-preview.6] - 2026-07-26
+
+### 修复
+
+- 为「从相册选取配对二维码」补充 App Store 要求的照片图库用途说明（`NSPhotoLibraryUsageDescription`）。
+- 稳定连续语音会话：监听、自动发送倒计时，以及 agent 回合结束后的重新武装更可靠。
+- 修复会话切换后连续语音相关提示音可能丢失的问题。
+
+### 变更
+
+- 口述时用实时波形替代原先的纯文字录音状态。
+
+### 发布工具
+
+- 已将 iOS TestFlight build `0.1.0 (6)` 上传至 App Store Connect。
+
 ## [0.1.0-preview.5] - 2026-07-23
 
 ### 新增
@@ -74,6 +90,7 @@
 - 已将 iOS TestFlight build `0.1.0 (3)` 上传至 App Store Connect；尚待分发给测试用户。
 - IPA 导出时向 Xcode 传递 App Store Connect API 凭据，使自动签名能够刷新 provisioning profile。
 
+[0.1.0-preview.6]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.5...v0.1.0-preview.6
 [0.1.0-preview.5]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.4...v0.1.0-preview.5
 [0.1.0-preview.4]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.3...v0.1.0-preview.4
 [0.1.0-preview.3]: https://github.com/Tomyail/herdr-connect/compare/v0.1.0-preview.2...v0.1.0-preview.3
