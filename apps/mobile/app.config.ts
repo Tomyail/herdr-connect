@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
-    buildNumber: "5",
+    buildNumber: "6",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
     // `requireFullScreen` is intentionally left unset (defaults to false).
@@ -34,6 +34,8 @@ const config: ExpoConfig = {
       },
       NSCameraUsageDescription:
         "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
+      NSPhotoLibraryUsageDescription:
+        "Herdr Connect accesses your photo library only when you choose a QR code image to pair with a nearby Herdr daemon.",
       NSSpeechRecognitionUsageDescription:
         "Herdr Connect uses speech recognition to turn your voice into text in the message composer.",
     },

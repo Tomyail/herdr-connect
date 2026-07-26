@@ -52,6 +52,12 @@ function validateConfig() {
   if (config.ios?.infoPlist?.ITSAppUsesNonExemptEncryption !== false) {
     errors.push("ios.infoPlist.ITSAppUsesNonExemptEncryption 必须显式设为 false");
   }
+  if (
+    typeof config.ios?.infoPlist?.NSPhotoLibraryUsageDescription !== "string" ||
+    config.ios.infoPlist.NSPhotoLibraryUsageDescription.trim() === ""
+  ) {
+    errors.push("ios.infoPlist.NSPhotoLibraryUsageDescription 必须是非空字符串");
+  }
 
   if (errors.length > 0) {
     throw new Error(`iOS 发布配置无效：\n- ${errors.join("\n- ")}`);

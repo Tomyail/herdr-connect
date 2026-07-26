@@ -1,6 +1,7 @@
 {
   "ios": {
     "NSLocalNetworkUsageDescription": "Herdr Connect needs access to your local network to discover and connect to nearby Herdr daemons.",
-    "NSCameraUsageDescription": "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device."
+    "NSCameraUsageDescription": "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
+    "NSPhotoLibraryUsageDescription": "Herdr Connect accesses your photo library only when you choose a QR code image to pair with a nearby Herdr daemon."
   }
 }

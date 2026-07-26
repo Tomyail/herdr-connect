@@ -1,6 +1,7 @@
 {
   "ios": {
     "NSLocalNetworkUsageDescription": "Herdr Connect 需要访问本地网络，以发现并连接附近的 Herdr daemon。",
-    "NSCameraUsageDescription": "Herdr Connect 使用相机扫描桌面端 daemon 在配对设备时显示的二维码。"
+    "NSCameraUsageDescription": "Herdr Connect 使用相机扫描桌面端 daemon 在配对设备时显示的二维码。",
+    "NSPhotoLibraryUsageDescription": "仅当你选择配对二维码图片时，Herdr Connect 才会访问照片图库，以配对附近的 Herdr daemon。"
   }
 }
