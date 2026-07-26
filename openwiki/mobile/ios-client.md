@@ -147,6 +147,17 @@ iOS requires explicit user permission for local network discovery. The app:
 
 Permission is requested automatically on first discovery; no custom prompt is shown.
 
+### iOS Permission Declarations
+
+The required iOS usage descriptions are declared as `infoPlist` keys in `app.config.ts` and localized through `locales/en.json` / `locales/zh-Hans.json`:
+
+- `NSLocalNetworkUsageDescription` — Bonjour discovery.
+- `NSCameraUsageDescription` — QR scanner during pairing.
+- `NSPhotoLibraryUsageDescription` — pairing by choosing a QR image from the photo library (added in `0.1.0-preview.6` for App Store compliance). No photo-library picker code is wired into the app yet; the string is declared ahead of the feature.
+- `NSSpeechRecognitionUsageDescription` — voice-to-text in the message composer.
+
+The TestFlight release script (`scripts/ios-release.mjs`, `validateConfig()`) treats `NSPhotoLibraryUsageDescription` as a required non-empty string alongside `bundleIdentifier`, `buildNumber`, and `ITSAppUsesNonExemptEncryption: false`, so a release will fail fast if the key is removed.
+
 ### States
 
 | State | Description | UI |
