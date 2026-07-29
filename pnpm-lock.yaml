@@ -68,6 +68,9 @@ importers:
       pinned-fetch:
         specifier: file:./modules/pinned-fetch
         version: file:apps/mobile/modules/pinned-fetch
+      pinned-stream:
+        specifier: file:./modules/pinned-stream
+        version: file:apps/mobile/modules/pinned-stream
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -2225,6 +2228,9 @@ packages:
 
   pinned-fetch@file:apps/mobile/modules/pinned-fetch:
     resolution: {directory: apps/mobile/modules/pinned-fetch, type: directory}
+
+  pinned-stream@file:apps/mobile/modules/pinned-stream:
+    resolution: {directory: apps/mobile/modules/pinned-stream, type: directory}
 
   plist@3.1.1:
     resolution: {integrity: sha512-ZIfcLJC+7E7FBFnDxm9MPmt7D+DidyQ26lewieO75AdhA2ayMtsJSES0iWzqJQbcVRSrTufQoy0DR94xHue0oA==}
@@ -5127,6 +5133,8 @@ snapshots:
   picomatch@4.0.5: {}
 
   pinned-fetch@file:apps/mobile/modules/pinned-fetch: {}
+
+  pinned-stream@file:apps/mobile/modules/pinned-stream: {}
 
   plist@3.1.1:
     dependencies:
