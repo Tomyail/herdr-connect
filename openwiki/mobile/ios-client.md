@@ -510,6 +510,12 @@ Public beta: `https://testflight.apple.com/join/ZkRzJ6rm`
 
 See `/docs/release/ios-testflight.md` for troubleshooting.
 
+### Xcode Cloud CI
+
+Xcode Cloud builds run a post-clone hook (`apps/mobile/ios/ci_scripts/ci_post_clone.sh`) that provisions the Node/pnpm toolchain via [mise](https://mise.jdx.dev/) — versions are pinned in `apps/mobile/.mise.toml` (Node `24.11.1`, pnpm `10.34.5`, ruby `4.0.6`). The script installs mise if missing, runs `mise install`, then `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare`.
+
+`ios-release.mjs prepare` detects the Xcode Cloud environment via `CI_XCODE_CLOUD === "TRUE"` and runs `pod install` directly (skipping Bundler); outside Xcode Cloud it falls back to `bundle exec pod install`. This is why ruby is pinned in `.mise.toml` even though Xcode Cloud does not use Bundler — local and Fastlane-driven builds still do.
+
 ## Android Support
 
 Android is not currently supported. The Bonjour module has Android equivalents (NSD — Network Service Discovery), but:
