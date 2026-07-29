@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+cd "${CI_PRIMARY_REPOSITORY_PATH:-$(git rev-parse --show-toplevel)}"
+
 corepack enable
 corepack prepare pnpm@10.34.5 --activate
 
