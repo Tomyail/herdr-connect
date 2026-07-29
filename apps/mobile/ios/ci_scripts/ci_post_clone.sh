@@ -9,8 +9,8 @@ fi
 
 cd apps/mobile
 
+export MISE_DISABLE_TOOLS=ruby
 mise install
 
 mise exec -- pnpm install --frozen-lockfile
-mise exec -- bundle install
 mise exec -- node scripts/ios-release.mjs prepare

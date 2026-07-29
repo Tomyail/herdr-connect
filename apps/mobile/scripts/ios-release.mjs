@@ -73,7 +73,11 @@ function prepare() {
   }
 
   run("pnpm", args);
-  run("bundle", ["exec", "pod", "install", "--project-directory=ios"]);
+  if (process.env.CI_XCODE_CLOUD === "TRUE") {
+    run("pod", ["install", "--project-directory=ios"]);
+  } else {
+    run("bundle", ["exec", "pod", "install", "--project-directory=ios"]);
+  }
   if (!existsSync(iosWorkspace)) {
     throw new Error(`Pod install 完成后仍未找到 workspace：${iosWorkspace}`);
   }
