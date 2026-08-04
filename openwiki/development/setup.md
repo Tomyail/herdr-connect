@@ -7,6 +7,7 @@ tags: [development, setup, build, dependencies, environment]
 
 # Development Setup
 
+<!-- openwiki: broken internal link [../README.md] file "../README.md" does not exist. Fix the href or restore the target, then delete this comment. -->
 This guide explains how to set up a development environment for contributing to Herdr Connect. For users who just want to try the preview, see the [main README](../README.md) "Try it in 5 minutes" section.
 
 ## Requirements
