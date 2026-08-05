@@ -76,10 +76,8 @@ Start here for project context, then explore specific areas:
 
 - **Source Repository**: [github.com/Tomyail/herdr-connect](https://github.com/Tomyail/herdr-connect)
 - **Upstream Herdr**: [github.com/ogulcancelik/herdr](https://github.com/ogulcancelik/herdr)
-<!-- openwiki: broken internal link [docs/security/lan-tls-pairing.md] file "docs/security/lan-tls-pairing.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-- **User Documentation**: [`/docs/`](docs/) directory (CLI guide, daemon guide, [TLS & pairing security model](docs/security/lan-tls-pairing.md))
-<!-- openwiki: broken internal link [CONTEXT.md] file "CONTEXT.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-- **Domain Language**: [`/CONTEXT.md`](CONTEXT.md) (Chinese — defines project terminology)
+- **User Documentation**: `/docs/` directory (CLI guide, daemon guide, TLS & pairing security model at `/docs/security/lan-tls-pairing.md`)
+- **Domain Language**: `/CONTEXT.md` (Chinese — defines project terminology)
 
 ## For Future Agents
 

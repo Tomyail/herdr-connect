@@ -13,8 +13,7 @@ This page documents two security layers:
 1. **LAN Security (Implemented)** — TLS with self-signed certificate, fingerprint pinning, QR-code pairing, per-device bearer tokens, and device revocation. This is the active security model for all LAN communication today.
 2. **End-to-End Encryption (Future)** — HPKE-based protocol primitives for future relay connections. Not yet integrated into the transport.
 
-<!-- openwiki: broken internal link [../../docs/security/lan-tls-pairing.md] link "../../docs/security/lan-tls-pairing.md" is outside the wiki root. Fix the href or restore the target, then delete this comment. -->
-For the authoritative human-readable security model, see [`/docs/security/lan-tls-pairing.md`](../../docs/security/lan-tls-pairing.md).
+For the authoritative human-readable security model, see `/docs/security/lan-tls-pairing.md` in the repository.
 
 ## LAN Security (Implemented)
 
