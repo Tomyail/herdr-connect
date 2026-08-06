@@ -2,7 +2,7 @@
 
 set -eu
 
-DEFAULT_VERSION="v0.1.0-preview.2"
+DEFAULT_VERSION="v0.1.0-preview.6"
 DEFAULT_REPOSITORY="Tomyail/herdr-connect"
 
 say() {
