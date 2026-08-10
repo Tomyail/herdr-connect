@@ -25,7 +25,7 @@ You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an i
    herdr agent list
    ```
 
-2. Install the **v0.1.0-preview.2 daemon**. The downloaded daemon does not require Go, Node.js, pnpm, Expo, or Xcode.
+2. Install the **daemon**. The installer fetches the latest release automatically. The downloaded daemon does not require Go, Node.js, pnpm, Expo, or Xcode.
 
    On macOS or Linux:
 
@@ -33,7 +33,7 @@ You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an i
    curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
    ```
 
-   On Windows, download and extract the matching zip from [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2).
+   On Windows, download and extract the matching zip from the newest entry on the [GitHub Releases page](https://github.com/Tomyail/herdr-connect/releases) (all releases are currently tagged as preview/prerelease, so GitHub's "latest release" shortcut doesn't apply).
 3. Check and start the daemon. The macOS/Linux service continues in the background; Windows users keep the foreground terminal open while using the app.
 
    On macOS or Linux:

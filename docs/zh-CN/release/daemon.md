@@ -2,17 +2,17 @@
 
 [English](../../../docs/release/daemon.md)
 
-Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包。当前公开 build 是 [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2)。daemon 是所有者侧的 LAN 服务：它与本机 Herdr CLI 交互、广播 `_herdr-connect._tcp`、提供 HTTPS LAN API，并在主机上保存配对与设备状态。
+Herdr Connect 为 macOS、Linux 和 Windows 提供预编译 daemon 压缩包，发布在 [GitHub Releases 页面](https://github.com/Tomyail/herdr-connect/releases)。daemon 是所有者侧的 LAN 服务：它与本机 Herdr CLI 交互、广播 `_herdr-connect._tcp`、提供 HTTPS LAN API，并在主机上保存配对与设备状态。
 
 ## 在 macOS 或 Linux 上快速安装
 
-将当前 daemon 安装到 `~/.local/bin/herdr-connect`：
+将最新 daemon 安装到 `~/.local/bin/herdr-connect`：
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
 ```
 
-安装器会识别 Apple Silicon、Intel/AMD64 和 Linux ARM64，下载固定版本的 Release 压缩包，并在安装前使用 Release 的 `SHA256SUMS` 校验文件。安装过程不使用 `sudo`。
+安装器会识别 Apple Silicon、Intel/AMD64 和 Linux ARM64；未指定 `HERDR_CONNECT_VERSION` 时会自动查找最新的 GitHub Release，下载对应压缩包，并在安装前使用 Release 的 `SHA256SUMS` 校验文件。安装过程不使用 `sudo`。
 
 如需先审查脚本再运行：
 
@@ -22,11 +22,11 @@ less install.sh
 sh install.sh
 ```
 
-需要时可以指定版本或安装目录：
+需要时可以指定固定版本或安装目录：
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh \
-  | HERDR_CONNECT_VERSION=v0.1.0-preview.2 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
+  | HERDR_CONNECT_VERSION=v0.1.0-preview.6 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
 ```
 
 Windows 用户继续使用下方的 zip 下载方式。

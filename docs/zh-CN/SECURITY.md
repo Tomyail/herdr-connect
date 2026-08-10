@@ -8,7 +8,7 @@
 
 | 版本 | 支持情况 |
 | --- | --- |
-| `v0.1.0-preview.2` | 尽力修复 |
+| [最新发布的 Release](https://github.com/Tomyail/herdr-connect/releases) | 尽力修复 |
 | 更旧或未发布的 build | 不支持 |
 
 ## 报告漏洞

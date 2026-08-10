@@ -2,7 +2,6 @@
 
 set -eu
 
-DEFAULT_VERSION="v0.1.0-preview.6"
 DEFAULT_REPOSITORY="Tomyail/herdr-connect"
 
 say() {
@@ -44,13 +43,40 @@ checksum_file() {
   fi
 }
 
-version="${HERDR_CONNECT_VERSION:-$DEFAULT_VERSION}"
+# resolve_latest_version 用来在没有显式指定 HERDR_CONNECT_VERSION 时找最新
+# release。不能用 GitHub 的 /releases/latest 接口——它明确排除 prerelease，
+# 而这个仓库目前所有 tag 都是 vX.Y.Z-preview.N，会被发布流水线自动标成
+# prerelease，命中 /releases/latest 只会拿到 404。改用列表接口（按创建时间
+# 倒序）取第一条的 tag_name。
+resolve_latest_version() {
+  releases_url="https://api.github.com/repos/${repository}/releases"
+  # Capture the full response before grepping it: piping curl straight into
+  # `grep -m1` makes grep close the pipe as soon as it finds a match, which
+  # sends curl a SIGPIPE and prints a spurious "Failure writing output" error
+  # even though the lookup succeeded.
+  response="$(curl -fsSL --retry 3 --proto '=https' --tlsv1.2 \
+    -H "Accept: application/vnd.github+json" "$releases_url")"
+  tag="$(printf '%s\n' "$response" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')"
+  [ -n "$tag" ] || fail "could not determine the latest release from $releases_url"
+  printf '%s\n' "$tag"
+}
+
+repository="${HERDR_CONNECT_REPOSITORY:-$DEFAULT_REPOSITORY}"
+require_command curl
+require_command grep
+require_command sed
+
+if [ -n "${HERDR_CONNECT_VERSION:-}" ]; then
+  version="$HERDR_CONNECT_VERSION"
+else
+  say "No HERDR_CONNECT_VERSION given; looking up the latest release..."
+  version="$(resolve_latest_version)"
+fi
 case "$version" in
   v*) ;;
   *) version="v$version" ;;
 esac
 
-repository="${HERDR_CONNECT_REPOSITORY:-$DEFAULT_REPOSITORY}"
 install_dir="${HERDR_CONNECT_INSTALL_DIR:-${HOME:?HOME is required}/.local/bin}"
 os="$(normalize_os "${HERDR_CONNECT_OS:-$(uname -s)}")"
 arch="$(normalize_arch "${HERDR_CONNECT_ARCH:-$(uname -m)}")"
@@ -59,7 +85,6 @@ archive_name="herdr-connect_${release_version}_${os}_${arch}"
 asset_name="${archive_name}.tar.gz"
 release_base_url="${HERDR_CONNECT_DOWNLOAD_BASE_URL:-https://github.com/${repository}/releases/download/${version}}"
 
-require_command curl
 require_command tar
 require_command awk
 require_command mktemp

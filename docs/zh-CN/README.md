@@ -21,7 +21,7 @@ Herdr Connect 是 [Herdr](https://github.com/ogulcancelik/herdr) 的本地优先
    herdr agent list
    ```
 
-2. 安装 **v0.1.0-preview.2 daemon**。下载版 daemon 不需要 Go、Node.js、pnpm、Expo 或 Xcode。
+2. 安装 **daemon**。安装脚本会自动获取最新 Release。下载版 daemon 不需要 Go、Node.js、pnpm、Expo 或 Xcode。
 
    macOS 或 Linux：
 
@@ -29,7 +29,7 @@ Herdr Connect 是 [Herdr](https://github.com/ogulcancelik/herdr) 的本地优先
    curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
    ```
 
-   Windows 用户从 [GitHub Releases](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2) 下载并解压对应的 zip。
+   Windows 用户从 [GitHub Releases 页面](https://github.com/Tomyail/herdr-connect/releases)最新的一条下载并解压对应的 zip（目前所有 Release 都标记为 preview/prerelease，GitHub 的"最新 Release"快捷方式不适用）。
 3. 检查并启动 daemon。macOS/Linux 服务会在后台持续运行；Windows 用户在使用 App 期间需保持前台终端运行。
 
    macOS 或 Linux：

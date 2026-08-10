@@ -8,7 +8,7 @@ Security fixes are considered for the latest published Herdr Connect build. Olde
 
 | Version | Supported |
 | --- | --- |
-| `v0.1.0-preview.2` | Best-effort fixes |
+| [Latest published release](https://github.com/Tomyail/herdr-connect/releases) | Best-effort fixes |
 | Older or unreleased builds | No |
 
 ## Report a vulnerability

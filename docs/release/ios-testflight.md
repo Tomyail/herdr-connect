@@ -11,7 +11,7 @@ The public beta has passed Beta App Review and is open to testers. Individual re
 ## Before you install
 
 - Install Apple's TestFlight app on your iPhone.
-- Install and start the [v0.1.0-preview.2 daemon](daemon.md) on a computer.
+- Install and start the [daemon](daemon.md) on a computer.
 - Put the iPhone and daemon host on the same reachable LAN (physical Wi-Fi or a VPN that makes both devices mutually reachable).
 - Ensure VPN and firewall settings do not block local multicast, HTTPS to TCP port `9808`, or the host firewall rule for the daemon.
 

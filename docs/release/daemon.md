@@ -2,17 +2,17 @@
 
 [简体中文](https://github.com/Tomyail/herdr-connect/blob/main/docs/zh-CN/release/daemon.md)
 
-Herdr Connect provides precompiled daemon archives for macOS, Linux, and Windows. The current public build is [v0.1.0-preview.2](https://github.com/Tomyail/herdr-connect/releases/tag/v0.1.0-preview.2). The daemon is the owner-side LAN service: it talks to the local Herdr CLI, advertises `_herdr-connect._tcp`, serves the HTTPS LAN API, and stores pairing/device state on the host.
+Herdr Connect provides precompiled daemon archives for macOS, Linux, and Windows, published on the [GitHub Releases page](https://github.com/Tomyail/herdr-connect/releases). The daemon is the owner-side LAN service: it talks to the local Herdr CLI, advertises `_herdr-connect._tcp`, serves the HTTPS LAN API, and stores pairing/device state on the host.
 
 ## Quick install on macOS or Linux
 
-Install the current daemon to `~/.local/bin/herdr-connect`:
+Install the latest daemon to `~/.local/bin/herdr-connect`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon, Intel/AMD64, and Linux ARM64. It downloads the pinned release archive and verifies it against the release's `SHA256SUMS` before installing the binary. It does not use `sudo`.
+The installer detects Apple Silicon, Intel/AMD64, and Linux ARM64. Unless `HERDR_CONNECT_VERSION` is set, it looks up the newest GitHub release automatically. It downloads the release archive and verifies it against the release's `SHA256SUMS` before installing the binary. It does not use `sudo`.
 
 To inspect the script before running it:
 
@@ -22,11 +22,11 @@ less install.sh
 sh install.sh
 ```
 
-Override the version or installation directory when needed:
+Pin a specific version or override the installation directory when needed:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh \
-  | HERDR_CONNECT_VERSION=v0.1.0-preview.2 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
+  | HERDR_CONNECT_VERSION=v0.1.0-preview.6 HERDR_CONNECT_INSTALL_DIR="$HOME/bin" sh
 ```
 
 Windows users should continue with the zip download below.

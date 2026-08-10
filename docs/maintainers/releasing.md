@@ -10,7 +10,9 @@
 
 ## daemon
 
-`v*` tag 会触发 `.github/workflows/daemon-release.yml`，运行测试并为 macOS、Linux 和 Windows 构建压缩包与 `SHA256SUMS`。工作流通过 Go `ldflags` 把去掉 `v` 前缀的 tag 注入 CLI，并在 Linux AMD64 build 上核对 `herdr-connect --version`；本地未注入 build 显示 `development`。带连字符的 tag 会创建 prerelease。当前公开版本为 `v0.1.0-preview.2`。
+`v*` tag 会触发 `.github/workflows/daemon-release.yml`，运行测试并为 macOS、Linux 和 Windows 构建压缩包与 `SHA256SUMS`。工作流通过 Go `ldflags` 把去掉 `v` 前缀的 tag 注入 CLI，并在 Linux AMD64 build 上核对 `herdr-connect --version`；本地未注入 build 显示 `development`。带连字符的 tag 会创建 prerelease。
+
+`install.sh` 不再硬编码默认版本号：未显式传 `HERDR_CONNECT_VERSION` 时，它会调 GitHub 列表接口（`GET /repos/{repo}/releases`，取第一条）自动解析最新 release。之所以不能用 `/releases/latest`，是因为该接口明确排除 prerelease，而这个仓库目前所有 tag 都带 `-preview.N` 后缀、会被本工作流自动标成 prerelease，命中 `/releases/latest` 只会拿到 404。这意味着发布新 tag 后不需要再手动同步 `install.sh` 或文档里的版本号——但如果哪天发了一个正式（非 prerelease）版本，要重新确认这条自动解析逻辑仍然选中你想要的那个 release。
 
 macOS（darwin arm64/amd64）在 macOS runner 上原生构建，并执行 Apple 签名与公证：用 Developer ID Application 证书 `codesign`（hardened runtime + secure timestamp），提交 `notarytool submit --wait` 公证，再尝试 `stapler staple` 并用 `spctl` 校验。公证失败（`--wait` 非零退出）会使 build job 失败，从而不发布未公证产物。所需 GitHub Secrets（证书与密钥均为 base64 编码内容）：
 
