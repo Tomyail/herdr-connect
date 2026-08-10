@@ -64,7 +64,7 @@ Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw 
 
 The daemon (`/cmd/herdr-connect/main.go`) is a long-lived service that:
 
-1. **Adapts Herdr CLI output** — The [Herdr Source Adapter](../domain/herdr-source-adapters.md) invokes `herder agent list --json` and parses the response into domain types
+1. **Adapts Herdr CLI output** — The [Herdr Source Adapter](../domain/herdr-source-adapters.md) invokes `herdr agent list` and parses the response into domain types, addressing each agent by its `pane_id`
 2. **Projects agent state** — The [Projection Layer](../domain/agent-projection.md) normalizes source observations and persists them to SQLite
 3. **Serves HTTPS API** — The LAN server (`/internal/demolan/server.go`) serves agent list, output, focus, messages, interrupt, and SSE endpoints over HTTPS with bearer-token auth on TCP port 9808
 4. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service with a `fp` TXT record containing the TLS certificate fingerprint for mobile pairing verification

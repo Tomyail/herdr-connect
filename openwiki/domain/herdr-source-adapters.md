@@ -1,9 +1,22 @@
 ---
 type: Domain Concept
 title: Herdr Source Adapters
-description: Source adapter interface that bridges Herdr CLI output to Herdr Connect domain model
+description: Source adapter interface that bridges Herdr CLI output (agent list, read, pane run/send-keys) to Herdr Connect domain model, addressing agents by pane_id
 tags: [domain, herdr-cli, source-adapter, interface-design]
 resource: /internal/herdrsource
+openwiki:
+  roles: [domain, integration]
+  change_kinds: [herdr-cli-shape, public-api]
+  source_paths: [internal/herdrsource/herdr_cli.go, internal/herdrsource/source.go, internal/herdrsource/tui_chrome.go]
+  symbols: [HerdrCLIAdapter, Source, Snapshot, ReadAgentHistory, SendAgentMessage, Interrupt, FocusAgent, AgentObservation]
+  test_paths: [internal/herdrsource/source_test.go, internal/herdrsource/tui_chrome_test.go]
+  invariants: >
+    AgentObservation.SourceID is the agent's pane_id from `herdr agent list`;
+    `herdr agent read` returns plain text on stdout (no JSON envelope) and
+    revision is fetched separately via `herdr agent get`; SendAgentMessage and
+    Interrupt pass sourceID straight to `pane run` / `pane send-keys C-c` with
+    no agent-get indirection.
+  validation_commands: ["go test ./internal/herdrsource/..."]
 ---
 
 # Herdr Source Adapters
@@ -34,7 +47,7 @@ Sources can implement either snapshot-based or incremental synchronization:
 - **Snapshot-only sources** — Always return the full agent list on `Snapshot()` and declare `IncrementalChanges: false`
 - **Incremental sources** — Provide both `Snapshot()` and `Changes()`, declaring `IncrementalChanges: true`
 
-The Herdr CLI adapter is currently snapshot-only. Each sync runs `herder agent list --json` and fetches all agents.
+The Herdr CLI adapter is currently snapshot-only. Each sync runs `herdr agent list` and fetches all agents.
 
 ## Domain Types
 
@@ -44,7 +57,7 @@ An `AgentObservation` represents a single agent as reported by Herdr:
 
 ```go
 type AgentObservation struct {
-    SourceID         string           // Stable identifier from Herdr (e.g., pane ID)
+    SourceID         string           // Stable identifier from Herdr (the agent's pane_id — see Herdr CLI Adapter below)
     DisplayName      string           // Human-readable name
     WorkspaceLabel   string           // Optional workspace name
     TabLabel         string           // Optional tab name
@@ -95,19 +108,23 @@ The `HerdrCLIAdapter` (`/internal/herdrsource/herdr_cli.go`) implements the sour
 
 ```go
 func (h *HerdrCLIAdapter) Snapshot(ctx context.Context) (herdrsource.Snapshot, error) {
-    // Run: herder agent list --json
+    // Run: herdr agent list
     agents, online, err := h.fetchAgents(ctx)
-    // Parse JSON response
-    // Return Snapshot with Cursor set to current timestamp
+    // Parse JSON response, set SourceID = pane_id per agent
+    // Return Snapshot with Cursor set to the max observed revision
 }
 ```
 
 The adapter:
 
-1. Invokes `herder agent list --json` via `os/exec`
-2. Parses the JSON response into `AgentObservation` structs
-3. Sets `Cursor` to the current timestamp (ISO 8601 string)
+1. Invokes `herdr agent list` via `os/exec`
+2. Parses the JSON response into `AgentObservation` structs, using each agent's **`pane_id`** as `SourceID`
+3. Sets `Cursor` to the highest observed agent `revision` (as a decimal string)
 4. Returns `Snapshot.Online = true` if the command succeeded
+
+#### Why `pane_id`, not `terminal_id`
+
+The `SourceID` is the agent's `pane_id` as reported by `herdr agent list`. An earlier version used `terminal_id`, which worked when the herdr CLI (0.7) accepted `terminal_id` for addressing in `agent get/read/focus`. As of herdr 0.8 those addressing commands only accept `pane_id`; a `terminal_id` resolves to `agent_not_found`, which surfaced as `502` on every detail-style REST endpoint (`focus`/`history`/`messages`/`interrupt`). Using `pane_id` for both addressing and display removes the extra `agent get` translation step that used to bridge the two IDs. See the `Snapshot` doc comment in `/internal/herdrsource/herdr_cli.go` for the historical rationale.
 
 ### History Reading
 
@@ -115,12 +132,16 @@ The adapter implements `AgentHistoryReader` for the demo LAN endpoints:
 
 ```go
 func (h *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string, lines int) (AgentHistory, error) {
-    // Run: herder pane show --id <sourceID> --tail <lines>
-    // Return truncated text and revision
+    // Run: herdr agent read <sourceID> --source recent-unwrapped --lines <lines>
+    // stdout is raw terminal TEXT (not JSON); revision comes from a separate
+    // herdr agent get <sourceID> call.
+    // Return stripped text, revision, and truncated flag.
 }
 ```
 
 This is called by the HTTP server when the mobile client requests `/v1/agents/{id}/history`.
+
+**Important output-shape note:** `herdr agent read` (and the underlying `herdr pane read`) only support `--format text|ansi` and write the terminal text directly to stdout on success — there is **no JSON envelope**. Only failures (e.g., a missing target) write `{"error":...}` to stderr and exit non-zero, which `runner.Run` already converts into a Go error. An earlier version assumed the success response was `{"result":{"type":"pane_read",...}}` JSON, which never matched the real CLI and caused `json.Unmarshal` to fail → `history_failed` → `502` on every agent-detail view. Because `agent read` does not report a revision, the adapter makes one additional `herdr agent get <sourceID>` call (structured JSON) to fetch `revision`, keeping it consistent with `Snapshot()`. The `Truncated` flag is inferred by comparing the returned line count to the requested line count, since the CLI does not report truncation itself.
 
 ### TUI Chrome Stripping
 
@@ -142,11 +163,11 @@ The adapter implements `AgentMessageSender`:
 
 ```go
 func (h *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID string, text string) error {
-    // Run: herder pane send --id <sourceID> --message <text>
+    // Run: herdr pane run <sourceID> <text>
 }
 ```
 
-This is called when the user sends text from the mobile client.
+This is called when the user sends text from the mobile client. Because `sourceID` is already the `pane_id` used in `Snapshot()`, it is passed straight to `pane run` with no `agent get` translation step.
 
 ### Interrupt
 
@@ -154,11 +175,13 @@ The adapter implements `AgentInterrupter` to send SIGINT (Ctrl-C) to a running a
 
 ```go
 func (h *HerdrCLIAdapter) Interrupt(ctx context.Context, sourceID string) error {
-    // Run: herder pane interrupt --id <sourceID>
+    // Run: herdr pane send-keys <sourceID> C-c
 }
 ```
 
-This is called when the user taps the interrupt button in the mobile client. The server only allows interrupt when the agent's interaction state is `working`.
+This is called when the user taps the interrupt button in the mobile client. The server only allows interrupt when the agent's interaction state is `working`. As with `SendAgentMessage`, `sourceID` is the `pane_id` and is passed directly to `pane send-keys` with no `agent get` indirection.
+
+The `Interrupt` doc comment records a verification caveat: `pane send-keys ... C-c` was confirmed end-to-end against a real running Herdr agent (whose foreground TUI reads keyboard input) but not against a bare backgrounded command like `sleep`, which may not surface the SIGINT. If a future agent type appears unresponsive to interrupt, suspect that agent's own SIGINT handling rather than this call chain.
 
 ## Fake Source
 
@@ -191,10 +214,10 @@ The projection layer treats source errors as **soft failures** — it continues 
 
 Cursors are opaque strings that sources use for incremental change tracking:
 
-- **Herdr CLI adapter** — Uses ISO 8601 timestamps (e.g., `2025-01-15T10:30:00Z`)
-- **Future adapters** — May use tokens, offsets, or commit hashes
+- **Herdr CLI adapter** — Uses the highest agent `revision` observed in the snapshot, formatted as a decimal string via `strconv.FormatUint(maxRevision, 10)`. Because the adapter is snapshot-only and does not implement `Changes()`, the cursor is recorded with the projection but is not currently consumed for incremental sync.
+- **Future adapters** — May use tokens, offsets, timestamps, or commit hashes
 
-The projection layer passes the cursor from `Snapshot()` to `Changes()` on the next sync. If a source does not support incremental changes, `Changes()` returns an error.
+The projection layer passes the cursor from `Snapshot()` to `Changes()` on the next sync. If a source does not support incremental changes, `Changes()` returns an error (the Herdr CLI adapter returns its "no trusted incremental subscription" error).
 
 ## Extending to Other Sources
 
@@ -225,9 +248,8 @@ case "my-source":
 
 Source behavior is tested via:
 
-- **Unit tests** (`/internal/herdrsource/source_test.go`) — Test normalization and validation
+- **Unit tests** (`/internal/herdrsource/source_test.go`) — Use a `recordingRunner` to assert exact `herdr` subcommand + argument shapes. Key suites: `Test当前Herdr适配器通过PaneID切换Agent` (`FocusAgent` → `agent focus <pane_id>`), `TestHerdrAdapterInterruptSendsControlCViaPaneSendKeys` (`Interrupt` → `pane send-keys <pane_id> C-c` with no `agent get`), and `Test当前Herdr适配器读取历史并通过Pane提交消息` (asserts `agent read` returns plain text, revision comes from a second `agent get`, and `SendAgentMessage` calls `pane run`). Fixtures use `pane_id` JSON fields and raw-text `agent read` stdout to mirror the real herdr 0.8 CLI.
 - **TUI chrome tests** (`/internal/herdrsource/tui_chrome_test.go`) — Test stripping across multiple agent CLI fixtures (`testdata/pane-claude.txt`, `pane-grok.txt`, `pane-pi.txt`)
-- **Integration tests** — Test against a real Herdr CLI in CI
 - **Fake source tests** — Test projection and HTTP layer without dependencies
 
-See [Development Testing](../development/testing.md) for test practices.
+Run the focused suite with `go test ./internal/herdrsource/...`. See [Development Testing](../development/testing.md) for test practices.
