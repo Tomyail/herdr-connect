@@ -265,6 +265,10 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          # Full history + tags: git-cliff walks the whole log to find the
+          # previous tag and diff commits against it.
+          fetch-depth: 0
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -278,9 +282,22 @@ jobs:
           cd dist
           sha256sum ./*.tar.gz ./*.zip > SHA256SUMS
 
+      # `gh release create --generate-notes` only lists commits that came in
+      # through a merged pull request, so anything pushed directly to main
+      # silently disappears from "What's Changed" even though it's shipped
+      # in the release. git-cliff walks the actual commit log instead, so
+      # nothing is excluded based on how it landed on main. See cliff.toml.
+      - name: Generate release notes with git-cliff
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --latest
+
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ steps.git-cliff.outputs.content }}
         shell: bash
         run: |
           set -euo pipefail
@@ -295,7 +312,7 @@ jobs:
           else
             gh release create "$tag" dist/* \
               --verify-tag \
-              --generate-notes \
+              --notes "$RELEASE_NOTES" \
               --title "$tag" \
               "${prerelease[@]}"
           fi
