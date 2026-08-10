@@ -52,6 +52,18 @@ func (a *HerdrCLIAdapter) FocusAgent(ctx context.Context, sourceID string) error
 	return nil
 }
 
+// ReadAgentHistory 读取 pane 最近文本。
+//
+// 注意：`herdr agent read`（以及底层的 `herdr pane read`）只支持
+// `--format text|ansi`，成功时直接把终端文本写到 stdout——没有 JSON 包装；
+// 只有失败（如 target 不存在）才会往 stderr 写 `{"error":...}` 并以非零码
+// 退出，这种情况已经由 runner.Run 转成 Go error 处理。历史代码假设成功响应
+// 也是形如 `{"result":{"type":"pane_read",...}}` 的 JSON，这在当前 CLI 上
+// 从未成立，会导致 json.Unmarshal 直接失败 → history_failed → 502，这是
+// mobile 端"agent 详情"全部 502 的直接原因。
+//
+// `read` 不回报 revision，所以额外调一次 `agent get <sourceID>`（结构化 JSON）
+// 取 revision，和 Snapshot() 里的语义保持一致。
 func (a *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string, lines int) (AgentHistory, error) {
 	if sourceID == "" {
 		return AgentHistory{}, fmt.Errorf("Agent source_id 不能为空")
@@ -63,20 +75,36 @@ func (a *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string,
 	if err != nil {
 		return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read: %w", err)
 	}
-	var response herdrAgentReadResponse
-	if err := json.Unmarshal(output, &response); err != nil {
-		return AgentHistory{}, fmt.Errorf("解析 Herdr agent.read JSON: %w", err)
+	revision, err := a.readAgentRevision(ctx, sourceID)
+	if err != nil {
+		return AgentHistory{}, fmt.Errorf("执行 Herdr agent.get: %w", err)
 	}
-	if response.Result.Type != "pane_read" {
-		return AgentHistory{}, fmt.Errorf("Herdr agent.read 返回非成功响应")
-	}
+	rawText := string(output)
+	lineCount := len(strings.Split(strings.TrimRight(rawText, "\n"), "\n"))
 	return AgentHistory{
-		Text:      stripTUIChrome(response.Result.Read.Text),
-		Revision:  response.Result.Read.Revision,
-		Truncated: response.Result.Read.Truncated,
+		Text:      stripTUIChrome(rawText),
+		Revision:  revision,
+		Truncated: lineCount >= lines,
 	}, nil
 }
 
+func (a *HerdrCLIAdapter) readAgentRevision(ctx context.Context, sourceID string) (uint64, error) {
+	output, err := a.runner.Run(ctx, a.binary, "agent", "get", sourceID)
+	if err != nil {
+		return 0, fmt.Errorf("执行 Herdr agent.get: %w", err)
+	}
+	var response herdrAgentGetResponse
+	if err := json.Unmarshal(output, &response); err != nil {
+		return 0, fmt.Errorf("解析 Herdr agent.get JSON: %w", err)
+	}
+	if response.Result.Type != "agent_info" {
+		return 0, fmt.Errorf("Herdr agent.get 返回非成功响应")
+	}
+	return response.Result.Agent.Revision, nil
+}
+
+// SendAgentMessage 直接把 sourceID 当 pane_id 传给 `pane run`——sourceID 就是
+// Snapshot() 里用的 pane_id（见该函数注释），无需再 `agent get` 转换一次。
 func (a *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID, text string) error {
 	if sourceID == "" {
 		return fmt.Errorf("Agent source_id 不能为空")
@@ -85,18 +113,7 @@ func (a *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID, text s
 		return fmt.Errorf("消息不能为空")
 	}
 
-	output, err := a.runner.Run(ctx, a.binary, "agent", "get", sourceID)
-	if err != nil {
-		return fmt.Errorf("执行 Herdr agent.get: %w", err)
-	}
-	var response herdrAgentGetResponse
-	if err := json.Unmarshal(output, &response); err != nil {
-		return fmt.Errorf("解析 Herdr agent.get JSON: %w", err)
-	}
-	if response.Result.Type != "agent_info" || response.Result.Agent.PaneID == "" {
-		return fmt.Errorf("Herdr agent.get 返回非成功响应")
-	}
-	if _, err := a.runner.Run(ctx, a.binary, "pane", "run", response.Result.Agent.PaneID, text); err != nil {
+	if _, err := a.runner.Run(ctx, a.binary, "pane", "run", sourceID, text); err != nil {
 		return fmt.Errorf("执行 Herdr pane.run: %w", err)
 	}
 	return nil
@@ -104,8 +121,9 @@ func (a *HerdrCLIAdapter) SendAgentMessage(ctx context.Context, sourceID, text s
 
 // Interrupt 向指定 Agent 的 pane 发送中断信号（SIGINT / Ctrl-C）。
 //
-// 实现说明：与 SendAgentMessage 一样先 `agent get <sourceID>` 拿到 PaneID，
-// 再用 `pane send-keys <paneID> C-c` 向该 pane 发送 Ctrl-C。
+// 实现说明：sourceID 就是 pane_id（见 Snapshot 注释），直接用
+// `pane send-keys <sourceID> C-c` 向该 pane 发送 Ctrl-C，无需先 `agent get`
+// 转换。
 //
 // 验证记录：对着一个原始后台 `sleep` 子进程手测 send-keys 时未观察到 SIGINT
 // 效果，一度怀疑 herdr CLI 不支持控制键。但在真机上对一个运行中的真实 Herdr
@@ -119,23 +137,18 @@ func (a *HerdrCLIAdapter) Interrupt(ctx context.Context, sourceID string) error 
 		return fmt.Errorf("Agent source_id 不能为空")
 	}
 
-	output, err := a.runner.Run(ctx, a.binary, "agent", "get", sourceID)
-	if err != nil {
-		return fmt.Errorf("执行 Herdr agent.get: %w", err)
-	}
-	var response herdrAgentGetResponse
-	if err := json.Unmarshal(output, &response); err != nil {
-		return fmt.Errorf("解析 Herdr agent.get JSON: %w", err)
-	}
-	if response.Result.Type != "agent_info" || response.Result.Agent.PaneID == "" {
-		return fmt.Errorf("Herdr agent.get 返回非成功响应")
-	}
-	if _, err := a.runner.Run(ctx, a.binary, "pane", "send-keys", response.Result.Agent.PaneID, "C-c"); err != nil {
+	if _, err := a.runner.Run(ctx, a.binary, "pane", "send-keys", sourceID, "C-c"); err != nil {
 		return fmt.Errorf("执行 Herdr pane.send-keys (interrupt): %w", err)
 	}
 	return nil
 }
 
+// Snapshot 用 pane_id 作为 AgentObservation.SourceID，而不是 terminal_id。
+// 早期版本用 terminal_id：herdr CLI 0.7 时 `agent get/read/focus <target>`
+// 接受 terminal_id 寻址；0.8 起这几个命令只认 pane_id，terminal_id 会报
+// agent_not_found，导致详情类 REST 端点（focus/history/messages/interrupt）
+// 全部 502。pane_id 由 `agent list` 直接给出，寻址和展示用同一个 ID，
+// 不需要再额外一次 `agent get` 做转换。
 func (a *HerdrCLIAdapter) Snapshot(ctx context.Context) (Snapshot, error) {
 	output, err := a.runner.Run(ctx, a.binary, "agent", "list")
 	if err != nil {
@@ -162,7 +175,7 @@ func (a *HerdrCLIAdapter) Snapshot(ctx context.Context) (Snapshot, error) {
 		}
 		interactionState, turnOutcome := mapAgentStatus(source.AgentStatus)
 		snapshot.Agents = append(snapshot.Agents, AgentObservation{
-			SourceID:         source.TerminalID,
+			SourceID:         source.PaneID,
 			DisplayName:      displayName,
 			WorkspaceLabel:   workspaceLabel,
 			TabLabel:         tabLabel,
@@ -256,7 +269,7 @@ func agentDisplayName(fallback, agent, workspace, tab string) string {
 }
 
 type herdrAgent struct {
-	TerminalID  string `json:"terminal_id"`
+	PaneID      string `json:"pane_id"`
 	Name        string `json:"name"`
 	Agent       string `json:"agent"`
 	AgentStatus string `json:"agent_status"`
@@ -292,22 +305,9 @@ type herdrTabListResponse struct {
 	} `json:"result"`
 }
 
-type herdrAgentReadResponse struct {
-	Result struct {
-		Type string `json:"type"`
-		Read struct {
-			Text      string `json:"text"`
-			Revision  uint64 `json:"revision"`
-			Truncated bool   `json:"truncated"`
-		} `json:"read"`
-	} `json:"result"`
-}
-
 type herdrAgentGetResponse struct {
 	Result struct {
-		Type  string `json:"type"`
-		Agent struct {
-			PaneID string `json:"pane_id"`
-		} `json:"agent"`
+		Type  string     `json:"type"`
+		Agent herdrAgent `json:"agent"`
 	} `json:"result"`
 }

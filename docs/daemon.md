@@ -34,7 +34,7 @@ go run ./cmd/herdr-connect migrations
 
 ## 当前 Herdr 兼容边界
 
-当前兼容适配器只调用 Herdr v0.7 的公开 `herdr agent list` JSON 命令。它使用 `terminal_id` 作为稳定来源身份，并消费来源 `revision` 来拒绝重复或乱序观察。
+当前兼容适配器只调用 Herdr 的公开 `herdr agent list` JSON 命令。它使用 `pane_id` 作为稳定来源身份（0.7 时代曾用 `terminal_id`；0.8 起 `agent get/read/focus` 等寻址命令只认 `pane_id`，继续用 `terminal_id` 会返回 `agent_not_found`，进而让详情类 REST 端点全部 502），并消费来源 `revision` 来拒绝重复或乱序观察。
 
 Herdr 返回的 `agent_status` 可能来自 screen detector，因此适配器不会把 `done`、`idle`、焦点、终端文字或进程状态映射为可信事实。Herdr 适配器仍支持基于 pane 的历史读取、焦点切换、文本发送和 `C-c` interrupt；结构化 lifecycle 的精确 `interaction_state` / `turn_outcome` 仍主要由 fake provider 作为 daemon contract 的规范 provider 覆盖。
 

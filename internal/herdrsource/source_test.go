@@ -2,7 +2,6 @@ package herdrsource_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -81,7 +80,7 @@ func Test当前Herdr适配器映射Agent状态(t *testing.T) {
 		t.Fatalf("快照 = %#v", snapshot)
 	}
 	agent := snapshot.Agents[0]
-	if agent.SourceID != "term-7" || agent.Revision != 1 {
+	if agent.SourceID != "pane-1" || agent.Revision != 1 {
 		t.Fatalf("来源身份或 revision = %#v", agent)
 	}
 	if agent.InteractionState != herdrsource.InteractionUnknown {
@@ -104,9 +103,9 @@ func Test当前Herdr适配器映射进行中空闲和未知状态(t *testing.T) 
 
 	adapter := herdrsource.NewHerdrCLIAdapter(routingRunner{outputs: map[string]string{
 		"agent list": `{"result":{"type":"agent_list","agents":[
-			{"terminal_id":"working","agent_status":"working"},
-			{"terminal_id":"idle","agent_status":"idle"},
-			{"terminal_id":"future","agent_status":"future_status"}
+			{"pane_id":"working","agent_status":"working"},
+			{"pane_id":"idle","agent_status":"idle"},
+			{"pane_id":"future","agent_status":"future_status"}
 		]}}`,
 	}})
 	snapshot, err := adapter.Snapshot(context.Background())
@@ -132,7 +131,7 @@ func Test当前Herdr适配器用Workspace与Tab区分Agent(t *testing.T) {
 	t.Parallel()
 
 	adapter := herdrsource.NewHerdrCLIAdapter(routingRunner{outputs: map[string]string{
-		"agent list":              `{"result":{"type":"agent_list","agents":[{"terminal_id":"term-ios","agent":"codex","workspace_id":"wR","tab_id":"wR:t8","revision":5},{"terminal_id":"term-claude","agent":"claude","workspace_id":"wV","tab_id":"wV:t1","revision":2}]}}`,
+		"agent list":              `{"result":{"type":"agent_list","agents":[{"pane_id":"wR:p1K","agent":"codex","workspace_id":"wR","tab_id":"wR:t8","revision":5},{"pane_id":"wV:p2K","agent":"claude","workspace_id":"wV","tab_id":"wV:t1","revision":2}]}}`,
 		"workspace list":          `{"result":{"type":"workspace_list","workspaces":[{"workspace_id":"wR","label":"herdr-connect"},{"workspace_id":"wV","label":"obsidian"}]}}`,
 		"tab list --workspace wR": `{"result":{"type":"tab_list","tabs":[{"tab_id":"wR:t8","label":"demo-ios"}]}}`,
 		"tab list --workspace wV": `{"result":{"type":"tab_list","tabs":[{"tab_id":"wV:t1","label":"master"}]}}`,
@@ -153,21 +152,23 @@ func Test当前Herdr适配器用Workspace与Tab区分Agent(t *testing.T) {
 	}
 }
 
-func Test当前Herdr适配器通过TerminalID切换Agent(t *testing.T) {
+func Test当前Herdr适配器通过PaneID切换Agent(t *testing.T) {
 	t.Parallel()
 
-	runner := &recordingRunner{outputs: map[string]string{"agent focus term-ios": `{}`}}
+	runner := &recordingRunner{outputs: map[string]string{"agent focus wR:p1K": `{}`}}
 	adapter := herdrsource.NewHerdrCLIAdapter(runner)
-	if err := adapter.FocusAgent(context.Background(), "term-ios"); err != nil {
+	if err := adapter.FocusAgent(context.Background(), "wR:p1K"); err != nil {
 		t.Fatalf("切换 Agent: %v", err)
 	}
-	if len(runner.calls) != 1 || runner.calls[0] != "agent focus term-ios" {
+	if len(runner.calls) != 1 || runner.calls[0] != "agent focus wR:p1K" {
 		t.Fatalf("命令 = %#v", runner.calls)
 	}
 }
 
-// Test当前Herdr适配器中断Agent走paneSendKeysCCl 验证 Interrupt 的 CLI 调用形状：
-// 先 `agent get <sourceID>` 拿 PaneID，再 `pane send-keys <paneID> C-c`。
+// TestHerdrAdapterInterruptSendsControlCViaPaneSendKeys 验证 Interrupt 的 CLI
+// 调用形状：sourceID 就是 pane_id，直接 `pane send-keys <sourceID> C-c`，不再
+// 经过 `agent get` 转换（herdr 0.8 起 `agent get` 也只认 pane_id，terminal_id
+// 会 agent_not_found，见 herdr_cli.go Snapshot 的注释）。
 //
 // 注意：本测试只断言“调用了预期子命令+参数”，不断言 herdr CLI 真的会发 SIGINT
 // ——后者我在 herdr --help / pane send-keys 上实测过当前版本不支持 C-c 解释
@@ -177,15 +178,13 @@ func TestHerdrAdapterInterruptSendsControlCViaPaneSendKeys(t *testing.T) {
 	t.Parallel()
 
 	runner := &recordingRunner{outputs: map[string]string{
-		"agent get term-ios":           `{"result":{"type":"agent_info","agent":{"pane_id":"wR:p1K"}}}`,
 		"pane send-keys wR:p1K C-c": `{}`,
 	}}
 	adapter := herdrsource.NewHerdrCLIAdapter(runner)
-	if err := adapter.Interrupt(context.Background(), "term-ios"); err != nil {
+	if err := adapter.Interrupt(context.Background(), "wR:p1K"); err != nil {
 		t.Fatalf("中断 Agent: %v", err)
 	}
 	wantCalls := []string{
-		"agent get term-ios",
 		"pane send-keys wR:p1K C-c",
 	}
 	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
@@ -206,28 +205,32 @@ func TestHerdrAdapterInterruptRejectsEmptySourceID(t *testing.T) {
 	}
 }
 
+// Test当前Herdr适配器读取历史并通过Pane提交消息 覆盖 ReadAgentHistory 的真实
+// CLI 输出形状：`agent read` 成功时直接把纯文本写到 stdout（没有 JSON 包
+// 装），revision 要另外调 `agent get` 拿；truncated 由返回行数是否达到请求
+// 行数推断（这里请求 3 行、返回 3 行 → 判定为可能被截断）。
 func Test当前Herdr适配器读取历史并通过Pane提交消息(t *testing.T) {
 	t.Parallel()
 
 	runner := &recordingRunner{outputs: map[string]string{
-		"agent read term-ios --source recent-unwrapped --lines 120": `{"result":{"type":"pane_read","read":{"text":"最近输出","revision":9,"truncated":true}}}`,
-		"agent get term-ios":     `{"result":{"type":"agent_info","agent":{"pane_id":"wR:p1K"}}}`,
+		"agent read wR:p1K --source recent-unwrapped --lines 3": "line1\nline2\nline3",
+		"agent get wR:p1K":        `{"result":{"type":"agent_info","agent":{"revision":9}}}`,
 		"pane run wR:p1K 继续完成演示": `{}`,
 	}}
 	adapter := herdrsource.NewHerdrCLIAdapter(runner)
-	history, err := adapter.ReadAgentHistory(context.Background(), "term-ios", 120)
+	history, err := adapter.ReadAgentHistory(context.Background(), "wR:p1K", 3)
 	if err != nil {
 		t.Fatalf("读取历史: %v", err)
 	}
-	if history.Text != "最近输出" || history.Revision != 9 || !history.Truncated {
+	if history.Text != "line1\nline2\nline3" || history.Revision != 9 || !history.Truncated {
 		t.Fatalf("历史 = %#v", history)
 	}
-	if err := adapter.SendAgentMessage(context.Background(), "term-ios", "继续完成演示"); err != nil {
+	if err := adapter.SendAgentMessage(context.Background(), "wR:p1K", "继续完成演示"); err != nil {
 		t.Fatalf("发送消息: %v", err)
 	}
 	wantCalls := []string{
-		"agent read term-ios --source recent-unwrapped --lines 120",
-		"agent get term-ios",
+		"agent read wR:p1K --source recent-unwrapped --lines 3",
+		"agent get wR:p1K",
 		"pane run wR:p1K 继续完成演示",
 	}
 	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
@@ -247,38 +250,10 @@ func TestReadAgentHistoryStripsTUIChrome(t *testing.T) {
 		"  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents" + strings.Repeat(" ", 20) + "912380 tokens",
 		"globalVersion: 2.1.215 · latestVersion: 2.1.216",
 	}, "\n")
-	payload, err := json.Marshal(struct {
-		Result struct {
-			Type string `json:"type"`
-			Read struct {
-				Text      string `json:"text"`
-				Revision  uint64 `json:"revision"`
-				Truncated bool   `json:"truncated"`
-			} `json:"read"`
-		} `json:"result"`
-	}{
-		Result: struct {
-			Type string `json:"type"`
-			Read struct {
-				Text      string `json:"text"`
-				Revision  uint64 `json:"revision"`
-				Truncated bool   `json:"truncated"`
-			} `json:"read"`
-		}{
-			Type: "pane_read",
-			Read: struct {
-				Text      string `json:"text"`
-				Revision  uint64 `json:"revision"`
-				Truncated bool   `json:"truncated"`
-			}{Text: rawText, Revision: 9, Truncated: false},
-		},
-	})
-	if err != nil {
-		t.Fatalf("marshal fixture: %v", err)
-	}
 
 	runner := &recordingRunner{outputs: map[string]string{
-		"agent read term-ios --source recent-unwrapped --lines 40": string(payload),
+		"agent read term-ios --source recent-unwrapped --lines 40": rawText,
+		"agent get term-ios": `{"result":{"type":"agent_info","agent":{"revision":9}}}`,
 	}}
 	adapter := herdrsource.NewHerdrCLIAdapter(runner)
 	history, err := adapter.ReadAgentHistory(context.Background(), "term-ios", 40)
@@ -295,7 +270,8 @@ func TestReadAgentHistoryPreservesShortMarkdownDivider(t *testing.T) {
 	t.Parallel()
 
 	runner := &recordingRunner{outputs: map[string]string{
-		"agent read term-ios --source recent-unwrapped --lines 40": `{"result":{"type":"pane_read","read":{"text":"a\n---\nb","revision":1,"truncated":false}}}`,
+		"agent read term-ios --source recent-unwrapped --lines 40": "a\n---\nb",
+		"agent get term-ios": `{"result":{"type":"agent_info","agent":{"revision":1}}}`,
 	}}
 	adapter := herdrsource.NewHerdrCLIAdapter(runner)
 	history, err := adapter.ReadAgentHistory(context.Background(), "term-ios", 40)
