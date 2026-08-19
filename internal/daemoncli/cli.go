@@ -316,7 +316,7 @@ func parsePairHost(args []string) (string, string) {
 	case len(args) == 1 && strings.HasPrefix(args[0], "--host="):
 		value = strings.TrimPrefix(args[0], "--host=")
 	default:
-		return "", "pair accepts only --host IP_ADDRESS"
+		return "", "pair accepts only --host IP_ADDRESS or --host=IP_ADDRESS"
 	}
 	if net.ParseIP(value) == nil {
 		return "", "pair --host requires a valid IP address"

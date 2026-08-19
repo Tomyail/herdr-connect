@@ -160,7 +160,7 @@ func selectPairHosts(hosts []string, requested string) ([]string, error) {
 		return hosts, nil
 	}
 	if !containsHost(hosts, requested) {
-		return nil, fmt.Errorf("pair --host address %s is not assigned to an active local interface", requested)
+		return nil, fmt.Errorf("pair --host address %q is not assigned to an active local interface", requested)
 	}
 	return []string{requested}, nil
 }
