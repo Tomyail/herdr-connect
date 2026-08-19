@@ -36,7 +36,7 @@ Supported features:
 
 - ✅ Bonjour/mDNS daemon advertisement as `_herdr-connect._tcp` (with certificate fingerprint in TXT record)
 - ✅ TLS HTTPS server with self-signed certificate and SHA-256 fingerprint pinning
-- ✅ QR-code [pairing](protocol/secure-pairing.md) with one-time secret and per-device bearer tokens
+- ✅ QR-code [pairing](protocol/secure-pairing.md) with one-time secret and per-device bearer tokens (`pair --host` selects a specific interface, e.g. for Tailscale pairing)
 - ✅ Device management: list paired devices, revoke devices (`herdr-connect devices` CLI)
 - ✅ Per-endpoint rate limiting (token bucket: reads, writes, pairing)
 - ✅ Snapshot caching and coalescing (1-second TTL with singleflight)

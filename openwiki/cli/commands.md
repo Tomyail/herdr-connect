@@ -184,6 +184,7 @@ Generate a pairing QR code for a mobile device:
 
 ```sh
 herdr-connect pair
+herdr-connect pair --host 192.168.1.20      # or --host=IP_ADDRESS
 ```
 
 This command:
@@ -196,6 +197,18 @@ This command:
 The mobile device scans the QR, POSTs the secret to the daemon's `/v1/pair`, and receives a per-device bearer token. The CLI prints the paired device name on success. Exit code 1 on timeout.
 
 Pairing is auto-approved — physical access to the terminal screen is the out-of-band confirmation.
+
+#### pair --host
+
+`--host IP_ADDRESS` limits the QR to a single address instead of all active local addresses. Use it on multi-interface hosts to force one pairing path — the physical-LAN address for local pairing, or the host's Tailscale/VPN address to pair from outside the physical LAN.
+
+Validation (`parsePairHost` in `/internal/daemoncli/cli.go`, `selectPairHosts` in `/internal/daemoncli/pair.go`):
+
+- Only `--host IP` or `--host=IP` is accepted; any other argument is rejected
+- The value must parse as an IP address (`net.ParseIP`)
+- The address must be assigned to an active local interface (compared canonically, so compressed and expanded IPv6 spellings match); otherwise the command errors out
+
+When pairing over Tailscale, both the daemon host and phone must be on the same tailnet; find the host address with `tailscale ip -4`. Pairing works even on cellular while the phone's tunnel is up (iOS may suspend the tunnel while locked — reopen the Tailscale app if pairing fails right after unlocking). Note that cold-launch reconnect off-LAN is not yet supported: startup rediscovery is mDNS-only, which does not traverse the tunnel (see user docs in `/docs/cli.md`). Focused tests: `TestParsePairHost`, `TestSelectPairHostsLimitsQRAddresses`, `TestContainsHostComparesCanonicalIPValues` in `/internal/daemoncli/pair_test.go` (`go test ./internal/daemoncli/ -run 'PairHost|SelectPairHosts|ContainsHost'`).
 
 ### devices
 

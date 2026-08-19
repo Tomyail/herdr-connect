@@ -28,12 +28,14 @@ Mobile devices do **not** perform standard CA-chain or hostname validation. Inst
 
 If the certificate files are deleted or regenerated, the fingerprint changes and all previously paired devices must re-pair. The fingerprint serves as the stable installation identity.
 
+On iOS, this pinning-only model requires disabling App Transport Security entirely (`NSAllowsArbitraryLoads: true` in `apps/mobile/app.config.ts`): iOS runs its own CA-chain/hostname ATS evaluation independently of the `URLSessionDelegate` trust decision, and that evaluation rejects the SAN-less self-signed certificate on non-"local network" paths such as a Tailscale tunnel (error `-9802`) before the fingerprint match is consulted. With ATS disabled, `PinnedTrustEvaluator` (see [iOS Mobile Client](../mobile/ios-client.md)) is the sole trust decision on every network path — safe here because ATS's CA/hostname checks never did meaningful work against a certificate that is self-signed by design. ATS exceptions cannot be scoped by IP range, only by domain (`NSExceptionDomains`). Details in `/docs/security/lan-tls-pairing.md` ("iOS App Transport Security").
+
 ### Pairing Flow
 
 Pairing uses a QR code containing a one-time secret:
 
 1. **Owner initiates** — `herdr-connect pair` generates a 32-byte random secret, stores only its **SHA-256 hash** in `pairing_secrets` with a 5-minute TTL, and renders a QR code in the terminal
-2. **QR payload** — `{v:1, fp, hosts[], port, secret}` containing the certificate fingerprint, LAN host addresses, port (9808), and plaintext secret
+2. **QR payload** — `{v:1, fp, hosts[], port, secret}` containing the certificate fingerprint, LAN host addresses, port (9808), and plaintext secret. With `herdr-connect pair --host IP_ADDRESS` the `hosts` array is narrowed to that single active local address (e.g. the host's Tailscale address to pair off-LAN); see [CLI Commands](../cli/commands.md)
 3. **Mobile scans** — The [iOS client](../mobile/ios-client.md) scans the QR, POSTs `{device_name, secret}` to `POST /v1/pair` via pinned-fetch, validating the cert fingerprint during the TLS handshake
 4. **Server consumes** — `lanauth.CompletePairing` runs a single SQLite transaction: conditionally consumes the secret (must exist, be unconsumed, not expired), inserts a new `paired_devices` row with a fresh per-device token (stored as SHA-256 hash)
 5. **Token returned once** — The plaintext bearer token is returned exactly once in the pairing response, stored by the mobile client in iOS Keychain, and never persisted or logged in cleartext

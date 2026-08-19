@@ -83,6 +83,8 @@ The app uses `@inthepocket/react-native-service-discovery` for Bonjour browsing 
 
 The pinned-fetch module (`/apps/mobile/modules/pinned-fetch/`) is an iOS-only Expo native module that performs HTTPS requests via `URLSession` with a custom delegate. The delegate validates the server certificate's SHA-256 fingerprint against a pinned value during the TLS handshake — no standard CA-chain or hostname validation is performed. See [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md) for the trust model.
 
+Because iOS also runs its own system-level ATS trust evaluation independently of the delegate (and rejects the SAN-less self-signed certificate on non-local-network paths like Tailscale), `app.config.ts` sets `NSAllowsArbitraryLoads: true` so that `PinnedTrustEvaluator` is the sole TLS trust decision for every request to the daemon, on every network path.
+
 Error codes are deliberately limited (`fingerprint_mismatch`, `tls_handshake_failed`, `timeout`, `network_error`, `invalid_url`, `unsupported_platform`) to avoid leaking server state to unauthenticated callers.
 
 ### Pinned-Stream Module
@@ -502,11 +504,15 @@ Public beta: `https://testflight.apple.com/join/ZkRzJ6rm`
 
 ### Release Process
 
-1. Update version in `apps/mobile/package.json`
-2. Run `release:ios:prepare` to update Expo config
-3. Run `release:ios:build` to build with EAS
-4. Upload to App Store Connect
-5. Submit for TestFlight review
+TestFlight builds are cut by pushing an `ios-v*` tag, which triggers an Xcode Cloud workflow (configured in App Store Connect: tag start condition `ios-v`, App Store Connect distribution preparation, external TestFlight post-action). Maintainer runbook: `/docs/release/ios-release-process.md`.
+
+Key invariants when cutting a release:
+
+1. **Bump `ios.buildNumber` in `apps/mobile/app.config.ts` first.** Nothing bumps it automatically — `ci_post_clone.sh` runs `expo prebuild`, which writes the static value into `Info.plist` — and App Store Connect rejects a re-used build number for the same app version.
+2. **Tag as `ios-v<version>-build<buildNumber>`** (e.g. `ios-v0.1.0-build7`) and push the tag. Never move or re-push an existing tag: Xcode Cloud triggers on tag creation, and a force-moved tag may not re-trigger.
+3. iOS deliberately does **not** share the daemon/Android `v*` tag scheme; compatibility with the daemon is enforced at runtime by `api_version` negotiation, not aligned marketing versions.
+
+Local EAS-based scripts (`release:ios:prepare` / `release:ios:build` / `release:ios:upload` / `release:ios:distribute` via `apps/mobile/scripts/ios-release.mjs`) still exist for building and uploading outside Xcode Cloud.
 
 See `/docs/release/ios-testflight.md` for troubleshooting.
 
