@@ -29,8 +29,18 @@ const config: ExpoConfig = {
       NSLocalNetworkUsageDescription:
         "Herdr Connect needs access to your local network to discover and connect to nearby Herdr daemons.",
       CFBundleAllowMixedLocalizations: true,
+      // NSAllowsLocalNetworking only exempts connections iOS classifies as
+      // "local network" (same-subnet LAN, mDNS/.local); it does NOT cover
+      // Tailscale's virtual interface traffic, even for private-looking
+      // addresses. ATS has no way to scope an exception to an IP range, so
+      // pairing over a non-LAN --host (e.g. Tailscale) needs ATS disabled
+      // entirely here. This is safe: PinnedTrustEvaluator (see
+      // apps/mobile/modules/pinned-fetch) is the actual trust decision for
+      // every request to the daemon — it pins the leaf certificate's SHA-256
+      // fingerprint and rejects anything that doesn't match, independent of
+      // ATS's own (CA-chain/hostname) evaluation.
       NSAppTransportSecurity: {
-        NSAllowsLocalNetworking: true,
+        NSAllowsArbitraryLoads: true,
       },
       NSCameraUsageDescription:
         "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
