@@ -68,6 +68,18 @@ herdr-connect pair                       # 终端 2
 
 主机存在多个网络接口时，可使用 `herdr-connect pair --host IP_ADDRESS`，让 QR 码只包含一个处于活动状态的本机 IP 地址。传入主机的物理局域网地址可强制通过本地网络配对，传入其 Tailscale 地址则可强制通过 VPN 路径配对。命令会拒绝无效 IP 地址，以及未分配给本机活动接口的地址。
 
+### 通过 Tailscale 配对与使用
+
+要在 daemon 所在物理局域网之外配对，需要在 daemon 主机和手机上都安装 Tailscale，并加入同一个 tailnet。查到主机的 Tailscale 地址（`tailscale ip -4`，或 `tailscale status` 中对应那一行），然后显式指定该地址配对：
+
+```sh
+herdr-connect pair --host 100.x.y.z
+```
+
+在手机上扫码即可；即使手机当前用的是蜂窝数据，只要手机上的 Tailscale 隧道确实是打通的，这一步就能成功。iOS 在手机锁屏或切到后台时可能会挂起 Tailscale 的 Network Extension，所以如果刚解锁就配对失败，先等隧道重新建立几秒（打开一下 Tailscale App 通常就够了）再重试。
+
+配对成功后，只要这个 App 会话没有被完全杀掉，就能持续通过 Tailscale 使用——包括在 WiFi 和蜂窝网络之间切换也不受影响，因为 Tailscale 会让 daemon 在同一个地址上保持可达，与手机当前走哪条物理网络无关。目前还没有验证过的场景是**完全离开局域网时冷启动 App**：App 启动时只会通过 mDNS（`_herdr-connect._tcp`）重新发现 daemon，而 mDNS 是链路本地协议，不会经过 Tailscale 隧道，所以在 daemon 所在局域网之外强制退出再重新打开 App，目前还不能保证能重新连上。
+
 ## 命令与选项
 
 全局选项必须放在命令之前：

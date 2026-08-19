@@ -68,6 +68,18 @@ herdr-connect pair                       # terminal 2
 
 On a host with multiple network interfaces, use `herdr-connect pair --host IP_ADDRESS` to put only one active local IP address in the QR code. Pass the host's physical-LAN address to force local-network pairing, or its Tailscale address to force the VPN path. The command rejects invalid addresses and addresses that are not assigned to an active local interface.
 
+### Pairing and using the device over Tailscale
+
+To pair from outside the daemon's physical LAN, install Tailscale on both the daemon host and the phone and join them to the same tailnet. Find the host's Tailscale address (`tailscale ip -4`, or the matching row in `tailscale status`), then pair against it explicitly:
+
+```sh
+herdr-connect pair --host 100.x.y.z
+```
+
+Scan the QR from the phone; this works even while the phone is on cellular data, as long as the phone's Tailscale tunnel is actually up. iOS can suspend Tailscale's network extension while the phone is locked or backgrounded, so if pairing fails right after unlocking, give the tunnel a few seconds to re-establish (opening the Tailscale app briefly is often enough) and try again.
+
+Once paired, the app keeps working over Tailscale for the life of that app session — including across a Wi-Fi/cellular handoff, since Tailscale keeps the daemon reachable at the same address regardless of the phone's underlying network. What is not yet verified is a **cold app launch while off the LAN**: on startup the app only rediscovers the daemon via mDNS (`_herdr-connect._tcp`), which is link-local and does not traverse the Tailscale tunnel, so force-quitting the app away from the daemon's LAN and reopening it is not a guaranteed reconnect path today.
+
 ## Commands and options
 
 Global options must appear before the command:
