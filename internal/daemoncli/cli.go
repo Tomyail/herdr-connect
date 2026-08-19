@@ -46,6 +46,7 @@ type options struct {
 	sourceName  string
 	command     string
 	commandArgs []string
+	pairHost    string
 }
 
 var commandNames = []string{
@@ -116,7 +117,7 @@ func execute(ctx context.Context, args []string, stdout, stderr io.Writer, sourc
 		}
 		return 0
 	case "pair":
-		return runPair(ctx, newPairDeps(), database, filepath.Dir(parsed.dbPath), stdout, stderr)
+		return runPair(ctx, newPairDeps(), database, filepath.Dir(parsed.dbPath), parsed.pairHost, stdout, stderr)
 	case "devices":
 		return runDevices(ctx, database, parsed.commandArgs, stdout, stderr)
 	}
@@ -246,6 +247,9 @@ func parseArgs(args []string, stdout, stderr io.Writer, version string) (options
 			if message := validateCommandArgs(parsed.command, parsed.commandArgs); message != "" {
 				return usageError(stderr, message)
 			}
+			if parsed.command == "pair" {
+				parsed.pairHost, _ = parsePairHost(parsed.commandArgs)
+			}
 			if parsed.sourceName != "herdr" && parsed.sourceName != "fake" {
 				return usageError(stderr, fmt.Sprintf("unknown source %q (expected herdr or fake)", parsed.sourceName))
 			}
@@ -290,12 +294,34 @@ func validateCommandArgs(command string, args []string) string {
 		return validateServiceArgs(args)
 	case "devices":
 		return validateDevicesArgs(args)
+	case "pair":
+		_, message := parsePairHost(args)
+		return message
 	default:
 		if len(args) != 0 {
 			return fmt.Sprintf("%s does not accept arguments", command)
 		}
 		return ""
 	}
+}
+
+func parsePairHost(args []string) (string, string) {
+	if len(args) == 0 {
+		return "", ""
+	}
+	var value string
+	switch {
+	case len(args) == 2 && args[0] == "--host":
+		value = args[1]
+	case len(args) == 1 && strings.HasPrefix(args[0], "--host="):
+		value = strings.TrimPrefix(args[0], "--host=")
+	default:
+		return "", "pair accepts only --host IP_ADDRESS or --host=IP_ADDRESS"
+	}
+	if net.ParseIP(value) == nil {
+		return "", "pair --host requires a valid IP address"
+	}
+	return value, ""
 }
 
 func validateServiceArgs(args []string) string {
@@ -767,7 +793,7 @@ Examples:
   herdr-connect service install
   herdr-connect service status
   herdr-connect --source herdr demo-lan
-  herdr-connect pair
+  herdr-connect pair --host IP_ADDRESS
   herdr-connect diagnostics
   herdr-connect help demo-lan
 
@@ -787,7 +813,7 @@ func writeCommandHelp(writer io.Writer, command string) {
 		"service":      "service <install|status|logs|restart|uninstall> [options]\n  Manage the owner-level LaunchAgent or systemd user service.\n  Run 'herdr-connect help service install' for action-specific help.",
 		"demo-lan":     "demo-lan\n  Start the LAN server on TCP 9808 (self-signed TLS) and advertise _herdr-connect._tcp.\n  Only paired devices can read output or send input; trusted, controlled LANs only.",
 		"diagnostics":  "diagnostics [--json]\n  Print the established diagnostics JSON shape. --json is accepted explicitly\n  without changing the backward-compatible default.",
-		"pair":         "pair\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. Requires a running 'demo-lan' daemon.",
+		"pair":         "pair [--host IP_ADDRESS]\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. --host limits the QR to an active local address.\n  Requires a running 'demo-lan' daemon.",
 		"devices":      "devices <list|revoke <device_id>>\n  List all paired devices or revoke a device by its device_id.\n  Revocation is immediate and persistent; the revoked token is rejected on the next request.",
 		"status":       "status\n  Synchronize and print the complete projected source state as JSON.",
 		"agents":       "agents\n  Synchronize and print the current Agent list as JSON.",

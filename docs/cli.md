@@ -66,6 +66,8 @@ herdr-connect pair                       # terminal 2
 
 `pair` first probes whether the daemon is listening on `9808`; if it is not, the command exits non-zero and tells you to start `demo-lan` first. While waiting it prints a scannable terminal QR whose payload carries the installation certificate fingerprint (`fp`), candidate LAN host addresses, the fixed port `9808`, and a one-time `secret`. A device that scans the QR submits the secret to `/v1/pair` to complete pairing; the command polls until pairing completes or the secret times out, then prints the paired device name and `device_id`. The plaintext device token is returned only to the pairing device and is never printed on the host.
 
+On a host with multiple network interfaces, use `herdr-connect pair --host IP_ADDRESS` to put only one active local IP address in the QR code. Pass the host's physical-LAN address to force local-network pairing, or its Tailscale address to force the VPN path. The command rejects invalid addresses and addresses that are not assigned to an active local interface.
+
 ## Commands and options
 
 Global options must appear before the command:

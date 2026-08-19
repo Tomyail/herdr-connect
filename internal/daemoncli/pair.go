@@ -81,7 +81,7 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 // runPair 实现 `herdr-connect pair`：探活（由 execute 前置完成）→ 取指纹 →
 // 发 secret → 渲染终端 QR → 轮询直到 secret 被消费或超时。
 // database 由调用方负责生命周期（defer Close）。
-func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir string, stdout, stderr io.Writer) int {
+func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir, requestedHost string, stdout, stderr io.Writer) int {
 	if deps.newSecret == nil {
 		deps.newSecret = lanauth.NewPairingSecret
 	}
@@ -106,6 +106,12 @@ func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir s
 		deps.pollInterval = pairPollInterval
 	}
 
+	hosts := deps.addresses()
+	hosts, err := selectPairHosts(hosts, requestedHost)
+	if err != nil {
+		return printError(stderr, err)
+	}
+
 	cert, err := lanauth.LoadOrCreateCertificate(tlsDir)
 	if err != nil {
 		return printError(stderr, fmt.Errorf("load LAN TLS identity: %w", err))
@@ -119,7 +125,7 @@ func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir s
 	deps.renderQR(pairingQR{
 		Version: 1,
 		FP:      cert.FingerprintBase64(),
-		Hosts:   deps.addresses(),
+		Hosts:   hosts,
 		Port:    pairPort,
 		Secret:  secretPlaintext,
 	}, stdout)
@@ -137,6 +143,26 @@ func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir s
 	}
 	fmt.Fprintf(stdout, "Paired device %q (device_id: %s) successfully.\n", device.Name, device.DeviceID)
 	return 0
+}
+
+func containsHost(hosts []string, requested string) bool {
+	wanted := net.ParseIP(requested)
+	for _, host := range hosts {
+		if candidate := net.ParseIP(host); candidate != nil && candidate.Equal(wanted) {
+			return true
+		}
+	}
+	return false
+}
+
+func selectPairHosts(hosts []string, requested string) ([]string, error) {
+	if requested == "" {
+		return hosts, nil
+	}
+	if !containsHost(hosts, requested) {
+		return nil, fmt.Errorf("pair --host address %q is not assigned to an active local interface", requested)
+	}
+	return []string{requested}, nil
 }
 
 type pairedDeviceInfo struct {

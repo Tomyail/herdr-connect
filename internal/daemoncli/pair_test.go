@@ -135,7 +135,7 @@ func TestPairSucceedsOutputsDeviceNameAndIDAndConsumesAfterPolls(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	done := make(chan int, 1)
-	go func() { done <- runPair(context.Background(), deps, database, dir, &stdout, &stderr) }()
+	go func() { done <- runPair(context.Background(), deps, database, dir, "", &stdout, &stderr) }()
 	select {
 	case code := <-done:
 		if code != 0 {
@@ -176,6 +176,60 @@ func TestCollectLANHostsSortsIPv4BeforeIPv6(t *testing.T) {
 		if v6Start >= 0 && !strings.Contains(h, ":") {
 			t.Fatalf("IPv4 address %q appears after IPv6 entries: %v", h, hosts)
 		}
+	}
+}
+
+func TestParsePairHost(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name        string
+		args        []string
+		want        string
+		wantMessage bool
+	}{
+		{name: "automatic", args: nil},
+		{name: "separate IPv4", args: []string{"--host", "192.0.2.10"}, want: "192.0.2.10"},
+		{name: "inline IPv6", args: []string{"--host=fd00::1"}, want: "fd00::1"},
+		{name: "invalid IP", args: []string{"--host", "tailscale.example"}, wantMessage: true},
+		{name: "missing value", args: []string{"--host"}, wantMessage: true},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			got, message := parsePairHost(test.args)
+			if got != test.want || (message != "") != test.wantMessage {
+				t.Fatalf("parsePairHost(%v) = (%q, %q), want host %q, message=%v", test.args, got, message, test.want, test.wantMessage)
+			}
+		})
+	}
+}
+
+func TestSelectPairHostsLimitsQRAddresses(t *testing.T) {
+	t.Parallel()
+
+	hosts := []string{"192.0.2.10", "198.51.100.20", "fd00::1"}
+	selected, err := selectPairHosts(hosts, "198.51.100.20")
+	if err != nil {
+		t.Fatalf("selectPairHosts: %v", err)
+	}
+	if len(selected) != 1 || selected[0] != "198.51.100.20" {
+		t.Fatalf("selected hosts = %v, want only requested address", selected)
+	}
+	if _, err := selectPairHosts(hosts, "203.0.113.30"); err == nil {
+		t.Fatal("unassigned address should be rejected")
+	}
+}
+
+func TestContainsHostComparesCanonicalIPValues(t *testing.T) {
+	t.Parallel()
+
+	hosts := []string{"192.0.2.10", "fd00::1"}
+	if !containsHost(hosts, "fd00:0:0:0:0:0:0:1") {
+		t.Fatal("expanded IPv6 address should match its compressed local address")
+	}
+	if containsHost(hosts, "198.51.100.20") {
+		t.Fatal("unassigned address must not match")
 	}
 }
 
