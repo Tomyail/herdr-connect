@@ -10,6 +10,12 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   ios: {
     bundleIdentifier: "com.tomyail.herdrconnect",
+    // Bump this before pushing an `ios-v*` tag (Xcode Cloud's trigger for a
+    // TestFlight build). App Store Connect rejects a re-used build number for
+    // this app version, and nothing bumps it automatically: `expo prebuild`
+    // writes this static value straight into Info.plist on every Xcode Cloud
+    // run (see apps/mobile/ios/ci_scripts/ci_post_clone.sh), so an unbumped
+    // retag fails the upload rather than silently reusing the old build.
     buildNumber: "7",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
