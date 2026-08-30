@@ -2,181 +2,132 @@
 
 [简体中文](docs/zh-CN/README.md)
 
-## LAN-only companion for Herdr
+**Control your Herdr agents from your iPhone — with no cloud in between.**
 
 [![Herdr Connect — LAN Discovery Demo](https://img.youtube.com/vi/BxX4ijalnzI/maxresdefault.jpg)](https://youtu.be/BxX4ijalnzI)
 
-Herdr Connect is a local-first companion for [Herdr](https://github.com/ogulcancelik/herdr). It lets an iPhone discover a nearby Herdr daemon, pair with it, and control Agents on the same local network without sending Agent state through a cloud service.
+Herdr Connect is a companion app for [Herdr](https://github.com/ogulcancelik/herdr). See what every agent is doing, read their latest output, send a follow-up, and get a nudge when a job finishes — while your data stays on your own network.
 
 <p>
-  <img src="assets/screenshot-1.png" alt="Herdr Connect iOS screenshot" width="180" />
-  <img src="assets/screenshot-2.png" alt="Herdr Connect iOS screenshot" width="180" />
+  <img src="assets/screenshot-agents.png" alt="Agent list" width="200" />
+  <img src="assets/screenshot-detail.png" alt="Agent detail" width="200" />
+  <img src="assets/screenshot-settings.png" alt="Settings" width="200" />
 </p>
 
-The current product scope is intentionally LAN-only: the daemon and phone must be on the same reachable network, and the data path stays inside that network. Remote relay access is a future milestone, not part of the current release.
+## Why Herdr Connect
 
-## Try it in 5 minutes
+- **See everything at a glance** — every agent's status, workspace, and recent activity in one list
+- **Stay close to the work** — read output, send instructions, or interrupt a running turn
+- **Know when it's done** — sound, haptic, and notification cues when an agent finishes
+- **Private by design** — the phone talks directly to your daemon over the local network. No cloud relay, no accounts, no telemetry
 
-You need a computer running [Herdr](https://github.com/ogulcancelik/herdr), an iPhone, and both devices on the same LAN (physical Wi-Fi or a VPN that makes them mutually reachable). Android is not currently published.
+## Requirements
 
-1. Confirm that Herdr is installed and has at least one Agent:
+- A computer running [Herdr](https://github.com/ogulcancelik/herdr) with at least one agent
+- An iPhone (Android is not yet available)
+- Both devices on the same network — your Wi-Fi at home, or a VPN such as Tailscale that puts them on the same virtual LAN
+
+## Quick start
+
+1. Make sure Herdr is installed and has at least one agent:
 
    ```sh
    herdr agent list
    ```
 
-2. Install the **daemon**. The installer fetches the latest release automatically. The downloaded daemon does not require Go, Node.js, pnpm, Expo, or Xcode.
-
-   On macOS or Linux:
+2. Install the daemon on the computer running Herdr (the download needs no Go, Node.js, or Xcode):
 
    ```sh
    curl -fsSL https://raw.githubusercontent.com/Tomyail/herdr-connect/main/install.sh | sh
    ```
 
-   On Windows, download and extract the matching zip from the newest entry on the [GitHub Releases page](https://github.com/Tomyail/herdr-connect/releases) (all releases are currently tagged as preview/prerelease, so GitHub's "latest release" shortcut doesn't apply).
-3. Check and start the daemon. The macOS/Linux service continues in the background; Windows users keep the foreground terminal open while using the app.
+   On Windows, download and extract the zip from the [Releases page](https://github.com/Tomyail/herdr-connect/releases) instead.
 
-   On macOS or Linux:
+3. Start it:
 
    ```sh
    ~/.local/bin/herdr-connect doctor
    ~/.local/bin/herdr-connect service install
-   ~/.local/bin/herdr-connect service status
    ```
 
-   On Windows PowerShell, run these commands in the extracted folder:
+4. Install the iOS app via the **[Herdr Connect TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm)** and allow Local Network access when prompted.
 
-   ```powershell
-   .\herdr-connect.exe doctor
-   .\herdr-connect.exe --source herdr demo-lan
-   ```
-
-4. On your iPhone, join the public **[Herdr Connect TestFlight beta](https://testflight.apple.com/join/ZkRzJ6rm)**, install the app, and allow Local Network access when prompted.
-5. Pair the phone with the daemon:
+5. Pair your phone. This prints a one-time QR code — scan it from the app's Settings → Pair new device:
 
    ```sh
    herdr-connect pair
    ```
 
-   The command prints a one-time QR code. In the app, open Settings → Pair new device and scan it. The phone pins the daemon certificate fingerprint, exchanges the one-time secret for a per-device bearer token, and stores that credential locally.
-6. Return to the Agents tab. The app should show your Agents. Tap an Agent to view recent output, switch focus, send text, interrupt a running turn, or receive completion notifications while the app is in the foreground.
+6. Open the Agents tab. Tap an agent to view its output, send messages, or interrupt it.
 
-If discovery does not succeed, confirm that both devices are on the same reachable LAN, temporarily disable VPNs that block local multicast, and check firewall or guest-network isolation settings. See the [daemon guide](docs/release/daemon.md) and [TestFlight troubleshooting guide](docs/release/ios-testflight.md) for details.
+Something not connecting? Check that both devices are on the same network, pause VPNs that block local multicast, and look at firewall or guest-network isolation settings. The [daemon guide](docs/release/daemon.md) and [TestFlight troubleshooting](docs/release/ios-testflight.md) cover the details, and the [CLI guide](docs/cli.md) documents every command.
 
-For all commands, diagnostics output, exit codes, and examples, see the [CLI guide](docs/cli.md).
+## How it works
 
-> [!NOTE]
-> LAN-only is the current product boundary: Herdr Connect is designed for devices you control on a local network, with no cloud relay in the data path. The LAN transport is HTTPS with a self-signed ECDSA P-256 certificate pinned by SHA-256 fingerprint, one-time QR pairing, per-device bearer tokens, device revocation, and rate limiting. See [LAN TLS and pairing](docs/security/lan-tls-pairing.md) for the full trust model and known boundaries (single owner, bearer-token auth, no message-layer E2EE yet).
+```text
+Herdr CLI
+    │
+Herdr Connect daemon   ← runs on your computer
+    │
+iPhone app             ← pairs, then talks to the daemon directly
+```
+
+The daemon and the app find each other on the local network. Trust is established once, by scanning a QR code from the pairing command; after that the phone only accepts the daemon it paired with. For the full trust model and its current limits, see [LAN TLS and pairing](docs/security/lan-tls-pairing.md).
 
 ## Project status
 
-Herdr Connect is a local-first LAN control surface for Herdr. The current release focuses on same-LAN iOS control with pairing and transport security; remote relay access and message-layer E2EE remain future milestones.
-
 | Area | Status |
 | --- | --- |
-| Bonjour/mDNS daemon advertisement | Implemented |
-| iOS discovery on a physical device | Public TestFlight beta available |
-| Pairing and LAN authentication | QR pairing, pinned TLS, per-device bearer tokens, revocation |
-| Agent list, recent output, focus, text input, interrupt | Authenticated LAN API |
-| Local completion signal | Foreground sound / haptic / local notification |
-| API compatibility | Daemon/app version negotiation with upgrade prompts |
-| Android app / APK | Not published |
-| Message-layer E2EE and relay remote access | Future milestone |
+| iOS app | Public TestFlight beta |
+| Discovery, pairing, secure transport | Implemented |
+| Agent list, output, focus, messaging, interrupt | Implemented |
+| Android | Not yet published |
+| Off-network remote access (relay + E2EE) | Future milestone |
 
-## Current scope
+## FAQ
 
-The current public scope is **LAN-only control**:
+**Can I use it away from home?**
+Not with an official relay — that is a future milestone. If you already run a mesh VPN like Tailscale, the app works fine across it as long as the phone can reach the daemon; you are responsible for the VPN's security.
 
-- advertise `_herdr-connect._tcp` from the Go daemon;
-- secure the LAN transport with TLS fingerprint pinning and QR pairing;
-- manage paired devices locally (`herdr-connect devices list` / `revoke`);
-- discover and pair from an iPhone on the same reachable LAN;
-- show Agent state, recent history, focus controls, text input, and interrupt;
-- surface completion cues in the foreground (in-app badges, sound, haptic, local notification);
-- provide diagnostics for local-network permission, VPN, multicast, firewall, client isolation, and version mismatch failures.
+**Does my data go to a server?**
+No. The app talks directly to the daemon on your network. There is no cloud relay and no account system.
 
-Discovery still proves reachability only; trust is established by QR pairing and certificate pinning. Official remote relay connectivity is deliberately outside this release scope.
-
-## Remote access via VPN (unofficial)
-
-Herdr Connect does not currently ship an official remote-connectivity product. If you already trust and operate a mesh VPN such as Tailscale, you can put the phone and daemon host on the same virtual LAN and use Herdr Connect over that network without changing Herdr Connect itself. The app only needs a reachable daemon address and the same TLS-pinning / pairing flow; it does not care whether the LAN is physical Wi-Fi or a VPN interface.
-
-This is an unofficial deployment pattern, not a product guarantee. You are responsible for the VPN's access controls, routing, DNS/multicast behavior, and device security. The official remote roadmap is a relay-based design with message-layer E2EE.
+**Which Herdr versions are supported?**
+The app and daemon negotiate versions and will prompt you to upgrade when they don't match. See the [daemon guide](docs/release/daemon.md).
 
 ## Documentation
 
 | Audience | Start here |
 | --- | --- |
-| Install and pair | [Try it in 5 minutes](#try-it-in-5-minutes), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
+| Install and pair | [Quick start](#quick-start), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
 | CLI reference | [CLI guide](docs/cli.md) |
-| LAN security model | [LAN TLS and pairing](docs/security/lan-tls-pairing.md) |
-| Architecture, domain, and contributor deep dives | [OpenWiki](openwiki/quickstart.md) |
-| Historical pre-pairing demo | [Archived LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) |
-
-OpenWiki is the living code-oriented wiki (architecture, adapters, projection, protocol notes, development setup, and testing). Prefer it over duplicating those details here.
-
-## Architecture
-
-```text
-Herdr CLI
-    │ command-line arguments and JSON
-    ▼
-Herdr Connect daemon
-    │ Bonjour / mDNS + HTTPS LAN API (pinned TLS, bearer-token auth)
-    ▼
-Expo / React Native mobile client
-```
-
-Herdr runs as a separate program and must be installed independently. Herdr Connect communicates with it through its CLI rather than embedding or linking Herdr source code.
-
-For component responsibilities, data flow, and source maps, see the [architecture overview](openwiki/architecture/overview.md).
+| Security model | [LAN TLS and pairing](docs/security/lan-tls-pairing.md) |
+| Architecture and contributor docs | [OpenWiki](openwiki/quickstart.md) |
 
 ## Develop from source
 
-Contributor setup, repository layout, common `pnpm` commands, and the full development workflow live in OpenWiki:
-
-- [Development setup](openwiki/development/setup.md)
-- [Testing guide](openwiki/development/testing.md)
-
-For users who only want the downloadable daemon and TestFlight app, follow [Try it in 5 minutes](#try-it-in-5-minutes) instead.
-
-Minimal path after cloning:
+Setup, repository layout, and the full workflow live in OpenWiki: [development setup](openwiki/development/setup.md), [testing guide](openwiki/development/testing.md).
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
-pnpm demo:lan      # daemon on TCP 9808, advertises _herdr-connect._tcp
+pnpm demo:lan      # run a local daemon on TCP 9808
 pnpm ios:mobile    # Expo development build on a physical iPhone
-pnpm dev:mobile    # later sessions: Metro only
 ```
 
-The mobile client needs native modules (Bonjour, pinned TLS fetch, camera pairing, notifications), so use an Expo development build rather than Expo Go. The historical [LAN iOS demo guide](docs/demo/lan-ios-agent-list.md) is kept only as an archive of the pre-pairing procedure.
-
-## Roadmap
-
-1. Mature the LAN-only product: reliability, version compatibility, app-store readiness, and better owner ergonomics.
-2. Publish Android after the LAN model and native modules are ready on that platform.
-3. Add secure remote connectivity through a relay and message-layer E2EE as a later milestone.
-
-Roadmap items may change as the project learns from real usage, but the current release commitment is local-first LAN control.
+The app needs native modules (mDNS, pinned TLS, camera, notifications), so use an Expo development build, not Expo Go.
 
 ## Security
 
-Do not report vulnerabilities, credentials, private prompts, Agent output, or sensitive paths in public issues. Follow the private reporting instructions in [SECURITY.md](SECURITY.md).
-
-The current LAN transport is encrypted and authenticated at the connection layer. Message-layer E2EE is not yet integrated; it belongs to the future relay milestone described by the Protocol v1 documents. For current guarantees and limits, start with [LAN TLS and pairing](docs/security/lan-tls-pairing.md).
+Do not report vulnerabilities or sensitive data in public issues — follow [SECURITY.md](SECURITY.md).
 
 ## Contributing
 
-Bug reports, reproducible LAN discovery or pairing failures, documentation fixes, and design feedback are welcome through [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues).
-
-Before submitting code, open an issue to confirm that the change belongs to the current LAN-only scope or an accepted roadmap item. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the repository conventions in [AGENTS.md](AGENTS.md).
-
-Community policies: [Code of Conduct](CODE_OF_CONDUCT.md), [Security Policy](SECURITY.md), and [Privacy Policy](PRIVACY.md).
+Bug reports, reproducible discovery or pairing failures, and design feedback are welcome in [GitHub Issues](https://github.com/Tomyail/herdr-connect/issues). Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## Relationship to Herdr
 
-Herdr Connect is an independent companion project. It is not affiliated with or endorsed by the Herdr project. Herdr is installed separately and remains subject to its own license and project policies.
+Herdr Connect is an independent companion project, not affiliated with or endorsed by the Herdr project. Herdr is installed separately and remains subject to its own license.
 
 ## License
 
