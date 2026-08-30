@@ -15,7 +15,6 @@
  */
 
 import { NetworkError } from "./i18n/errors";
-import { preferredAddress } from "./address";
 
 /** Shape deserialized from the QR code JSON. */
 export interface PairingQRPayload {
@@ -87,18 +86,16 @@ export function parsePairingQRPayload(raw: string): PairingQRPayload {
 /**
  * Build the pairing endpoint URL from a validated payload.
  *
- * Uses {@link preferredAddress} (same IPv4-preference logic as the rest of
- * the networking layer) to pick the best reachable host from `payload.hosts`,
- * then assembles `https://<host>:<port>/v1/pair`.
+ * 为 payload.hosts 中的每个地址生成 `https://<host>:<port>/v1/pair`，保持
+ * daemon 给出的顺序（IPv4 升序在前）。可达性由调用方逐个尝试回退决定
+ * （见 withHostFallback）——多宿主 daemon 的 hosts 会包含手机不可达的
+ * 地址（Docker 网桥、VPN 等），顺序不携带可达性信息。
  *
- * Returns `undefined` if no address is preferred (should not happen for a
- * valid payload, but handled defensively).
+ * IPv6 地址在 URL 中需括号包裹；IPv4 原样使用。
  */
-export function pairingUrl(payload: PairingQRPayload): string | undefined {
-  const host = preferredAddress(payload.hosts);
-  if (!host) return undefined;
-
-  // IPv6 addresses in URLs must be bracketed; IPv4 addresses are used as-is.
-  const hostPart = host.includes(":") ? `[${host}]` : host;
-  return `https://${hostPart}:${payload.port}/v1/pair`;
+export function pairingUrls(payload: PairingQRPayload): string[] {
+  return payload.hosts.map((host) => {
+    const hostPart = host.includes(":") ? `[${host}]` : host;
+    return `https://${hostPart}:${payload.port}/v1/pair`;
+  });
 }
