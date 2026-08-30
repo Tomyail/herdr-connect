@@ -21,8 +21,15 @@ import {
   type DiscoveredService,
 } from "./discovery";
 import { discoveryRetryDelay, shouldRestartDiscovery } from "./discovery-lifecycle";
-import { devServerFallbackService, agentsEventsUrl, fetchAgents, focusAgent, preferredAddress, serviceKey } from "./network";
-import { loadCredentials, clearCredentials } from "./credentials";
+import { classifyProbeFailure, selectCandidates, serviceKey, type ServiceAssociations } from "./discovery-match";
+import { devServerFallbackService, agentsEventsUrl, fetchAgents, focusAgent, preferredAddress } from "./network";
+import { clearCredentials, loadCredentials, loadPairedInstances, selectActiveInstance } from "./credentials";
+import {
+  listInstances,
+  resolveActiveInstance,
+  type DeviceCredentials,
+  type PairedInstancesModel,
+} from "./paired-instances";
 import { startStream, type PinnedStreamHandle, type PinnedStreamError } from "pinned-stream";
 import { useI18n } from "./i18n/I18nContext";
 import {
@@ -85,8 +92,17 @@ interface ConnectionValue {
   streamStatus: StreamStatus;
   refresh: () => Promise<void>;
   switchAgent: (service: DiscoveredService, agent: Agent) => Promise<void>;
-  /** Clear local pairing credentials and reset to "not_paired" state. */
+  /** Unpair the ACTIVE installation locally (daemon-side revocation is
+   *  separate). Other paired instances survive; if any remain, the connection
+   *  falls back to the most recently paired one. */
   unpair: () => Promise<void>;
+  /** All paired installations, most recently paired first (Settings list). */
+  instances: DeviceCredentials[];
+  /** Fingerprint of the active installation; `null` when nothing is paired. */
+  activeFingerprint: string | null;
+  /** Make another paired installation the active one. Single-active
+   *  semantics: disconnect the old connection, then connect the new instance. */
+  switchInstance: (fingerprint: string) => Promise<void>;
 }
 
 const ConnectionContext = createContext<ConnectionValue | undefined>(undefined);
@@ -101,6 +117,9 @@ interface ConnectedSnapshotOptions {
   mountedRef: RefObject<boolean>;
   pollingInflightRef: RefObject<boolean>;
   selectedKeyRef: RefObject<string | undefined>;
+  /** Polling observed a terminal auth failure for the connected (active)
+   *  instance; the provider removes that instance and updates the list. */
+  onAuthInvalid: (kind: "unauthorized" | "revoked", key: string) => Promise<void>;
 }
 
 /**
@@ -112,6 +131,7 @@ function useConnectedSnapshot({
   mountedRef,
   pollingInflightRef,
   selectedKeyRef,
+  onAuthInvalid,
 }: ConnectedSnapshotOptions) {
   const [state, setState] = useState<ConnectionState>({ phase: "discovering" });
   const [streamStatus, setStreamStatus] = useReducer(
@@ -136,15 +156,11 @@ function useConnectedSnapshot({
           setState({ phase: "connected", service, data });
         }
       } catch (error) {
-        if (error instanceof NetworkError && error.code === "unauthorized") {
-          await clearCredentials();
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "not_paired" });
-          }
-        } else if (error instanceof NetworkError && error.code === "revoked") {
-          await clearCredentials();
-          if (mountedRef.current && selectedKeyRef.current === key) {
-            setState({ phase: "revoked" });
+        // 鉴权失败只针对当前活动实例（token 由 loadCredentials 按活动实例解析）。
+        // key 守卫拦下过期 tick，避免切到新实例后误删新实例凭据。
+        if (error instanceof NetworkError && (error.code === "unauthorized" || error.code === "revoked")) {
+          if (selectedKeyRef.current === key) {
+            await onAuthInvalid(error.code, key);
           }
         } else if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
           if (mountedRef.current && selectedKeyRef.current === key) {
@@ -293,7 +309,7 @@ function useConnectedSnapshot({
       stopStream();
       subscription.remove();
     };
-  }, [connectedService, mountedRef, pollingInflightRef, selectedKeyRef]);
+  }, [connectedService, mountedRef, onAuthInvalid, pollingInflightRef, selectedKeyRef]);
 
   return { state, setState, streamStatus };
 }
@@ -302,6 +318,14 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const servicesRef = useRef(new Map<string, DiscoveredService>());
   const selectedKeyRef = useRef<string | undefined>(undefined);
+  /** 当前探测/连接中的候选服务键：防止发现重放打断有效探测（旧代码由
+   *  selectedKey 提前占位承担同一职责，探测式匹配下命中前不能占位）。 */
+  const connectInFlightRef = useRef<string | undefined>(undefined);
+  /** 已验证的 serviceKey → fingerprint 关联（pinned TLS 握手成功时记录）。
+   *  会话内缓存：切换实例后切回可免探测直连。 */
+  const associationsRef = useRef<ServiceAssociations>({});
+  /** 活动实例 fingerprint 的 ref 镜像：发现监听器不因切换而重挂载。 */
+  const activeFingerprintRef = useRef<string | null>(null);
   const requestRef = useRef<AbortController | undefined>(undefined);
   const discoveryTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mountedRef = useRef(true);
@@ -309,11 +333,52 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const retryAttemptRef = useRef(0);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const [focusResult, setFocusResult] = useState<{ sourceID: string; phase: FocusPhase }>();
+  const [instances, setInstances] = useState<DeviceCredentials[]>([]);
+  const [activeFingerprint, setActiveFingerprint] = useState<string | null>(null);
+
+  /** 把模型同步进 context 状态与 ref 镜像（活动实例经解析回退规则）。 */
+  const applyModel = useCallback((model: PairedInstancesModel) => {
+    const active = resolveActiveInstance(model);
+    setInstances(listInstances(model));
+    activeFingerprintRef.current = active?.fingerprint ?? null;
+    setActiveFingerprint(active?.fingerprint ?? null);
+  }, []);
+
+  // 鉴权失效处理需要 setState（来自下方快照 hook），经 ref 转发打破定义环。
+  const onAuthInvalidRef = useRef<ConnectedSnapshotOptions["onAuthInvalid"]>(async () => {});
+  const callAuthInvalid = useCallback<ConnectedSnapshotOptions["onAuthInvalid"]>(
+    (kind, key) => onAuthInvalidRef.current(kind, key),
+    [],
+  );
+
   const { state, setState, streamStatus } = useConnectedSnapshot({
     mountedRef,
     pollingInflightRef,
     selectedKeyRef,
+    onAuthInvalid: callAuthInvalid,
   });
+
+  /** 移除活动实例凭据并进入终态相位（401/revoked 路径）；其他实例保留。 */
+  const removeActiveInstance = useCallback(
+    async (phase: "not_paired" | "revoked") => {
+      const model = await clearCredentials();
+      if (!mountedRef.current) return;
+      applyModel(model);
+      setState({ phase });
+    },
+    [applyModel, setState],
+  );
+
+  /** Polling tick 观察到鉴权失效：先过 key 守卫再移除，防止过期 tick
+   *  在切换实例后误删新活动实例的凭据。 */
+  const handleTickAuthInvalid = useCallback(
+    async (kind: "unauthorized" | "revoked", key: string) => {
+      if (!mountedRef.current || selectedKeyRef.current !== key) return;
+      await removeActiveInstance(kind === "revoked" ? "revoked" : "not_paired");
+    },
+    [removeActiveInstance],
+  );
+  onAuthInvalidRef.current = handleTickAuthInvalid;
 
   // Keep the latest permission rationale without retriggering the discovery effect.
   const rationaleRef = useRef<PermissionRationale>({
@@ -344,41 +409,61 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     discoveryTimerRef.current = undefined;
   }, []);
 
+  /**
+   * 按候选顺序探测连接，直至 pinned TLS 握手命中活动实例的证书
+   * fingerprint。mDNS 发现结果不含 TXT（fp=），服务与实例的对应关系只能由
+   * pinned 握手验证：fingerprint_mismatch / 传输失败 → 换下一个候选；其余
+   * 错误意味着 pin 已通过（目标实例的 daemon 返回的终态），按终态处理。
+   * 全部候选未命中说明目标实例的 daemon 不在当前发现集中。
+   */
   const connect = useCallback(
-    async (service: DiscoveredService) => {
-      const key = serviceKey(service);
-      selectedKeyRef.current = key;
+    async (candidates: readonly DiscoveredService[]) => {
       requestRef.current?.abort();
       const controller = new AbortController();
       requestRef.current = controller;
       clearDiscoveryTimer();
 
-      try {
-        const data = await fetchAgents(service, controller.signal);
-        if (mountedRef.current && selectedKeyRef.current === key && !controller.signal.aborted) {
+      let attemptCount = 0;
+      let wrongDaemonCount = 0;
+      let lastError: unknown;
+      for (const service of candidates) {
+        if (!mountedRef.current || controller.signal.aborted) {
+          connectInFlightRef.current = undefined;
+          return;
+        }
+        const key = serviceKey(service);
+        connectInFlightRef.current = key;
+        attemptCount += 1;
+        try {
+          const data = await fetchAgents(service, controller.signal);
+          if (!mountedRef.current || controller.signal.aborted) {
+            connectInFlightRef.current = undefined;
+            return;
+          }
+          // pinned TLS 握手成功 = 证书 fingerprint 匹配活动实例，记录关联。
+          const activeFp = activeFingerprintRef.current;
+          if (activeFp) associationsRef.current[key] = activeFp;
+          connectInFlightRef.current = undefined;
+          selectedKeyRef.current = key;
           retryAttemptRef.current = 0;
           setState({ phase: "connected", service, data });
-        }
-      } catch (error) {
-        if (mountedRef.current && selectedKeyRef.current === key && !controller.signal.aborted) {
-          if (error instanceof NetworkError && error.code === "unauthorized") {
-            void clearCredentials().then(() => {
-              if (mountedRef.current && selectedKeyRef.current === key) {
-                setState({ phase: "not_paired" });
-              }
-            });
+          return;
+        } catch (error) {
+          lastError = error;
+          if (!mountedRef.current || controller.signal.aborted) {
+            connectInFlightRef.current = undefined;
             return;
           }
-          if (error instanceof NetworkError && error.code === "revoked") {
-            void clearCredentials().then(() => {
-              if (mountedRef.current && selectedKeyRef.current === key) {
-                setState({ phase: "revoked" });
-              }
-            });
-            return;
+          const failureKind = classifyProbeFailure(error);
+          if (failureKind === "wrong_daemon") {
+            wrongDaemonCount += 1;
+            continue;
           }
-          if (error instanceof NetworkError && error.code === "fingerprint_mismatch") {
-            setState({ phase: "fingerprint_mismatch" });
+          if (failureKind === "unreachable") continue;
+          connectInFlightRef.current = undefined;
+          // terminal：pin 已通过，错误属于目标实例。
+          if (error instanceof NetworkError && (error.code === "unauthorized" || error.code === "revoked")) {
+            await removeActiveInstance(error.code === "revoked" ? "revoked" : "not_paired");
             return;
           }
           if (error instanceof NetworkError && error.code === "daemon_outdated") {
@@ -390,26 +475,42 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
             return;
           }
           setState(failureFrom(error, "connect_failed"));
+          return;
         }
       }
+      connectInFlightRef.current = undefined;
+      if (wrongDaemonCount === attemptCount && attemptCount > 0) {
+        // 每个候选都指纹不匹配：LAN 内的 daemon 都不是活动实例的。
+        setState({ phase: "not_found" });
+        return;
+      }
+      setState(failureFrom(lastError ?? new NetworkError("connect_failed"), "connect_failed"));
     },
-    [clearDiscoveryTimer, setState],
+    [clearDiscoveryTimer, removeActiveInstance, setState],
   );
 
   const beginNotFoundCountdown = useCallback(() => {
     clearDiscoveryTimer();
     discoveryTimerRef.current = setTimeout(() => {
-      if (mountedRef.current && servicesRef.current.size === 0) {
-        const sourceCode = NativeModules.SourceCode as
-          | { scriptURL?: string; getConstants?: () => { scriptURL?: string } }
-          | undefined;
-        const scriptURL = sourceCode?.getConstants?.().scriptURL ?? sourceCode?.scriptURL;
-        const fallback = devServerFallbackService(scriptURL);
-        if (fallback) {
-          void connect(fallback);
-        } else {
-          setState({ phase: "not_found" });
-        }
+      if (!mountedRef.current) return;
+      const activeFingerprint = activeFingerprintRef.current;
+      if (!activeFingerprint) return;
+      // 探测仍在进行时不打断。
+      if (connectInFlightRef.current) return;
+      const services = [...servicesRef.current.values()];
+      // “未找到”的判定对象是活动实例：LAN 内有其他实例的 daemon 不算找到。
+      const hasCandidate =
+        selectCandidates(services, activeFingerprint, associationsRef.current).length > 0;
+      if (hasCandidate) return;
+      const sourceCode = NativeModules.SourceCode as
+        | { scriptURL?: string; getConstants?: () => { scriptURL?: string } }
+        | undefined;
+      const scriptURL = sourceCode?.getConstants?.().scriptURL ?? sourceCode?.scriptURL;
+      const fallback = devServerFallbackService(scriptURL);
+      if (fallback) {
+        void connect([fallback]);
+      } else {
+        setState({ phase: "not_found" });
       }
     }, DISCOVERY_WAIT_MS);
   }, [clearDiscoveryTimer, connect, setState]);
@@ -417,13 +518,16 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     requestRef.current?.abort();
     selectedKeyRef.current = undefined;
+    connectInFlightRef.current = undefined;
     servicesRef.current.clear();
 
     // Re-check credentials before restarting discovery — the user may have
-    // paired (or unpaired) while the app was in another screen.
-    const creds = await loadCredentials();
+    // paired, unpaired, or switched instances while the app was in another
+    // screen. 加载本身携带旧键迁移。
+    const model = await loadPairedInstances();
     if (!mountedRef.current) return;
-    if (!creds) {
+    applyModel(model);
+    if (!resolveActiveInstance(model)) {
       setState({ phase: "not_paired" });
       stopDiscoverySearch();
       clearDiscoveryTimer();
@@ -439,19 +543,40 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (mountedRef.current) setState(failureFrom(error, "connect_failed"));
     }
-  }, [beginNotFoundCountdown, clearDiscoveryTimer, setState]);
+  }, [applyModel, beginNotFoundCountdown, clearDiscoveryTimer, setState]);
 
   const unpair = useCallback(async () => {
     requestRef.current?.abort();
     selectedKeyRef.current = undefined;
+    connectInFlightRef.current = undefined;
     servicesRef.current.clear();
     clearDiscoveryTimer();
     stopDiscoverySearch();
-    await clearCredentials();
-    if (mountedRef.current) {
+    // 只移除活动实例；其余实例保留，若有剩余则自动切到回退实例并重连。
+    const model = await clearCredentials();
+    if (!mountedRef.current) return;
+    applyModel(model);
+    if (resolveActiveInstance(model)) {
+      setState({ phase: "discovering" });
+      void refresh();
+    } else {
       setState({ phase: "not_paired" });
     }
-  }, [clearDiscoveryTimer, setState]);
+  }, [applyModel, clearDiscoveryTimer, refresh, setState]);
+
+  /** 切换活动实例（单活语义）：持久化选择、断开旧连接、对新实例重新发现。
+   *  并行保活属下一票（#54），本阶段允许重连成本。 */
+  const switchInstance = useCallback(
+    async (fingerprint: string) => {
+      if (activeFingerprintRef.current === fingerprint) return;
+      const model = await selectActiveInstance(fingerprint);
+      if (!model || !mountedRef.current) return;
+      applyModel(model);
+      setState({ phase: "discovering" });
+      void refresh();
+    },
+    [applyModel, refresh, setState],
+  );
 
   // Retry: back off after non-terminal errors, but do NOT retry from
   // not_paired / revoked / fingerprint_mismatch / daemon_outdated /
@@ -511,17 +636,28 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       servicesRef.current = nextServices;
       const selectedKey = selectedKeyRef.current;
       if (selectedKey && nextServices.has(selectedKey)) return;
+      // 探测进行中且目标候选仍在发现集中：不打断（防止发现重放触发探测风暴）。
+      const inFlightKey = connectInFlightRef.current;
+      if (inFlightKey && nextServices.has(inFlightKey)) return;
 
-      if (selectedKey) requestRef.current?.abort();
+      const activeFingerprint = activeFingerprintRef.current;
+      if (!activeFingerprint) return;
+
+      if (selectedKey || inFlightKey) requestRef.current?.abort();
       selectedKeyRef.current = undefined;
-      const nextService = nextServices.values().next().value;
-      if (!nextService) {
-        if (selectedKey) setState({ phase: "not_found" });
+      connectInFlightRef.current = undefined;
+
+      // 按 fingerprint 匹配目标实例的候选（已验证关联优先、外来实例排除），
+      // 取代旧的“取第一个发现结果”；探测循环在 connect 内完成身份验证。
+      const candidates = selectCandidates(services, activeFingerprint, associationsRef.current);
+      if (candidates.length === 0) {
+        // 发现集里没有目标实例的服务（可能全是其他实例的 daemon 或为空）。
+        if (selectedKey || inFlightKey) setState({ phase: "not_found" });
         return;
       }
 
       retryAttemptRef.current = 0;
-      void connect(nextService);
+      void connect(candidates);
     });
     const errorListener = listenForDiscoveryFailure(
       (error) => {
@@ -539,12 +675,13 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       },
     );
 
-    // Discovery itself is gated on credential presence — without credentials
+    // Discovery itself is gated on having a paired instance — without one
     // we show not_paired and don't waste resources scanning.
     const setup = async () => {
-      const creds = await loadCredentials();
+      const model = await loadPairedInstances();
       if (!mountedRef.current) return;
-      if (!creds) {
+      applyModel(model);
+      if (!resolveActiveInstance(model)) {
         setState({ phase: "not_paired" });
         return;
       }
@@ -567,11 +704,21 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       errorListener.remove();
       stopDiscoverySearch();
     };
-  }, [beginNotFoundCountdown, clearDiscoveryTimer, connect, setState]);
+  }, [applyModel, beginNotFoundCountdown, clearDiscoveryTimer, connect, setState]);
 
   const value = useMemo(
-    () => ({ state, focusResult, streamStatus, refresh, switchAgent, unpair }),
-    [state, focusResult, streamStatus, refresh, switchAgent, unpair],
+    () => ({
+      state,
+      focusResult,
+      streamStatus,
+      refresh,
+      switchAgent,
+      unpair,
+      instances,
+      activeFingerprint,
+      switchInstance,
+    }),
+    [state, focusResult, streamStatus, refresh, switchAgent, unpair, instances, activeFingerprint, switchInstance],
   );
 
   return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;

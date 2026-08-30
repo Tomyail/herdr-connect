@@ -53,10 +53,6 @@ export function agentsEventsUrl(address: string, port: number): string {
   return `${agentsUrl(address, port)}/events`;
 }
 
-export function serviceKey(service: DiscoveredService): string {
-  return `${service.name}|${service.type}|${service.domain}`;
-}
-
 export function devServerFallbackService(scriptURL: string | undefined): DiscoveredService | undefined {
   if (!scriptURL) return undefined;
 

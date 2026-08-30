@@ -159,6 +159,7 @@ const en = {
   "settings.row.fingerprint": "Fingerprint",
   "settings.row.deviceName": "Paired as",
   "settings.value.notPaired": "Not paired",
+  "settings.value.active": "Active",
   "settings.row.pairDevice": "Pair new device",
   "settings.row.unpairDevice": "Unpair device",
 
@@ -320,6 +321,7 @@ const zhHans: Record<MessageKey, string> = {
   "settings.row.fingerprint": "\u8BC1\u4E66\u6307\u7EB9",
   "settings.row.deviceName": "\u5DF2\u914D\u5BF9\u4E3A",
   "settings.value.notPaired": "\u672A\u914D\u5BF9",
+  "settings.value.active": "\u5F53\u524D",
   "settings.row.pairDevice": "\u914D\u5BF9\u65B0\u8BBE\u5907",
   "settings.row.unpairDevice": "\u89E3\u9664\u914D\u5BF9",
 
