@@ -239,6 +239,16 @@ export function PairingScreen({ onSuccess }: { onSuccess?: () => void } = {}) {
         )}
       </View>
       <Text style={styles.scanPrompt}>{t("pairing.scanPrompt")}</Text>
+      <View style={styles.howToCard}>
+        <Text style={styles.howToTitle}>{t("pairing.howToTitle")}</Text>
+        <Text style={styles.howToStep}>{t("pairing.howToStep1")}</Text>
+        <Text style={styles.howToStep}>{t("pairing.howToStep2")}</Text>
+        {/* selectable:长按可选中复制命令,避免手敲出错。 */}
+        <Text selectable style={styles.howToCommand}>
+          herdr-connect pair
+        </Text>
+        <Text style={styles.howToStep}>{t("pairing.howToStep3")}</Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -287,6 +297,32 @@ const createStyles = (colors: ThemeColors) =>
       textAlign: "center",
       paddingHorizontal: 32,
       paddingVertical: 18,
+    },
+    // ── 配对引导说明(#59 后续):新用户不知道二维码来自终端命令。──
+    howToCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+      marginHorizontal: 20,
+      marginBottom: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      gap: 8,
+    },
+    howToTitle: { color: colors.textPrimary, fontSize: 14, fontWeight: "700", marginBottom: 2 },
+    howToStep: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
+    howToCommand: {
+      color: colors.textPrimary,
+      fontSize: 13,
+      fontFamily: "monospace",
+      backgroundColor: colors.background,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      overflow: "hidden",
     },
     // ── 命名步骤(#55) ──
     doneBody: { flex: 1, paddingHorizontal: 28, paddingTop: 48, alignItems: "stretch" },
