@@ -15,6 +15,7 @@ import type { MessageKey } from "./i18n/messages";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
+import { InstanceSwitcher } from "./InstanceSwitcher";
 import type { RootStackParamList } from "./navigation";
 
 // Status text/tone mapping lives in agent-status.ts, shared with AgentDetail's switcher.
@@ -161,14 +162,18 @@ export function AgentsScreenContent({
         <ScreenHeader
           title={t("agents.screenTitle")}
           right={
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("agents.refreshA11y")}
-              onPress={() => void refresh()}
-              style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
-            >
-              <Ionicons name="refresh" size={20} color={colors.onAction} />
-            </Pressable>
+            <>
+              {/* 多实例切换器(#55):单实例时自动隐藏,不影响既有头部。 */}
+              <InstanceSwitcher />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("agents.refreshA11y")}
+                onPress={() => void refresh()}
+                style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
+              >
+                <Ionicons name="refresh" size={20} color={colors.onAction} />
+              </Pressable>
+            </>
           }
         />
 
