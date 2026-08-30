@@ -247,25 +247,27 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
    *  语义一致;有剩余实例时指针回退,不需要覆盖。 */
   const [authTerminalState, setAuthTerminalState] = useState<ConnectionState | null>(null);
 
-  /** 鉴权失效串行队列:多个会话可能并发观察到各自实例的 401/revoked,
-   *  逐个执行"读模型 → 移除 → 写回"避免 Keychain 读改写竞态。 */
-  const authInvalidQueueRef = useRef<Promise<void>>(Promise.resolve());
-
   /** 鉴权失效:只解绑对应实例,其余会话不受影响;若移除的是活动实例,
-   *  活动指针按 paired-instances 规则回退,焦点自动切到回退会话。 */
+   *  活动指针按 paired-instances 规则回退,焦点自动切到回退会话。多个
+   *  会话并发观察到各自实例的 401/revoked 时,由 credentials.ts 的模型
+   *  变更串行队列逐个完整执行,不会交错覆盖。 */
   const handleAuthInvalid = useCallback((kind: "unauthorized" | "revoked", fingerprint: string) => {
     const run = async () => {
       const wasActive = activeFingerprintRef.current === fingerprint;
-      const model = await removeInstanceCredentials(fingerprint);
-      if (!mountedRef.current) return;
-      syncModelRef.current(model);
-      if (wasActive && Object.keys(model.instances).length === 0) {
-        setAuthTerminalState(kind === "revoked" ? { phase: "revoked" } : { phase: "not_paired" });
+      try {
+        const model = await removeInstanceCredentials(fingerprint);
+        if (!mountedRef.current) return;
+        syncModelRef.current(model);
+        if (wasActive && Object.keys(model.instances).length === 0) {
+          setAuthTerminalState(kind === "revoked" ? { phase: "revoked" } : { phase: "not_paired" });
+        }
+      } catch (error) {
+        // Keychain 故障:凭据未能解绑。会话落到明确终态(failed),绝不让
+        // rejection 漏出——调用链是 void connect()/void tick(),无人接。
+        sessionsRef.current.get(fingerprint)?.failWith(toErrorCode(error, "connect_failed"));
       }
     };
-    const queued = authInvalidQueueRef.current.then(run, run);
-    authInvalidQueueRef.current = queued;
-    return queued;
+    return run();
   }, []);
 
   /**
@@ -336,12 +338,15 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  /** 重载模型 + reconcile 会话 + 重启发现(配对完成、手动刷新)。 */
+  /** 重载模型 + reconcile 会话 + 重启发现(配对完成、手动刷新)。
+   *  已连接的活动实例强制重拉一次快照(main 版既有语义);mDNS 重启对
+   *  已连接会话无打扰(发现重放被防抖守卫拦截)。 */
   const refresh = useCallback(async () => {
     const model = await loadPairedInstances();
     if (!mountedRef.current) return;
     syncModel(model);
     setModelLoaded(true);
+    sessionsRef.current.get(activeFingerprintRef.current ?? "")?.refreshSnapshot();
     restartDiscovery();
   }, [restartDiscovery, syncModel]);
 
@@ -420,8 +425,9 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 前后台:全部会话统一启停(平等长连,无焦点降级);回前台按既有
-    // 语义重载模型 + 重启发现 + 会话重置探测。
+    // 前后台:退到 background 才全停(spec 决策:停轮询/SSE/重连,状态
+    // 保留);短暂 inactive(iOS 下拉通知中心/系统弹窗)维持现状不断流;
+    // 回前台恢复全部会话并重启发现。
     const appStateSubscription = AppState.addEventListener("change", (next: AppStateStatus) => {
       const previous = appStateRef.current;
       appStateRef.current = next;
@@ -430,7 +436,7 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         for (const session of sessionsRef.current.values()) session.pause();
         return;
       }
-      if (!plan.restartDiscovery) return;
+      if (plan.sessionAction !== "begin" || !plan.restartDiscovery) return;
       const resume = async () => {
         const model = await loadPairedInstances();
         if (!mountedRef.current) return;

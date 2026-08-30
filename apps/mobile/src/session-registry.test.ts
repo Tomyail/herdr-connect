@@ -111,20 +111,30 @@ test("planForegroundTransition 回到 active 时全部会话恢复并重启发�
   });
 });
 
-test("planForegroundTransition 离开 active 时全部会话暂停、不动发现", () => {
+test("planForegroundTransition 退到 background 时全部会话暂停、不动发现", () => {
   assert.deepEqual(planForegroundTransition("active", "background"), {
     sessionAction: "pause",
     restartDiscovery: false,
   });
-  assert.deepEqual(planForegroundTransition("active", "inactive"), {
+  assert.deepEqual(planForegroundTransition("inactive", "background"), {
     sessionAction: "pause",
     restartDiscovery: false,
   });
 });
 
-test("planForegroundTransition 后台内的状态转换只维持暂停", () => {
+test("planForegroundTransition 短暂 inactive 维持现状不断流", () => {
+  // iOS 下拉通知中心/系统弹窗等失焦是 active→inactive,尚未真正退后台:
+  // 会话保持轮询/SSE/重连不断流,避免连接抖动;真正退到 background 才全停。
+  assert.deepEqual(planForegroundTransition("active", "inactive"), {
+    sessionAction: "hold",
+    restartDiscovery: false,
+  });
+});
+
+test("planForegroundTransition 后台内的状态转换维持现状", () => {
+  // 会话已在 background 时 pause,background→inactive 无需额外动作。
   assert.deepEqual(planForegroundTransition("background", "inactive"), {
-    sessionAction: "pause",
+    sessionAction: "hold",
     restartDiscovery: false,
   });
 });

@@ -171,6 +171,20 @@ export class ConnectionSession {
     this.stopSnapshotLoop();
   }
 
+  /**
+   * 手动刷新(main 版 refresh 的既有语义):已连接时对当前服务强制重拉
+   * 一次快照,不打断 SSE/轮询循环;其他相位(not_found/failed/探测中)
+   * 退化为 begin() 重置探测。provider 的 refresh() 对活动实例会话调用。
+   */
+  refreshSnapshot(): void {
+    if (this.stopped) return;
+    if (this.state.phase === "connected") {
+      void this.tick();
+      return;
+    }
+    this.begin(undefined, { foreground: this.foreground });
+  }
+
   /** 终止会话(provider 移除实例/卸载):此后一切异步回调静默。 */
   stop(): void {
     this.stopped = true;
@@ -298,7 +312,7 @@ export class ConnectionSession {
       this.connectInFlightKey = key;
       attemptCount += 1;
       try {
-        const data = await fetchAgents(service, controller.signal, requestCredentials);
+        const data = await fetchAgents(service, requestCredentials);
         if (this.stopped || controller.signal.aborted) {
           this.connectInFlightKey = undefined;
           return;
@@ -374,7 +388,7 @@ export class ConnectionSession {
     if (!service || this.pollingInflight) return;
     this.pollingInflight = true;
     try {
-      const data = await fetchAgents(service, undefined, {
+      const data = await fetchAgents(service, {
         fingerprint: this.credentials.fingerprint,
         token: this.credentials.token,
       });

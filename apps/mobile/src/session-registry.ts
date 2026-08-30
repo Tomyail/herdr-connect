@@ -64,27 +64,32 @@ export function planSessionSet(
   return { stop, start };
 }
 
-/** 单个会话的前后台动作:begin(前台运行)/ pause(后台暂停)。 */
-export type SessionLifecycleAction = "begin" | "pause";
+/** 单个会话的前后台动作:begin(前台运行)/ pause(后台暂停)/
+ *  hold(维持现状)。 */
+export type SessionLifecycleAction = "begin" | "pause" | "hold";
 
 /** 前后台转换对会话集合与 mDNS 发现的整体规划。 */
 export interface ForegroundPlan {
   /** 应用到全部 N 份会话的动作(平等对待,无焦点降级档位)。 */
   readonly sessionAction: SessionLifecycleAction;
-  /** 是否需要重启 mDNS 发现(回前台时,与既有 shouldRestartDiscovery 一致)。 */
+  /** 是否需要重启 mDNS 发现(真正离开过 active 后回到 active 时,与既有
+   *  shouldRestartDiscovery 语义一致)。 */
   readonly restartDiscovery: boolean;
 }
 
 /**
  * App 前后台事件 → 会话启停映射。
  *
- * - 回到 active:全部会话 begin(恢复探测/轮询/流)+ 重启发现(此前非
- *   active);active→active 不产生转换事件,返回幂等结果。
- * - 离开 active(background/inactive 等):全部会话 pause(停轮询/流/
- *   重连),连接状态与已连接数据保留,回前台恢复。
+ * - 退到 background:全部会话 pause(停轮询/流/重连),连接状态与已
+ *   连接数据保留,回前台恢复(spec 决策:退后台才全停)。
+ * - 短暂 inactive(iOS 下拉通知中心/系统弹窗等失焦,尚未真正退后台):
+ *   hold 维持现状不断流;inactive→background 才真正全停。
+ * - 回到 active:全部会话 begin(恢复探测/轮询/流)+ 重启发现(此前
+ *   非 active);active→active 不产生转换事件,返回幂等结果。
  */
 export function planForegroundTransition(previous: string, next: string): ForegroundPlan {
-  const sessionAction: SessionLifecycleAction = next === "active" ? "begin" : "pause";
+  const sessionAction: SessionLifecycleAction =
+    next === "background" ? "pause" : next === "active" ? "begin" : "hold";
   const restartDiscovery = previous !== "active" && next === "active";
   return { sessionAction, restartDiscovery };
 }

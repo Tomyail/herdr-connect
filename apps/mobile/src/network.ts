@@ -187,9 +187,17 @@ export interface RequestCredentials {
   token: string;
 }
 
+/**
+ * Fetch the agents snapshot from a discovered service.
+ *
+ * 注意:不接收 AbortSignal——pinned-fetch 原生层没有请求取消通道
+ * (URLSession task 不对外暴露,options 也不携带 signal),这里的“取消”
+ * 语义是调用方丢弃结果(connection-session.ts 的探测循环每次迭代前
+ * 检查 abort)。若未来原生层支持取消,应在此透传 signal 并把在途请求
+ * 一并中止。
+ */
 export async function fetchAgents(
   service: DiscoveredService,
-  _outerSignal?: AbortSignal,
   credentials?: RequestCredentials,
 ): Promise<AgentsResponse> {
   const address = preferredAddress(service.addresses);
