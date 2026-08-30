@@ -45,7 +45,7 @@ export function ActionSheet({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       statusBarTranslucent
       onRequestClose={onDismiss}
     >

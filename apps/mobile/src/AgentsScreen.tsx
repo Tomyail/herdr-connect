@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMMKVString } from "react-native-mmkv";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { type Agent } from "./agent-contract";
 import { ActionSheet } from "./ActionSheet";
@@ -151,6 +151,7 @@ function FilterPanel({
   onToggleStatusGroup,
   onToggleWorkspace,
   onToggleFavoritesOnly,
+  onClose,
 }: {
   agentFilter: AgentListFilter;
   workspaceOptions: readonly WorkspaceOption[];
@@ -159,14 +160,39 @@ function FilterPanel({
   onToggleStatusGroup: (group: AgentStatusGroup) => void;
   onToggleWorkspace: (workspaceKey: string) => void;
   onToggleFavoritesOnly: () => void;
+  onClose: () => void;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { bottom } = useSafeAreaInsets();
   const favoritesOnly = agentFilter.favoritesOnly;
   return (
-    <View style={styles.filterPanel}>
-      <ScrollView
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <Pressable
+        onPress={onClose}
+        style={[styles.filterOverlay, { paddingBottom: Math.max(bottom, 8) }]}
+      >
+        <Pressable onPress={() => {}} style={styles.filterPanel}>
+          <View style={styles.filterHeader}>
+            <Text style={styles.filterTitle}>{t("agents.filter.openA11y")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common.cancel")}
+              hitSlop={10}
+              onPress={onClose}
+              style={({ pressed }) => [styles.filterCloseButton, pressed && styles.buttonPressed]}
+            >
+              <Ionicons name="close" size={18} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+          <ScrollView
         style={styles.filterPanelScroll}
         contentContainerStyle={styles.filterPanelContent}
         showsVerticalScrollIndicator={false}
@@ -253,8 +279,10 @@ function FilterPanel({
             </View>
           </>
         ) : null}
-      </ScrollView>
-    </View>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -458,6 +486,7 @@ export function AgentsScreenContent({
                 onToggleStatusGroup={toggleFilterGroup}
                 onToggleWorkspace={toggleFilterWorkspace}
                 onToggleFavoritesOnly={toggleFilterFavoritesOnly}
+                onClose={() => setFilterOpen(false)}
               />
             ) : null}
             <FlatList
@@ -554,10 +583,49 @@ const createStyles = (colors: ThemeColors) =>
     filterButtonActive: { backgroundColor: colors.accent },
     filterBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: colors.actionBg, alignItems: "center", justifyContent: "center" },
     filterBadgeText: { color: colors.onDanger, fontSize: 10, fontWeight: "700" },
-    filterPanel: { backgroundColor: colors.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, marginBottom: 12 },
-    // workspace 多时面板整体可滚动(状态区 + workspace 区同一滚动上下文)。
-    filterPanelScroll: { maxHeight: 232 },
-    filterPanelContent: { padding: 10 },
+    filterOverlay: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "flex-end",
+      paddingHorizontal: 12,
+      backgroundColor: "rgba(0,0,0,0.42)",
+    },
+    filterPanel: {
+      width: "100%",
+      maxWidth: 540,
+      maxHeight: "82%",
+      overflow: "hidden",
+      backgroundColor: colors.card,
+      borderRadius: 22,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.cardBorder,
+      shadowColor: colors.background,
+      shadowOpacity: 0.22,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 8,
+    },
+    filterHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      paddingBottom: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.separator,
+    },
+    filterTitle: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },
+    filterCloseButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
+    filterPanelScroll: { maxHeight: 420, flexShrink: 1 },
+    filterPanelContent: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 2 },
     filterSectionTitle: { color: colors.textSecondary, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
     filterSectionTitleSpaced: { marginTop: 12 },
     filterChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
