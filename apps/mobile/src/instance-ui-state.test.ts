@@ -38,7 +38,7 @@ test("selection 动作更新当前显示的页面与选中 Agent,不写记忆槽
     map: {},
     destination: "Settings",
     selectedAgentId: "agent-1",
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
 });
 
@@ -50,7 +50,7 @@ test("清空选中 Agent(back 到列表)后切走,记忆的也是列表态", () 
   assert.deepEqual(switched.map["fp-a"], {
     destination: "Agents",
     selectedAgentId: undefined,
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
 });
 
@@ -68,7 +68,7 @@ test("切换实例时记忆旧焦点、恢复新焦点记忆", () => {
   assert.deepEqual(state.map["fp-a"], {
     destination: "Settings",
     selectedAgentId: undefined,
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
   // 在 B 展开 agent-2。
   state = selectAgent(state, "agent-2");
@@ -79,7 +79,7 @@ test("切换实例时记忆旧焦点、恢复新焦点记忆", () => {
   assert.deepEqual(state.map["fp-b"], {
     destination: "Agents",
     selectedAgentId: "agent-2",
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
 });
 
@@ -109,7 +109,7 @@ test("冷启动(无旧焦点)只应用恢复,不记忆到 null 槽", () => {
   let state = initialInstanceUiState;
   state = {
     ...state,
-    map: { "fp-a": { destination: "Settings", selectedAgentId: "agent-9", agentFilter: { statusGroups: [], workspaces: [] } } },
+    map: { "fp-a": { destination: "Settings", selectedAgentId: "agent-9", agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } } },
   };
   const switched = focusSwitch(state, null, "fp-a");
   assert.equal(switched.destination, "Settings");
@@ -128,7 +128,7 @@ test("全部解绑(next 为 null)回到默认页", () => {
   assert.deepEqual(state.map["fp-a"], {
     destination: "Agents",
     selectedAgentId: "agent-1",
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
 });
 
@@ -146,9 +146,9 @@ test("重复对同一实例切换是幂等的(记忆当前后恢复当前)", () 
 test("prune 清理已解绑实例的记忆槽,保留存活实例", () => {
   let state = initialInstanceUiState;
   state = { ...state, map: {
-    "fp-a": { destination: "Agents", selectedAgentId: "agent-1", agentFilter: { statusGroups: [], workspaces: [] } },
-    "fp-b": { destination: "Settings", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [] } },
-    "fp-c": { destination: "Agents", selectedAgentId: "agent-3", agentFilter: { statusGroups: [], workspaces: [] } },
+    "fp-a": { destination: "Agents", selectedAgentId: "agent-1", agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } },
+    "fp-b": { destination: "Settings", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } },
+    "fp-c": { destination: "Agents", selectedAgentId: "agent-3", agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } },
   } };
   state = instanceUiReducer(state, { type: "prune", liveFingerprints: ["fp-a", "fp-c"] });
   assert.deepEqual(Object.keys(state.map), ["fp-a", "fp-c"]);
@@ -156,7 +156,7 @@ test("prune 清理已解绑实例的记忆槽,保留存活实例", () => {
 
 test("prune 无可清理时返回原状态引用(reducer 调用方可跳过渲染)", () => {
   let state = initialInstanceUiState;
-  state = { ...state, map: { "fp-a": { destination: "Agents", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [] } } } };
+  state = { ...state, map: { "fp-a": { destination: "Agents", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } } } };
   const next = instanceUiReducer(state, { type: "prune", liveFingerprints: ["fp-a"] });
   assert.equal(next, state);
 });
@@ -166,49 +166,49 @@ test("prune 无可清理时返回原状态引用(reducer 调用方可跳过渲�
 // ---------------------------------------------------------------------------
 
 test("agentFilter 动作更新当前显示的过滤,不写记忆槽", () => {
-  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe"], workspaces: [] });
+  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe"], workspaces: [], favoritesOnly: false });
   assert.deepEqual(state, {
     map: {},
     destination: "Agents",
     selectedAgentId: undefined,
-    agentFilter: { statusGroups: ["needsMe"], workspaces: [] },
+    agentFilter: { statusGroups: ["needsMe"], workspaces: [], favoritesOnly: false },
   });
 });
 
 test("demo 场景:A 选“需要我” → 切 B(默认无过滤)→ 切回 A,过滤原样保留", () => {
-  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe", "failed"], workspaces: [] });
+  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe", "failed"], workspaces: [], favoritesOnly: false });
   state = focusSwitch(state, "fp-a", "fp-b");
   // B 无记忆 → 默认不过滤;A 的过滤被记忆。
-  assert.deepEqual(state.agentFilter, { statusGroups: [], workspaces: [] });
-  assert.deepEqual(state.map["fp-a"]?.agentFilter, { statusGroups: ["needsMe", "failed"], workspaces: [] });
+  assert.deepEqual(state.agentFilter, { statusGroups: [], workspaces: [], favoritesOnly: false });
+  assert.deepEqual(state.map["fp-a"]?.agentFilter, { statusGroups: ["needsMe", "failed"], workspaces: [], favoritesOnly: false });
   const restored = focusSwitch(state, "fp-b", "fp-a");
-  assert.deepEqual(restored.agentFilter, { statusGroups: ["needsMe", "failed"], workspaces: [] });
+  assert.deepEqual(restored.agentFilter, { statusGroups: ["needsMe", "failed"], workspaces: [], favoritesOnly: false });
 });
 
 test("过滤与页面/选中 Agent 独立记忆,互不覆盖", () => {
   // A:Settings 页 + 过滤;B:Agents 页 + 选中 Agent、无过滤。
   let state = selectDestination(initialInstanceUiState, "Settings");
-  state = setAgentFilter(state, { statusGroups: ["completed"], workspaces: [] });
+  state = setAgentFilter(state, { statusGroups: ["completed"], workspaces: [], favoritesOnly: false });
   state = focusSwitch(state, "fp-a", "fp-b");
   state = selectAgent(state, "agent-b1");
   state = focusSwitch(state, "fp-b", "fp-a");
   assert.equal(state.destination, "Settings");
-  assert.deepEqual(state.agentFilter, { statusGroups: ["completed"], workspaces: [] });
+  assert.deepEqual(state.agentFilter, { statusGroups: ["completed"], workspaces: [], favoritesOnly: false });
   assert.deepEqual(state.map["fp-b"], {
     destination: "Agents",
     selectedAgentId: "agent-b1",
-    agentFilter: { statusGroups: [], workspaces: [] },
+    agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false },
   });
 });
 
 test("prune 清理含过滤的记忆槽(实例解绑后过滤随快照丢弃)", () => {
-  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["working"], workspaces: [] });
+  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["working"], workspaces: [], favoritesOnly: false });
   state = focusSwitch(state, "fp-a", "fp-b");
   state = instanceUiReducer(state, { type: "prune", liveFingerprints: ["fp-b"] });
   assert.equal(state.map["fp-a"], undefined);
   // 解绑后再次配对回同一实例 → 无记忆,落到默认(不过滤)。
   const restored = focusSwitch(state, "fp-b", "fp-a");
-  assert.deepEqual(restored.agentFilter, { statusGroups: [], workspaces: [] });
+  assert.deepEqual(restored.agentFilter, { statusGroups: [], workspaces: [], favoritesOnly: false });
 });
 
 // ---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ test("resolveInstanceUiState 对 null/未知 fingerprint 返回默认快照", ()
   assert.equal(resolveInstanceUiState({}, null), DEFAULT_INSTANCE_UI_SNAPSHOT);
   assert.equal(
     resolveInstanceUiState(
-      { "fp-a": { destination: "Settings", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [] } } },
+      { "fp-a": { destination: "Settings", selectedAgentId: undefined, agentFilter: { statusGroups: [], workspaces: [], favoritesOnly: false } } },
       "fp-b",
     ),
     DEFAULT_INSTANCE_UI_SNAPSHOT,
@@ -231,21 +231,21 @@ test("resolveInstanceUiState 对 null/未知 fingerprint 返回默认快照", ()
 // ---------------------------------------------------------------------------
 
 test("agentFilter 动作更新含 workspace 的组合过滤,不写记忆槽", () => {
-  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe"], workspaces: ["herdr-connect"] });
+  let state = setAgentFilter(initialInstanceUiState, { statusGroups: ["needsMe"], workspaces: ["herdr-connect"], favoritesOnly: false });
   assert.deepEqual(state, {
     map: {},
     destination: "Agents",
     selectedAgentId: undefined,
-    agentFilter: { statusGroups: ["needsMe"], workspaces: ["herdr-connect"] },
+    agentFilter: { statusGroups: ["needsMe"], workspaces: ["herdr-connect"], favoritesOnly: false },
   });
 });
 
 test("demo 场景:A 选 workspace + 状态 → 切 B → 切回 A,两维组合原样保留", () => {
-  const filter: AgentListFilter = { statusGroups: ["needsMe"], workspaces: ["herdr-connect", "other"] };
+  const filter: AgentListFilter = { statusGroups: ["needsMe"], workspaces: ["herdr-connect", "other"], favoritesOnly: false };
   let state = setAgentFilter(initialInstanceUiState, filter);
   state = focusSwitch(state, "fp-a", "fp-b");
   // B 无记忆 → 默认不过滤;A 的组合过滤被完整记忆。
-  assert.deepEqual(state.agentFilter, { statusGroups: [], workspaces: [] });
+  assert.deepEqual(state.agentFilter, { statusGroups: [], workspaces: [], favoritesOnly: false });
   assert.deepEqual(state.map["fp-a"]?.agentFilter, filter);
   const restored = focusSwitch(state, "fp-b", "fp-a");
   assert.deepEqual(restored.agentFilter, filter);
@@ -255,7 +255,7 @@ test("记忆槽恢复的悬空 workspace 由列表页 prune 剔除:恢复原样 
   // instance-ui-state 本身不感知快照:恢复的过滤里 workspace 可能已消失,
   // 列表页(AgentsScreen)在快照到达后调用 agent-filter 的 pruneWorkspaces
   // 修剪。这里用纯 reducer 驱动该组合流程。
-  const stale = { statusGroups: ["needsMe"] as const, workspaces: ["gone"] };
+  const stale = { statusGroups: ["needsMe"] as const, workspaces: ["gone"], favoritesOnly: false };
   let state: InstanceUiState = {
     ...initialInstanceUiState,
     map: { "fp-a": { destination: "Agents", selectedAgentId: undefined, agentFilter: stale } },
@@ -264,7 +264,7 @@ test("记忆槽恢复的悬空 workspace 由列表页 prune 剔除:恢复原样 
   state = focusSwitch(state, null, "fp-a");
   assert.deepEqual(state.agentFilter, stale);
   // 快照到达后列表页派发修剪(状态维保留,消失的 workspace 剔除)。
-  const pruned = { statusGroups: ["needsMe"] as const, workspaces: [] };
+  const pruned = { statusGroups: ["needsMe"] as const, workspaces: [], favoritesOnly: false };
   state = setAgentFilter(state, pruned);
   assert.deepEqual(state.agentFilter, pruned);
 });

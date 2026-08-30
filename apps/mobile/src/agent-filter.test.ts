@@ -15,6 +15,7 @@ import {
   pruneWorkspaces,
   statusGroupFor,
   statusGroupLabelKey,
+  toggleFavoritesOnly,
   toggleStatusGroup,
   toggleWorkspace,
   workspaceKeyFor,
@@ -154,7 +155,7 @@ test("空选择 = 不过滤:任何状态(含 idle/cancelled)都通过,列表原�
 });
 
 test("needsMe 组内 OR:blocked 与 ready_input 都保留", () => {
-  const filter = { statusGroups: ["needsMe"] as const, workspaces: [] };
+  const filter = { statusGroups: ["needsMe"] as const, workspaces: [], favoritesOnly: false };
   const blocked = withState("blocked");
   const readyInput = withState("ready_input");
   const working = withState("working");
@@ -166,7 +167,7 @@ test("needsMe 组内 OR:blocked 与 ready_input 都保留", () => {
 });
 
 test("completed 组同时覆盖“刚完成”瞬态与 reported succeeded", () => {
-  const filter = { statusGroups: ["completed"] as const, workspaces: [] };
+  const filter = { statusGroups: ["completed"] as const, workspaces: [], favoritesOnly: false };
   const justCompleted = withState("unknown", undefined); // 无 outcome,仅瞬态标记
   const reported = withState("unknown", "succeeded");
   const result = filterAgents([justCompleted, reported], ids(justCompleted.source_id), filter);
@@ -180,7 +181,7 @@ test("completed 组同时覆盖“刚完成”瞬态与 reported succeeded", () 
 });
 
 test("多组 OR:working + failed;未选中的组与 idle/cancelled 一并过滤", () => {
-  const filter = { statusGroups: ["working", "failed"] as const, workspaces: [] };
+  const filter = { statusGroups: ["working", "failed"] as const, workspaces: [], favoritesOnly: false };
   const working = withState("working");
   const blocked = withState("blocked");
   const failed = withState("unknown", "failed");
@@ -195,7 +196,7 @@ test("多组 OR:working + failed;未选中的组与 idle/cancelled 一并过滤"
 
 test("选中任一组时,cancelled 与 idle 即使其他条件不同也一律排除", () => {
   for (const group of STATUS_GROUPS) {
-    const filter = { statusGroups: [group], workspaces: [] };
+    const filter = { statusGroups: [group], workspaces: [], favoritesOnly: false };
     assert.equal(matchesFilter(withState("unknown", "cancelled"), false, filter), false, group);
     assert.equal(matchesFilter(withState("unknown", undefined), false, filter), false, group);
     // 瞬态可救活空闲 Agent(归入 completed)——仅当选中 completed 时。
@@ -214,7 +215,7 @@ test("filterAgents 保序过滤并按 source_id 查瞬态;计数 X/Y 由长度�
   const succeeded = withState("unknown", "succeeded");
   const idle = withState("unknown", undefined);
   const agents = [blocked, working, readyInput, succeeded, idle];
-  const shown = filterAgents(agents, ids(), { statusGroups: ["needsMe", "completed"], workspaces: [] });
+  const shown = filterAgents(agents, ids(), { statusGroups: ["needsMe", "completed"], workspaces: [], favoritesOnly: false });
   // 屏显“显示 X/Y”:X = shown.length, Y = agents.length。
   assert.equal(shown.length, 3);
   assert.equal(agents.length, 5);
@@ -223,7 +224,7 @@ test("filterAgents 保序过滤并按 source_id 查瞬态;计数 X/Y 由长度�
 
 test("无匹配时返回空数组(空占位 + 清除过滤入口)", () => {
   const agents = [withState("working"), withState("unknown", "cancelled")];
-  assert.deepEqual(filterAgents(agents, ids(), { statusGroups: ["failed"], workspaces: [] }), []);
+  assert.deepEqual(filterAgents(agents, ids(), { statusGroups: ["failed"], workspaces: [], favoritesOnly: false }), []);
 });
 
 // ---------------------------------------------------------------------------
@@ -259,7 +260,7 @@ test("demo 场景:workspace X + 状态“需要我”只剩该 workspace 里受�
   const result = filterAgents(
     [inXBlocked, inXReady, inXWorking, outXBlocked, outXWorking],
     ids(),
-    { statusGroups: ["needsMe"], workspaces: ["herdr-connect"] },
+    { statusGroups: ["needsMe"], workspaces: ["herdr-connect"], favoritesOnly: false },
   );
   // 组间 AND:必须同时落在选中 workspace 与选中状态组内。
   assert.deepEqual(result.map((candidate) => candidate.source_id), ["x-blocked", "x-ready"]);
@@ -272,6 +273,7 @@ test("双维都激活时组间 AND:任一维不满足即排除", () => {
   const result = filterAgents([a, b, c], ids(), {
     statusGroups: ["working", "needsMe"],
     workspaces: ["alpha", "beta"],
+    favoritesOnly: false,
   });
   // a:状态 working ✓ + workspace alpha ✓;
   // b:blocked(needsMe)✓ + beta ✓;
@@ -292,6 +294,7 @@ test("只选 workspace 维时状态维直通(idle/cancelled 也保留)", () => {
   const result = filterAgents([working, idle, cancelled, other], ids(), {
     statusGroups: [],
     workspaces: ["alpha"],
+    favoritesOnly: false,
   });
   // 状态维未选 = 不筛状态:alpha 里所有状态(含 idle/cancelled)都保留。
   assert.deepEqual(result.map((candidate) => candidate.source_id), ["a", "b", "c"]);
@@ -304,6 +307,7 @@ test("workspace 组内 OR:多个 workspace 同时选中", () => {
   const result = filterAgents([alpha1, beta1, gamma1], ids(), {
     statusGroups: [],
     workspaces: ["alpha", "gamma"],
+    favoritesOnly: false,
   });
   assert.deepEqual(result.map((candidate) => candidate.source_id), ["a", "c"]);
 });
@@ -311,7 +315,7 @@ test("workspace 组内 OR:多个 workspace 同时选中", () => {
 test("只选状态维时 workspace 维直通", () => {
   const alpha1 = withWorkspace("alpha", "a");
   const beta1 = withWorkspace("beta", "b");
-  const result = filterAgents([alpha1, beta1], ids(), { statusGroups: ["working"], workspaces: [] });
+  const result = filterAgents([alpha1, beta1], ids(), { statusGroups: ["working"], workspaces: [], favoritesOnly: false });
   assert.deepEqual(result.map((candidate) => candidate.source_id), ["a", "b"]);
 });
 
@@ -322,27 +326,28 @@ test("选中未命名 workspace 时空 label Agent 保留,有 label 的排除", 
   const result = filterAgents([unnamed1, unnamed2, named], ids(), {
     statusGroups: [],
     workspaces: [UNNAMED_WORKSPACE_KEY],
+    favoritesOnly: false,
   });
   assert.deepEqual(result.map((candidate) => candidate.source_id), ["a", "b"]);
 });
 
 test("悬空 workspace 选择:选中的 workspace 不在快照中时匹配不到任何 Agent", () => {
   const a = withWorkspace("alpha", "a");
-  const result = filterAgents([a], ids(), { statusGroups: [], workspaces: ["ghost"] });
+  const result = filterAgents([a], ids(), { statusGroups: [], workspaces: ["ghost"], favoritesOnly: false });
   assert.deepEqual(result, []);
   // 组合场景:悬空 workspace + 有效状态组 → 组间 AND 后同样为空。
   assert.deepEqual(
-    filterAgents([a], ids(), { statusGroups: ["working"], workspaces: ["ghost"] }),
+    filterAgents([a], ids(), { statusGroups: ["working"], workspaces: ["ghost"], favoritesOnly: false }),
     [],
   );
 });
 
 test("activeFilterChipCount 汇总两维选中数(激活徽标)", () => {
   assert.equal(
-    activeFilterChipCount({ statusGroups: ["working", "failed"], workspaces: ["alpha"] }),
+    activeFilterChipCount({ statusGroups: ["working", "failed"], workspaces: ["alpha"], favoritesOnly: false }),
     3,
   );
-  assert.equal(activeFilterChipCount({ statusGroups: [], workspaces: ["alpha", "beta"] }), 2);
+  assert.equal(activeFilterChipCount({ statusGroups: [], workspaces: ["alpha", "beta"], favoritesOnly: false }), 2);
 });
 
 // ---------------------------------------------------------------------------
@@ -435,7 +440,7 @@ test("toggleStatusGroup 多选切换并保持固定组序,workspace 维原样保
 });
 
 test("toggleStatusGroup 不触碰 workspace 维", () => {
-  const filter = { statusGroups: [] as const, workspaces: ["alpha"] };
+  const filter = { statusGroups: [] as const, workspaces: ["alpha"], favoritesOnly: false };
   const next = toggleStatusGroup(filter, "working");
   assert.deepEqual(next.statusGroups, ["working"]);
   assert.deepEqual(next.workspaces, ["alpha"]);
@@ -469,7 +474,7 @@ test("全部取消后回到 NO_FILTER 同构(两维皆空 = 不过滤)", () => {
 
 test("toggleWorkspace 同名重复选择去重(组内 OR 无重复项)", () => {
   const filter = toggleWorkspace(
-    { statusGroups: [], workspaces: ["alpha"] },
+    { statusGroups: [], workspaces: ["alpha"], favoritesOnly: false },
     "alpha",
   );
   assert.deepEqual(filter.workspaces, []);
@@ -480,7 +485,7 @@ test("toggleWorkspace 同名重复选择去重(组内 OR 无重复项)", () => {
 // ---------------------------------------------------------------------------
 
 test("pruneWorkspaces 剔除快照中已消失的 workspace,保留仍存活的", () => {
-  const filter = { statusGroups: ["working"] as const, workspaces: ["alpha", "ghost", "beta"] };
+  const filter = { statusGroups: ["working"] as const, workspaces: ["alpha", "ghost", "beta"], favoritesOnly: false };
   const pruned = pruneWorkspaces(filter, ["alpha", "beta", "gamma"]);
   assert.deepEqual(pruned.workspaces, ["alpha", "beta"]);
   // 状态维不受影响。
@@ -488,7 +493,7 @@ test("pruneWorkspaces 剔除快照中已消失的 workspace,保留仍存活的",
 });
 
 test("pruneWorkspaces 无需剔除时返回原引用(调用方可跳过 dispatch)", () => {
-  const filter = { statusGroups: [] as const, workspaces: ["alpha"] };
+  const filter = { statusGroups: [] as const, workspaces: ["alpha"], favoritesOnly: false };
   assert.equal(pruneWorkspaces(filter, ["alpha", "beta"]), filter);
 });
 
@@ -497,7 +502,7 @@ test("pruneWorkspaces 空选择直通原引用", () => {
 });
 
 test("pruneWorkspaces 全部悬空时清空 workspace 维(回到该维不过滤)", () => {
-  const filter = { statusGroups: ["needsMe"] as const, workspaces: ["ghost-1", "ghost-2"] };
+  const filter = { statusGroups: ["needsMe"] as const, workspaces: ["ghost-1", "ghost-2"], favoritesOnly: false };
   const pruned = pruneWorkspaces(filter, ["alpha"]);
   assert.deepEqual(pruned.workspaces, []);
   assert.deepEqual(pruned.statusGroups, ["needsMe"]);
@@ -513,4 +518,116 @@ test("每个组都有 chip 文案键,顺序固定为 工作中/需要我/已完�
     assert.ok(statusGroupLabelKey[group].startsWith("agents.filter.group."));
     assert.ok(typeof statusGroupLabelKey[group] === "string" && statusGroupLabelKey[group].length > 0);
   }
+});
+
+// ---------------------------------------------------------------------------
+// 收藏维(issue #58)—— 三维 AND:收藏 × 状态 × workspace,各维直通
+// ---------------------------------------------------------------------------
+
+test("收藏维关闭 = 直通:收藏集合为空也不影响,任何状态都通过", () => {
+  const filter = { statusGroups: [] as const, workspaces: [] as const, favoritesOnly: false };
+  for (const candidate of [withState("working"), withState("blocked"), withState("unknown", "cancelled"), withState("unknown", undefined)]) {
+    assert.equal(matchesFilter(candidate, false, filter, []), true);
+  }
+  assert.equal(isFilterActive(filter), false);
+});
+
+test("仅开收藏维:只保留收藏集合内的 Agent,其余两维直通(收藏的 idle/cancelled 也保留)", () => {
+  const working = withWorkspace("alpha", "a"); // 收藏
+  const idle = agent({ source_id: "b", workspace_label: "beta", interaction_state: "unknown" }); // 收藏
+  const cancelled = agent({
+    source_id: "c",
+    workspace_label: "beta",
+    interaction_state: "unknown",
+    turn_outcome: "cancelled",
+  }); // 未收藏
+  const other = withWorkspace("gamma", "d"); // 未收藏
+  const filter = toggleFavoritesOnly(NO_FILTER);
+  // 收集维不约束状态/ workspace:idle 收藏项同样保留。
+  const result = filterAgents([working, idle, cancelled, other], ids(), filter, ["b", "a"]);
+  assert.deepEqual(result.map((candidate) => candidate.source_id), ["a", "b"]);
+});
+
+test("仅开收藏维且收藏集合为空:无匹配(空占位 + 清除过滤入口)", () => {
+  const filter = toggleFavoritesOnly(NO_FILTER);
+  assert.deepEqual(filterAgents([withState("working")], ids(), filter, []), []);
+});
+
+test("三维 AND:收藏 × 需要我 × workspace 一步聚焦“重要的 Agent 里谁需要我处理”", () => {
+  // 5 个 Agent:收藏与状态/workspace 各自交叉。
+  const favNeedsInX = agent({ source_id: "fav-x-blocked", workspace_label: "herdr-connect", interaction_state: "blocked" });
+  const favNeedsOutX = agent({ source_id: "fav-y-blocked", workspace_label: "other-repo", interaction_state: "ready_input" });
+  const favWorkingInX = withWorkspace("herdr-connect", "fav-x-working");
+  const unfavNeedsInX = agent({ source_id: "unfav-x-blocked", workspace_label: "herdr-connect", interaction_state: "blocked" });
+  const unfavWorkingOutX = withWorkspace("other-repo", "unfav-y-working");
+  const filter = {
+    statusGroups: ["needsMe"] as const,
+    workspaces: ["herdr-connect"] as const,
+    favoritesOnly: true,
+  };
+  const result = filterAgents(
+    [favNeedsInX, favNeedsOutX, favWorkingInX, unfavNeedsInX, unfavWorkingOutX],
+    ids(),
+    filter,
+    [favNeedsInX.source_id, favNeedsOutX.source_id, favWorkingInX.source_id],
+  );
+  // 交集:必须同时是收藏 + needsMe + herdr-connect。
+  assert.deepEqual(result.map((candidate) => candidate.source_id), ["fav-x-blocked"]);
+});
+
+test("三维中任一维不满足即排除(AND 组合的完备交叉)", () => {
+  const favNeedsInX = agent({ source_id: "ok", workspace_label: "x", interaction_state: "blocked" });
+  const favWorkingInX = withWorkspace("x", "wrong-status");
+  const favNeedsOutX = agent({ source_id: "wrong-workspace", workspace_label: "y", interaction_state: "blocked" });
+  const unfavNeedsInX = agent({ source_id: "unfavorited", workspace_label: "x", interaction_state: "blocked" });
+  const filter = {
+    statusGroups: ["needsMe"] as const,
+    workspaces: ["x"] as const,
+    favoritesOnly: true,
+  };
+  const result = filterAgents(
+    [favNeedsInX, favWorkingInX, favNeedsOutX, unfavNeedsInX],
+    ids(),
+    filter,
+    [favNeedsInX.source_id, favWorkingInX.source_id, favNeedsOutX.source_id],
+  );
+  assert.deepEqual(result.map((candidate) => candidate.source_id), ["ok"]);
+});
+
+test("收藏维与状态维组合:状态维选中时收藏的 idle 仍被状态维排除", () => {
+  // 收藏维不教嗂状态语义:idle 不属任何状态组,选中任一组即被排除——
+  // 两维各自独立判定后 AND。
+  const favIdle = agent({ source_id: "fav-idle", workspace_label: "x", interaction_state: "unknown" });
+  const favBlocked = agent({ source_id: "fav-blocked", workspace_label: "x", interaction_state: "blocked" });
+  const filter = {
+    statusGroups: ["needsMe"] as const,
+    workspaces: [] as const,
+    favoritesOnly: true,
+  };
+  const result = filterAgents([favIdle, favBlocked], ids(), filter, [favIdle.source_id, favBlocked.source_id]);
+  assert.deepEqual(result.map((candidate) => candidate.source_id), ["fav-blocked"]);
+});
+
+test("toggleFavoritesOnly 翻转开关并保留另两维;往返回到 NO_FILTER 同构", () => {
+  let filter = toggleStatusGroup(NO_FILTER, "working");
+  filter = toggleWorkspace(filter, "alpha");
+  filter = toggleFavoritesOnly(filter);
+  assert.deepEqual(filter, { statusGroups: ["working"], workspaces: ["alpha"], favoritesOnly: true });
+  assert.equal(isFilterActive(filter), true);
+  filter = toggleFavoritesOnly(filter);
+  assert.equal(filter.favoritesOnly, false);
+  assert.deepEqual(filter.statusGroups, ["working"]); // 另两维不受开关翻转影响
+});
+
+test("激活态徽标计入收藏开关:仅开收藏维时激活且计数为 1", () => {
+  const filter = toggleFavoritesOnly(NO_FILTER);
+  assert.equal(isFilterActive(filter), true);
+  assert.equal(activeFilterChipCount(filter), 1);
+  assert.equal(
+    activeFilterChipCount({ statusGroups: ["working", "failed"], workspaces: ["alpha"], favoritesOnly: true }),
+    4,
+  );
+  // 无选择无开关 = 不激活、零计数。
+  assert.equal(isFilterActive(NO_FILTER), false);
+  assert.equal(activeFilterChipCount(NO_FILTER), 0);
 });

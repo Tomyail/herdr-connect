@@ -50,6 +50,7 @@ import {
   type DeviceCredentials,
   type PairedInstancesModel,
 } from "./paired-instances";
+import { deleteAgentFavorites } from "./agent-favorites-storage";
 import { deleteInstanceAlias } from "./instance-alias-storage";
 import {
   classifyRevocationFailure,
@@ -401,7 +402,9 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
         }
       }
       const next = await removeInstanceCredentials(fingerprint);
+      // 收藏与别名同为 per-instance 本地数据,随凭据一并清理防泄漏。
       deleteInstanceAlias(fingerprint);
+      deleteAgentFavorites(fingerprint);
       if (mountedRef.current) syncModel(next);
       return { outcome: "forgotten" };
     },

@@ -3,7 +3,7 @@
  *
  * issue #54:切换活动实例瞬间完成、界面原样恢复。App 的可记忆界面状态是
  * AppShell 提升的“当前目标页(Agents/Settings)+ 选中的 Agent + Agents 列表
- * 过滤(issue #56 状态维 / issue #57 workspace 维)”——窄屏由 React
+ * 过滤(issue #56 状态维 / issue #57 workspace 维 / #58 收藏维)”——窄屏由 React
  * Navigation 树呈现(镜像回提升状态),宽屏由 SplitLayout 直接消费。本模块
  * 把这份提升状态组织为 reducer:
  *
@@ -23,7 +23,7 @@ import type { SidebarDestination } from "./navigation";
 export interface InstanceUiSnapshot {
   readonly destination: SidebarDestination;
   readonly selectedAgentId: string | undefined;
-  /** Agents 列表过滤(状态 + workspace 两维):两维皆空 = 不过滤。 */
+  /** Agents 列表过滤(状态 + workspace + 收藏开关三维):三维皆空 = 不过滤。 */
   readonly agentFilter: AgentListFilter;
 }
 
