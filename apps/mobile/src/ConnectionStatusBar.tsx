@@ -172,6 +172,9 @@ export function ConnectionStatusBar({
   // ── 实例管理(切换/重命名/忘记),自 Settings.PairedInstancesCard 迁入 ──
 
   const openInstanceMenu = (instance: DeviceCredentials, label: string) => {
+    // iOS 上多个 Modal 同时 visible 会冲突:先收起实例菜单 Modal,
+    // 再挂载 ActionSheet,否则操作菜单不显示(点了没反应)。
+    setOpen(false);
     setInstanceMenu({ instance, label });
   };
 
