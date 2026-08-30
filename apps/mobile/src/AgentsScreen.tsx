@@ -108,9 +108,11 @@ function AgentRow({
 export function AgentsScreenContent({
   onAgentPress,
   selectedAgentId,
+  onStartPairing,
 }: {
   onAgentPress: (agent: Agent) => void;
   selectedAgentId?: string;
+  onStartPairing: () => void;
 }) {
   const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
@@ -178,6 +180,7 @@ export function AgentsScreenContent({
           statusDetail={statusDetail}
           phase={state.phase}
           streamStatus={streamStatus}
+          onStartPairing={onStartPairing}
         />
 
         {connected ? (
@@ -229,7 +232,8 @@ export function AgentsScreen() {
     (agent: Agent) => navigation.navigate("AgentDetail", { agent }),
     [navigation],
   );
-  return <AgentsScreenContent onAgentPress={onAgentPress} />;
+  const onStartPairing = useCallback(() => navigation.navigate("Pairing"), [navigation]);
+  return <AgentsScreenContent onAgentPress={onAgentPress} onStartPairing={onStartPairing} />;
 }
 
 const createStyles = (colors: ThemeColors) =>

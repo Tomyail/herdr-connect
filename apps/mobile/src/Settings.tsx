@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { useCallback, useMemo, type ReactNode } from "react";
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Notifications from "expo-notifications";
-import { useMMKVBoolean, useMMKVString } from "react-native-mmkv";
+import { useMMKVBoolean } from "react-native-mmkv";
 import type { DiscoveredService } from "./discovery";
 
 import appConfig from "../app.config";
@@ -34,15 +34,12 @@ import { appearanceLabelKey } from "./AppearanceScreen";
 import { useVoiceLanguage, VOICE_LANG_SYSTEM } from "./voice/VoiceLanguageContext";
 import { localeDisplay } from "./voice/config";
 import { silenceThresholdStorage } from "./voice/silenceThreshold";
-import { displayInstanceLabel } from "./instance-alias";
-import { readInstanceAlias, writeInstanceAlias, aliasKeyFor, instanceAliasStorage } from "./instance-alias-storage";
-import type { DeviceCredentials } from "./paired-instances";
 import type { ConnectionState } from "./connection";
 import { useConnection } from "./connection";
 import type { RootStackParamList } from "./navigation";
 
-/** The five existing Settings sections, used as the category list in wide mode. */
-export type SettingsCategoryKey = "general" | "notifications" | "connection" | "discovery" | "about";
+/** Settings 的四个分类(宽屏分类列表用);实例管理/配对入口已迁至首页连接状态条。 */
+export type SettingsCategoryKey = "general" | "notifications" | "connection" | "about";
 
 interface SettingsRow {
   icon: IoniconName;
@@ -225,7 +222,6 @@ export interface SettingsNavigation {
   onNavigateAppearance: () => void;
   onNavigateVoiceLanguage: () => void;
   onNavigateSilenceThreshold: () => void;
-  onRequestPairing: () => void;
 }
 
 export interface SettingsCategory {
@@ -234,216 +230,6 @@ export interface SettingsCategory {
   icon: IoniconName;
   /** Renders this category's card(s). Memoized by the hook's own render cycle. */
   render: () => ReactNode;
-}
-
-// ─── 实例管理(#55) ───────────────────────────────────────────────────────────
-
-/** 重命名弹窗(跨平台 prompt:Alert.prompt 仅 iOS,自建 Modal)。 */
-function RenameInstanceModal({
-  fingerprint,
-  initial,
-  onClose,
-}: {
-  fingerprint: string;
-  initial: string;
-  onClose: () => void;
-}) {
-  const { t } = useI18n();
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  const [draft, setDraft] = useState(initial);
-  const save = () => {
-    // 空白串 = 清除别名(回退指纹尾 8 位),与 normalizeInstanceAlias 一致。
-    writeInstanceAlias(fingerprint, draft);
-    onClose();
-  };
-  return (
-    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.renameOverlay} onPress={onClose}>
-        <Pressable style={styles.renameSheet}>
-          <Text style={styles.renameTitle}>{t("instance.renameTitle")}</Text>
-          <TextInput
-            style={styles.renameInput}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder={t("pairing.aliasPlaceholder")}
-            placeholderTextColor={colors.textFaint}
-            maxLength={64}
-            autoFocus
-            selectTextOnFocus
-          />
-          <View style={styles.renameActions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onClose}
-              style={({ pressed }) => [styles.renameAction, pressed && styles.rowPressed]}
-            >
-              <Text style={styles.renameActionCancel}>{t("common.cancel")}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={save}
-              style={({ pressed }) => [styles.renameAction, pressed && styles.rowPressed]}
-            >
-              <Text style={styles.renameActionSave}>{t("instance.renameSave")}</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-/** 单个已配对实例行:别名 + 可达/离线徽标 + 当前标记;点按弹管理菜单。 */
-function InstanceRow({
-  instance,
-  isActive,
-  reachable,
-  last,
-  onMenu,
-}: {
-  instance: DeviceCredentials;
-  isActive: boolean;
-  reachable: boolean;
-  last: boolean;
-  onMenu: (instance: DeviceCredentials, label: string) => void;
-}) {
-  const { t } = useI18n();
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  // 响应式别名:重命名/配对后 MMKV 同 key 变更自动重渲染。
-  const [alias] = useMMKVString(aliasKeyFor(instance.fingerprint), instanceAliasStorage);
-  const label = displayInstanceLabel(alias, instance.fingerprint);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={isActive ? { selected: true } : undefined}
-      onPress={() => onMenu(instance, label)}
-      style={({ pressed }) => [styles.instanceRow, last && styles.rowLast, pressed && styles.rowPressed]}
-    >
-      <View style={styles.rowLeading}>
-        <View style={[styles.instanceDot, reachable ? styles.instanceDotReachable : styles.instanceDotOffline]} />
-        <View style={styles.instanceCopy}>
-          <Text numberOfLines={1} style={styles.instanceLabel}>{label}</Text>
-          <Text style={styles.instanceStatus}>
-            {reachable ? t("instance.status.reachable") : t("instance.status.offline")}
-          </Text>
-        </View>
-      </View>
-      {isActive ? (
-        <View style={styles.instanceActiveMark}>
-          <Text style={styles.instanceActiveText}>{t("settings.value.active")}</Text>
-          <Ionicons name="checkmark-circle" size={15} color={colors.accent} />
-        </View>
-      ) : (
-        <Ionicons name="chevron-forward" size={15} color={colors.textFaint} style={styles.chevron} />
-      )}
-    </Pressable>
-  );
-}
-
-/**
- * 已配对实例管理卡片(#55):别名 + 可达/离线徽标(并行会话状态)+ 点按菜单
- * (切换/重命名/忘记)。忘记 = 删除本地凭据与别名 + DELETE /v1/device 吊销
- * token;吊销失败明确提示三选(仅本地删除/重试/取消),不静默——编排决策
- * 见 instance-revocation.ts,执行见 ConnectionProvider.forgetInstance。
- */
-function PairedInstancesCard() {
-  const { t, tError } = useI18n();
-  const styles = useThemedStyles(createStyles);
-  const { instances, activeFingerprint, switchInstance, forgetInstance, instanceStates } = useConnection();
-  const [renaming, setRenaming] = useState<{ fingerprint: string; initial: string } | null>(null);
-
-  if (instances.length === 0) return null;
-
-  const openMenu = (instance: DeviceCredentials, label: string) => {
-    const isActive = instance.fingerprint === activeFingerprint;
-    const buttons: Array<{ text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }> = [];
-    if (!isActive) {
-      buttons.push({
-        text: t("instance.switchTo"),
-        onPress: () => void switchInstance(instance.fingerprint),
-      });
-    }
-    buttons.push(
-      {
-        text: t("instance.rename"),
-        onPress: () =>
-          setRenaming({ fingerprint: instance.fingerprint, initial: readInstanceAlias(instance.fingerprint) ?? "" }),
-      },
-      {
-        text: t("instance.forget"),
-        style: "destructive",
-        onPress: () => confirmForget(instance.fingerprint, label),
-      },
-      { text: t("common.cancel"), style: "cancel" },
-    );
-    Alert.alert(label, undefined, buttons);
-  };
-
-  const confirmForget = (fingerprint: string, label: string) => {
-    Alert.alert(
-      t("instance.forgetConfirmTitle", { name: label }),
-      t("instance.forgetConfirmBody"),
-      [
-        { text: t("instance.forgetAction"), style: "destructive", onPress: () => void runForgetInstance(fingerprint) },
-        { text: t("common.cancel"), style: "cancel" },
-      ],
-    );
-  };
-
-  const runForgetInstance = async (fingerprint: string) => {
-    const result = await forgetInstance(fingerprint);
-    switch (result.outcome) {
-      case "forgotten":
-        Alert.alert(t("instance.section"), t("instance.forgotten"));
-        return;
-      case "not_found":
-        // 幂等重入(已被鉴权终态移除等):无需提示。
-        return;
-      case "revocation_unavailable":
-      case "revocation_failed": {
-        // 不静默:交用户裁决——仅本地删除 / 重试 / 取消。
-        const detail =
-          result.outcome === "revocation_failed" ? `\n\n${tError(result.code)}` : "";
-        Alert.alert(t("instance.revocationFailedTitle"), `${t("instance.revocationFailedBody")}${detail}`, [
-          {
-            text: t("instance.removeLocally"),
-            style: "destructive",
-            onPress: () => void forgetInstance(fingerprint, { localOnly: true }),
-          },
-          { text: t("instance.retry"), onPress: () => void runForgetInstance(fingerprint) },
-          { text: t("common.cancel"), style: "cancel" },
-        ]);
-        return;
-      }
-    }
-  };
-
-  return (
-    <>
-      <Text style={styles.sectionTitle}>{t("instance.section")}</Text>
-      <View style={styles.card}>
-        {instances.map((instance, index) => (
-          <InstanceRow
-            key={instance.fingerprint}
-            instance={instance}
-            isActive={instance.fingerprint === activeFingerprint}
-            reachable={instanceStates[instance.fingerprint]?.phase === "connected"}
-            last={index === instances.length - 1}
-            onMenu={openMenu}
-          />
-        ))}
-      </View>
-      {renaming ? (
-        <RenameInstanceModal
-          fingerprint={renaming.fingerprint}
-          initial={renaming.initial}
-          onClose={() => setRenaming(null)}
-        />
-      ) : null}
-    </>
-  );
 }
 
 /**
@@ -512,25 +298,8 @@ export function useSettingsCategories(
     );
   }
 
-  // Pairing section — separate card so the connection card stays about the live
-  // daemon link while this one is about the persistent pairing identity.
-  // #55:已配对实例列表升级为独立管理卡片(别名/徽标/切换/重命名/忘记,
-  // 见 PairedInstancesCard);本卡只保留配对入口与设备名。
-  const activeInstance = instances.find((instance) => instance.fingerprint === activeFingerprint);
-  const pairingRows: SettingsRow[] = [];
-  if (instances.length === 0) {
-    pairingRows.push(
-      { icon: "finger-print-outline", label: t("settings.row.status"), value: t("settings.value.notPaired") },
-    );
-  }
-  pairingRows.push(
-    { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: navigation.onRequestPairing },
-  );
-  if (activeInstance) {
-    pairingRows.push(
-      { icon: "phone-portrait-outline", label: t("settings.row.deviceName"), value: activeInstance.deviceName },
-    );
-  }
+  // 实例列表与配对入口已迁至首页连接状态条(ConnectionStatusBar);
+  // 此处不再组装 pairingRows。
 
   return [
     {
@@ -603,17 +372,6 @@ export function useSettingsCategories(
       render: () => <SettingsCard title={t("settings.section.connection")} rows={connectionRows} />,
     },
     {
-      key: "discovery",
-      labelKey: "settings.section.discovery",
-      icon: "qr-code-outline",
-      render: () => (
-        <>
-          <PairedInstancesCard />
-          <SettingsCard title={t("settings.section.discovery")} rows={pairingRows} />
-        </>
-      ),
-    },
-    {
       key: "about",
       labelKey: "settings.section.about",
       icon: "information-circle-outline",
@@ -653,7 +411,6 @@ export function Settings({ connectionState }: { connectionState: ConnectionState
       onNavigateAppearance: () => rootNavigation.navigate("Appearance"),
       onNavigateVoiceLanguage: () => rootNavigation.navigate("VoiceLanguage"),
       onNavigateSilenceThreshold: () => rootNavigation.navigate("SilenceThreshold"),
-      onRequestPairing: () => rootNavigation.navigate("Pairing"),
     }),
     [rootNavigation],
   );
@@ -701,54 +458,4 @@ const createStyles = (colors: ThemeColors) =>
     rowValue: { color: colors.textPrimary, fontSize: 14, fontWeight: "600", flexShrink: 1 },
     chevron: { marginLeft: 2 },
     rowPressed: { opacity: 0.6 },
-    // ── 实例管理卡片(#55) ──
-    instanceRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 16,
-      paddingVertical: 14,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.separator,
-    },
-    instanceCopy: { flexShrink: 1 },
-    instanceLabel: { color: colors.textPrimary, fontSize: 14, fontWeight: "600" },
-    instanceStatus: { color: colors.textSecondary, fontSize: 12, marginTop: 2 },
-    instanceDot: { width: 9, height: 9, borderRadius: 5 },
-    instanceDotReachable: { backgroundColor: colors.statusDotConnected },
-    instanceDotOffline: { backgroundColor: colors.textFaint },
-    instanceActiveMark: { flexDirection: "row", alignItems: "center", gap: 4 },
-    instanceActiveText: { color: colors.accent, fontSize: 14, fontWeight: "600" },
-    // ── 重命名弹窗 ──
-    renameOverlay: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.32)",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 28,
-    },
-    renameSheet: {
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.cardBorder,
-      padding: 20,
-      width: "100%",
-      maxWidth: 360,
-    },
-    renameTitle: { color: colors.textPrimary, fontSize: 17, fontWeight: "700", marginBottom: 14 },
-    renameInput: {
-      color: colors.textPrimary,
-      fontSize: 15,
-      backgroundColor: colors.background,
-      borderRadius: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.cardBorder,
-    },
-    renameActions: { flexDirection: "row", justifyContent: "flex-end", gap: 18, marginTop: 16 },
-    renameAction: { paddingVertical: 6, paddingHorizontal: 8 },
-    renameActionCancel: { color: colors.textSecondary, fontSize: 15, fontWeight: "600" },
-    renameActionSave: { color: colors.accent, fontSize: 15, fontWeight: "700" },
   });

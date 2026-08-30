@@ -282,16 +282,15 @@ function SettingsDetailColumn({
   }, [colors, theme]);
 
   // Detail column navigation: Language/Appearance push on this column's local
-  // stack; Pairing is the full-app overlay (lifted to App.tsx).
+  // stack; Pairing 入口已迁至首页连接状态条(经 AgentsScreenContent.onStartPairing)。
   const navigation = useMemo<SettingsNavigation>(
     () => ({
       onNavigateLanguage: () => detailRef.current?.navigate("Language"),
       onNavigateAppearance: () => detailRef.current?.navigate("Appearance"),
       onNavigateVoiceLanguage: () => detailRef.current?.navigate("VoiceLanguage"),
       onNavigateSilenceThreshold: () => detailRef.current?.navigate("SilenceThreshold"),
-      onRequestPairing,
     }),
-    [detailRef, onRequestPairing],
+    [detailRef],
   );
 
   return (
@@ -333,7 +332,6 @@ function SettingsColumns({ onRequestPairing }: { onRequestPairing: () => void })
     onNavigateAppearance: () => {},
     onNavigateVoiceLanguage: () => {},
     onNavigateSilenceThreshold: () => {},
-    onRequestPairing,
   });
 
   return (
@@ -381,7 +379,7 @@ export function SplitLayout({
         <View style={styles.agentsBody}>
           {agentsFocused ? null : (
             <View style={styles.listColumn}>
-              <AgentsScreenContent onAgentPress={onSelectAgent} selectedAgentId={selectedAgentId} />
+              <AgentsScreenContent onAgentPress={onSelectAgent} selectedAgentId={selectedAgentId} onStartPairing={onRequestPairing} />
             </View>
           )}
           <View style={styles.detailColumnWrapper}>

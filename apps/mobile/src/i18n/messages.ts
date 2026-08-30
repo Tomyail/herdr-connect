@@ -98,7 +98,6 @@ const en = {
   "settings.screenTitle": "Settings",
   "settings.section.general": "General",
   "settings.section.connection": "Connection",
-  "settings.section.discovery": "Discovery",
   "settings.section.about": "About",
   "settings.section.notifications": "Notifications",
   "settings.row.status": "Status",
@@ -164,15 +163,14 @@ const en = {
   "pairing.revocationWarning": "Paired, but the previous token could not be revoked on this daemon.",
 
   "settings.row.fingerprint": "Fingerprint",
-  "settings.row.deviceName": "Paired as",
-  "settings.value.notPaired": "Not paired",
-  "settings.value.active": "Active",
-  "settings.row.pairDevice": "Pair new device",
   "settings.row.unpairDevice": "Unpair device",
 
   "switcher.openA11y": "Switch installation",
   "switcher.reachable": "Reachable",
   "switcher.offline": "Offline",
+  "switcher.pairNew": "Pair new installation",
+  "switcher.pairA11y": "Start pairing",
+  "switcher.manageA11y": "Manage installation",
 
   "instance.section": "Paired installations",
   "instance.status.reachable": "Reachable",
@@ -288,7 +286,6 @@ const zhHans: Record<MessageKey, string> = {
   "settings.screenTitle": "\u8BBE\u7F6E",
   "settings.section.general": "\u901A\u7528",
   "settings.section.connection": "\u8FDE\u63A5",
-  "settings.section.discovery": "\u53D1\u73B0",
   "settings.section.about": "\u5173\u4E8E",
   "settings.section.notifications": "\u901A\u77E5",
   "settings.row.status": "\u72B6\u6001",
@@ -354,15 +351,14 @@ const zhHans: Record<MessageKey, string> = {
   "pairing.revocationWarning": "\u5DF2\u914D\u5BF9\uFF0C\u4F46\u65E7\u4EE4\u724C\u672A\u80FD\u5728\u8FD9\u53F0 daemon \u4E0A\u540A\u9500\u3002",
 
   "settings.row.fingerprint": "\u8BC1\u4E66\u6307\u7EB9",
-  "settings.row.deviceName": "\u5DF2\u914D\u5BF9\u4E3A",
-  "settings.value.notPaired": "\u672A\u914D\u5BF9",
-  "settings.value.active": "\u5F53\u524D",
-  "settings.row.pairDevice": "\u914D\u5BF9\u65B0\u8BBE\u5907",
   "settings.row.unpairDevice": "\u89E3\u9664\u914D\u5BF9",
 
   "switcher.openA11y": "\u5207\u6362\u5B89\u88C5\u5B9E\u4F8B",
   "switcher.reachable": "\u53EF\u8FBE",
   "switcher.offline": "\u79BB\u7EBF",
+  "switcher.pairNew": "\u914D\u5BF9\u65B0\u5B9E\u4F8B",
+  "switcher.pairA11y": "\u5F00\u59CB\u914D\u5BF9",
+  "switcher.manageA11y": "\u7BA1\u7406\u5B9E\u4F8B",
 
   "instance.section": "\u5DF2\u914D\u5BF9\u7684\u5B89\u88C5\u5B9E\u4F8B",
   "instance.status.reachable": "\u53EF\u8FBE",
