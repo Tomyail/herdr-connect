@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import type { MessageKey } from "./i18n/messages";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { ScreenHeader } from "./ScreenHeader";
-import { InstanceSwitcher } from "./InstanceSwitcher";
+import { ConnectionStatusBar } from "./ConnectionStatusBar";
 import type { RootStackParamList } from "./navigation";
 
 // Status text/tone mapping lives in agent-status.ts, shared with AgentDetail's switcher.
@@ -162,34 +162,23 @@ export function AgentsScreenContent({
         <ScreenHeader
           title={t("agents.screenTitle")}
           right={
-            <>
-              {/* 多实例切换器(#55):单实例时自动隐藏,不影响既有头部。 */}
-              <InstanceSwitcher />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("agents.refreshA11y")}
-                onPress={() => void refresh()}
-                style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
-              >
-                <Ionicons name="refresh" size={20} color={colors.onAction} />
-              </Pressable>
-            </>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("agents.refreshA11y")}
+              onPress={() => void refresh()}
+              style={({ pressed }) => [styles.refreshButton, pressed && styles.buttonPressed]}
+            >
+              <Ionicons name="refresh" size={20} color={colors.onAction} />
+            </Pressable>
           }
         />
 
-        <View style={[styles.statusCard, connected && styles.statusConnected]}>
-          <View style={[styles.statusDot, connected && styles.statusDotConnected]} />
-          <View style={styles.statusCopy}>
-            <Text style={styles.statusTitle}>{t(statusTitleKey)}</Text>
-            <Text style={styles.statusDetail}>{statusDetail}</Text>
-          </View>
-          {state.phase === "discovering" ? <ActivityIndicator color={colors.spinner} /> : null}
-          {connected ? (
-            <Text style={[styles.streamPill, streamStatus === "live" ? styles.streamPillLive : styles.streamPillPolling]}>
-              {streamStatus === "live" ? t("connection.live") : t("connection.polling")}
-            </Text>
-          ) : null}
-        </View>
+        <ConnectionStatusBar
+          statusTitle={t(statusTitleKey)}
+          statusDetail={statusDetail}
+          phase={state.phase}
+          streamStatus={streamStatus}
+        />
 
         {connected ? (
           <>
@@ -249,16 +238,6 @@ const createStyles = (colors: ThemeColors) =>
     screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
     refreshButton: { backgroundColor: colors.actionBg, borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
     buttonPressed: { opacity: 0.72 },
-    statusCard: { flexDirection: "row", alignItems: "center", backgroundColor: colors.statusCard, borderRadius: 18, padding: 16, marginBottom: 28 },
-    statusConnected: { backgroundColor: colors.statusCardConnected },
-    statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.statusDot, marginRight: 12 },
-    statusDotConnected: { backgroundColor: colors.statusDotConnected },
-    statusCopy: { flex: 1 },
-    statusTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 3 },
-    statusDetail: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
-    streamPill: { fontSize: 11, fontWeight: "700", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, overflow: "hidden", letterSpacing: 0.2 },
-    streamPillLive: { color: colors.success, backgroundColor: colors.statusCard },
-    streamPillPolling: { color: colors.textSecondary, backgroundColor: colors.statusCard },
     summaryRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
     sectionTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700" },
     summaryText: { color: colors.textSecondary, fontSize: 12 },

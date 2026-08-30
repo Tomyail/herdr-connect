@@ -1,18 +1,18 @@
 /**
- * 主界面实例切换器(issue #55)。
+ * 连接状态条(issue #55 后续 UX 调整)。
  *
- * Agents 列表页头部的一击切换入口:只列**已配对**安装实例(ConnectionProvider
- * 的 instances,不掺未配对的 mDNS 发现结果),每项显示别名(instance-alias)
- * 与可达/离线徽标(数据来自 #54 的 per-instance 并行会话状态
- * instanceStates——connected 即可达)。点选非活动项 → switchInstance:只改
- * 活动指针,会话并行保活,切换瞬间完成。
+ * 替代 AgentsScreen 原有的绿色"已连接"状态卡与 header 角落的实例切换器
+ * 胶囊,二者合并为一个整行状态条:
  *
- * 单实例时隐藏(无物可切);窄屏(tab 头部)与宽屏(列表列头部)由
- * AgentsScreenContent 统一挂载,两处行为一致。
+ * - 显示焦点实例的连接相位(标题/详情文案由 AgentsScreen 组装传入)、
+ *   状态点(discovering 显示 spinner)、connected 时的 live/polling 徽标;
+ * - 已配对实例 ≥ 2 时,状态条可点开实例切换菜单(原 InstanceSwitcher 的
+ *   下拉菜单原样保留:别名 + 可达/离线徽标 + checkmark),并显示 chevron;
+ * - 单实例或未配对时退化为纯状态条,不可点。
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 import { useMMKVString } from "react-native-mmkv";
 
 import { useConnection } from "./connection";
@@ -45,7 +45,21 @@ function InstanceLabel({
   );
 }
 
-export function InstanceSwitcher() {
+export function ConnectionStatusBar({
+  statusTitle,
+  statusDetail,
+  phase,
+  streamStatus,
+}: {
+  /** 焦点实例相位标题(已配对文案,如"已连接"/"正在发现")。 */
+  statusTitle: string;
+  /** 相位详情文案(实例名/错误说明等)。 */
+  statusDetail: string;
+  /** 焦点实例当前相位,仅判 connected(绿)与 discovering(spinner)。 */
+  phase: string;
+  /** 焦点实例的流状态,connected 时显示 live/polling 徽标。 */
+  streamStatus: "live" | "polling";
+}) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -54,16 +68,14 @@ export function InstanceSwitcher() {
   /** 切换在途标记:防连点。 */
   const switchingRef = useRef(false);
 
-  const activeReachable = isReachable(instanceStates[activeFingerprint ?? ""]?.phase);
+  const connected = phase === "connected";
+  const discovering = phase === "discovering";
+  const canSwitch = instances.length > 1 && !!activeFingerprint;
 
   useEffect(() => {
-    // 实例集合收缩到 1(忘记/解绑)时收起菜单;入口由下面的渲染守卫隐藏。
+    // 实例集合收缩到 ≤1(忘记/解绑)时收起菜单;条目本身保留为纯状态条。
     if (open && instances.length < 2) setOpen(false);
   }, [instances.length, open]);
-
-  // 只在有得可切时显示。
-  if (instances.length < 2) return null;
-  if (!activeFingerprint) return null;
 
   const handleSelect = (fingerprint: string) => {
     setOpen(false);
@@ -74,23 +86,39 @@ export function InstanceSwitcher() {
     });
   };
 
+  const bar = (
+    <View style={[styles.statusCard, connected && styles.statusConnected]}>
+      <View style={[styles.statusDot, connected && styles.statusDotConnected]} />
+      <View style={styles.statusCopy}>
+        <Text style={styles.statusTitle}>{statusTitle}</Text>
+        <Text style={styles.statusDetail}>{statusDetail}</Text>
+      </View>
+      {discovering ? <ActivityIndicator color={colors.spinner} /> : null}
+      {connected ? (
+        <Text style={[styles.streamPill, streamStatus === "live" ? styles.streamPillLive : styles.streamPillPolling]}>
+          {streamStatus === "live" ? t("connection.live") : t("connection.polling")}
+        </Text>
+      ) : null}
+      {canSwitch ? (
+        <Ionicons name="chevron-down" size={15} color={colors.textFaint} />
+      ) : null}
+    </View>
+  );
+
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("switcher.openA11y")}
-        onPress={() => setOpen(true)}
-        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
-      >
-        <View
-          style={[
-            styles.triggerDot,
-            activeReachable ? styles.triggerDotReachable : styles.triggerDotOffline,
-          ]}
-        />
-        <InstanceLabel fingerprint={activeFingerprint} style={styles.triggerLabel} />
-        <Ionicons name="chevron-down" size={13} color={colors.textFaint} style={styles.triggerChevron} />
-      </Pressable>
+      {canSwitch ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("switcher.openA11y")}
+          onPress={() => setOpen(true)}
+          style={({ pressed }) => [styles.pressable, pressed && styles.pressablePressed]}
+        >
+          {bar}
+        </Pressable>
+      ) : (
+        bar
+      )}
 
       <Modal
         visible={open}
@@ -145,30 +173,29 @@ export function InstanceSwitcher() {
 
 const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    trigger: {
+    pressable: {},
+    pressablePressed: { opacity: 0.82 },
+    statusCard: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 7,
-      backgroundColor: colors.card,
-      borderRadius: 20,
-      height: 40,
-      paddingLeft: 13,
-      paddingRight: 10,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.cardBorder,
-      maxWidth: 220,
-      marginRight: 8,
+      backgroundColor: colors.statusCard,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 28,
     },
-    triggerPressed: { opacity: 0.72 },
-    triggerLabel: { color: colors.textPrimary, fontSize: 14, fontWeight: "600", flexShrink: 1 },
-    triggerDot: { width: 8, height: 8, borderRadius: 4 },
-    triggerDotReachable: { backgroundColor: colors.statusDotConnected },
-    triggerDotOffline: { backgroundColor: colors.textFaint },
-    triggerChevron: { marginLeft: 1 },
+    statusConnected: { backgroundColor: colors.statusCardConnected },
+    statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.statusDot, marginRight: 12 },
+    statusDotConnected: { backgroundColor: colors.statusDotConnected },
+    statusCopy: { flex: 1 },
+    statusTitle: { color: colors.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 3 },
+    statusDetail: { color: colors.textSecondary, fontSize: 13, lineHeight: 18 },
+    streamPill: { fontSize: 11, fontWeight: "700", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 8, overflow: "hidden", letterSpacing: 0.2, marginLeft: 8 },
+    streamPillLive: { color: colors.success, backgroundColor: colors.statusCard },
+    streamPillPolling: { color: colors.textSecondary, backgroundColor: colors.statusCard },
     overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.28)" },
     menu: {
       position: "absolute",
-      top: 92,
+      top: 118,
       right: 20,
       left: 20,
       backgroundColor: colors.card,
