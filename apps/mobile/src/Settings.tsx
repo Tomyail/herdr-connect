@@ -301,8 +301,9 @@ export function useSettingsCategories(
 
   // Pairing section — separate card so the connection card stays about the live
   // daemon link while this one is about the persistent pairing identity. 多实例
-  // 基础层：每行一个已配对实例（指纹尾 8 位识别），点选切换活动实例；单活
-  // 语义下切换会断开旧连接并连新实例。别名/忘记实例等管理属后续票。
+  // 并行连接(#54):每行一个已配对实例(指纹尾 8 位识别),点选切换活动
+  // 实例——切换零等待(会话并行保活,只换 UI 焦点)。实例徽标、别名/
+  // 忘记单个实例等管理属后续票。
   const activeInstance = instances.find((instance) => instance.fingerprint === activeFingerprint);
   const pairingRows: SettingsRow[] = [];
   if (instances.length > 0) {
