@@ -36,10 +36,17 @@ export interface ThemeValue {
 
 const ThemeContext = createContext<ThemeValue | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({
+  children,
+  initialAppearance,
+}: {
+  children: ReactNode;
+  /** Optional non-persisted override used by deterministic screenshot scenes. */
+  initialAppearance?: AppearanceChoice;
+}) {
   // Synchronous initial read -> first render already has the right theme.
   const [appearance, setAppearanceState] = useState<AppearanceChoice>(() =>
-    appearanceStorage.read(),
+    initialAppearance ?? appearanceStorage.read(),
   );
   const systemScheme = useColorScheme();
 

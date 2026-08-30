@@ -1,0 +1,8 @@
+{
+  "name": "screenshot-launch-options",
+  "version": "0.1.0",
+  "description": "Debug-only iOS launch options for deterministic App Store screenshots.",
+  "main": "index.ts",
+  "private": true,
+  "sideEffects": false
+}

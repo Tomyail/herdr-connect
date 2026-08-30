@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import type { ComponentProps } from "react";
 import { Modal, Pressable, View } from "react-native";
 import {
   DarkTheme,
@@ -14,8 +15,9 @@ import { StatusBar } from "expo-status-bar";
 
 import { ConnectionProvider, useConnection } from "./connection";
 import { I18nProvider, useI18n } from "./i18n/I18nContext";
+import { getScreenshotLaunchOptions } from "screenshot-launch-options";
 import { ThemeProvider, useTheme } from "./theme/ThemeContext";
-import { DoneSoundProvider } from "./notifications/DoneSoundProvider";
+import type { DoneSoundProvider as DoneSoundProviderComponent } from "./notifications/DoneSoundProvider";
 import { RecentCompletionsProvider } from "./notifications/RecentCompletions";
 import { AgentsScreen } from "./AgentsScreen";
 import { SettingsScreen } from "./SettingsScreen";
@@ -35,11 +37,34 @@ import { Ionicons } from "./icons";
 import type { RootStackParamList, TabParamList, SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
 import type { Agent } from "./agent-contract";
+import { AppStoreScreenshotScene } from "./AppStoreScreenshotScene";
+import { parseScreenshotScene, type ScreenshotSceneName } from "./screenshot-fixtures";
+import type { AppLanguage } from "./i18n/locale";
+
+const screenshotLaunchOptions = __DEV__ ? getScreenshotLaunchOptions() : undefined;
+const screenshotScene: ScreenshotSceneName | undefined = parseScreenshotScene(screenshotLaunchOptions?.scene);
+const screenshotLanguage: AppLanguage = screenshotLaunchOptions?.locale === "zh-Hans" ? "zh-Hans" : "en";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const tabIcons = sidebarIcons;
+
+type DoneSoundProviderProps = ComponentProps<typeof DoneSoundProviderComponent>;
+
+/**
+ * Keep expo-notifications out of Debug screenshot scenes. The production-only
+ * provider is loaded lazily when AppShell actually renders it; importing it at
+ * module load would make Expo Dev Client emit a simulator registration error
+ * into the screenshot even though the screenshot scene never uses it.
+ */
+function DoneSoundProvider(props: DoneSoundProviderProps) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const module = require("./notifications/DoneSoundProvider") as {
+    DoneSoundProvider: typeof DoneSoundProviderComponent;
+  };
+  return createElement(module.DoneSoundProvider, props);
+}
 
 function Tabs() {
   const { t } = useI18n();
@@ -367,17 +392,30 @@ function PairingOverlay({ visible, onDismiss }: { visible: boolean; onDismiss: (
   );
 }
 
+function AppContent() {
+  if (screenshotScene) {
+    return <AppStoreScreenshotScene scene={screenshotScene} />;
+  }
+
+  return (
+    <ConnectionProvider>
+      <RecentCompletionsProvider>
+        <AppShell />
+      </RecentCompletionsProvider>
+    </ConnectionProvider>
+  );
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <I18nProvider>
+      <ThemeProvider initialAppearance={screenshotScene ? "light" : undefined}>
+        <I18nProvider
+          initialLanguage={screenshotScene ? screenshotLanguage : undefined}
+          fixedTimeLabel={screenshotScene ? (screenshotLanguage === "zh-Hans" ? "09:41" : "9:41 AM") : undefined}
+        >
           <VoiceLanguageProvider>
-            <ConnectionProvider>
-              <RecentCompletionsProvider>
-                <AppShell />
-              </RecentCompletionsProvider>
-            </ConnectionProvider>
+            <AppContent />
           </VoiceLanguageProvider>
         </I18nProvider>
       </ThemeProvider>

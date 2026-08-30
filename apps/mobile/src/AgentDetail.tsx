@@ -758,9 +758,9 @@ function AgentComposer({
   );
 }
 
-function useAgentHistory(agent: Agent, service: DiscoveredService) {
-  const [history, setHistory] = useState<AgentHistory>();
-  const [loadPhase, setLoadPhase] = useState<LoadPhase>("loading");
+function useAgentHistory(agent: Agent, service: DiscoveredService, initialHistory?: AgentHistory) {
+  const [history, setHistory] = useState<AgentHistory | undefined>(initialHistory);
+  const [loadPhase, setLoadPhase] = useState<LoadPhase>(initialHistory ? "ready" : "loading");
   const [loadError, setLoadError] = useState<Failure>();
   const [hasNewContent, setHasNewContent] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -770,6 +770,12 @@ function useAgentHistory(agent: Agent, service: DiscoveredService) {
   const mountedRef = useRef(true);
 
   const loadHistory = useCallback(async (showLoading = false) => {
+    if (initialHistory) {
+      setHistory(initialHistory);
+      setLoadPhase("ready");
+      setLoadError(undefined);
+      return;
+    }
     if (showLoading) setLoadPhase("loading");
     try {
       const next = await fetchAgentHistory(service, agent.source_id);
@@ -782,17 +788,24 @@ function useAgentHistory(agent: Agent, service: DiscoveredService) {
       setLoadPhase("failed");
       setLoadError({ code: toErrorCode(error, "history_read"), status: toErrorStatus(error) });
     }
-  }, [agent.source_id, service]);
+  }, [agent.source_id, initialHistory, service]);
 
   useEffect(() => {
     mountedRef.current = true;
+    if (initialHistory) {
+      setHistory(initialHistory);
+      setLoadPhase("ready");
+      return () => {
+        mountedRef.current = false;
+      };
+    }
     void loadHistory(true);
     const timer = setInterval(() => void loadHistory(), HISTORY_REFRESH_MS);
     return () => {
       mountedRef.current = false;
       clearInterval(timer);
     };
-  }, [loadHistory]);
+  }, [initialHistory, loadHistory]);
 
   useEffect(() => {
     if (!history) return;
@@ -931,6 +944,7 @@ export function AgentDetailBody({
   keyboardOffsetExtra,
   renderHeader,
   refreshRef,
+  initialHistory,
 }: {
   agent: Agent;
   service: DiscoveredService;
@@ -940,6 +954,8 @@ export function AgentDetailBody({
   renderHeader: (config: AgentDetailHeaderConfig) => ReactNode;
   /** Lets the narrow native-stack header trigger this body's current refresh action. */
   refreshRef?: React.RefObject<(() => void) | null>;
+  /** Deterministic history used by the Debug App Store screenshot harness. */
+  initialHistory?: AgentHistory;
 }) {
   const styles = useThemedStyles(createStyles);
   const {
@@ -953,7 +969,7 @@ export function AgentDetailBody({
     positionedHistoryRef,
     scrollRef,
     setHasNewContent,
-  } = useAgentHistory(agent, service);
+  } = useAgentHistory(agent, service, initialHistory);
   const playSentSound = useSentSound();
   const {
     canInterrupt,

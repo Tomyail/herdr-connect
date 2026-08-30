@@ -62,9 +62,21 @@ function readSystemLanguageTag(): string | undefined {
   }
 }
 
-export function I18nProvider({ children }: { children: ReactNode }) {
+export function I18nProvider({
+  children,
+  initialLanguage,
+  fixedTimeLabel,
+}: {
+  children: ReactNode;
+  /** Optional non-persisted override used by deterministic screenshot scenes. */
+  initialLanguage?: AppLanguage;
+  /** Optional stable time label used by deterministic screenshot scenes. */
+  fixedTimeLabel?: string;
+}) {
   // Synchronous initial read -> first render already has the right locale.
-  const [language, setLanguageState] = useState<AppLanguage>(() => languageStorage.read());
+  const [language, setLanguageState] = useState<AppLanguage>(
+    () => initialLanguage ?? languageStorage.read(),
+  );
   const [systemLanguageTag, setSystemLanguageTag] = useState<string | undefined>(
     readSystemLanguageTag,
   );
@@ -100,6 +112,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
   const formatTime = useCallback(
     (iso: string) => {
+      if (fixedTimeLabel !== undefined) return fixedTimeLabel;
       const date = new Date(iso);
       if (Number.isNaN(date.getTime())) return translateUi(locale, "common.unknown");
       return date.toLocaleTimeString(localeForTime(locale), {
@@ -107,7 +120,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         minute: "2-digit",
       });
     },
-    [locale],
+    [fixedTimeLabel, locale],
   );
 
   const value = useMemo<I18nValue>(

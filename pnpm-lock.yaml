@@ -92,6 +92,9 @@ importers:
       react-native-svg:
         specifier: 15.15.4
         version: 15.15.4(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+      screenshot-launch-options:
+        specifier: file:./modules/screenshot-launch-options
+        version: file:apps/mobile/modules/screenshot-launch-options
     devDependencies:
       '@types/node':
         specifier: 26.1.1
@@ -2395,6 +2398,9 @@ packages:
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
+
+  screenshot-launch-options@file:apps/mobile/modules/screenshot-launch-options:
+    resolution: {directory: apps/mobile/modules/screenshot-launch-options, type: directory}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -5326,6 +5332,8 @@ snapshots:
   sax@1.6.0: {}
 
   scheduler@0.27.0: {}
+
+  screenshot-launch-options@file:apps/mobile/modules/screenshot-launch-options: {}
 
   semver@6.3.1: {}
 

@@ -29,6 +29,7 @@ import {
   type SettingsNavigation,
 } from "./Settings";
 import { AgentDetailBody, AgentDetailTitleBlock, AgentDetailRefreshButton } from "./AgentDetail";
+import type { AgentHistory } from "./network";
 import { Ionicons } from "./icons";
 import { useI18n } from "./i18n/I18nContext";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
@@ -47,6 +48,8 @@ export interface SplitLayoutProps {
   /** Wide mode only: requested from the Discovery category, handled by App.tsx
    *  as a full-app Pairing overlay. */
   onRequestPairing: () => void;
+  /** Debug-only history fixture for deterministic screenshot scenes. */
+  screenshotHistory?: AgentHistory;
 }
 
 function Sidebar({
@@ -105,10 +108,12 @@ function AgentDetailColumn({
   agentId,
   focused,
   onToggleFocus,
+  screenshotHistory,
 }: {
   agentId: string | undefined;
   focused: boolean;
   onToggleFocus: () => void;
+  screenshotHistory?: AgentHistory;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -136,6 +141,7 @@ function AgentDetailColumn({
             agent={agent}
             service={service}
             keyboardOffsetExtra={0}
+            initialHistory={screenshotHistory}
             renderHeader={(config) => (
               <View style={styles.inlineHeader}>
                 <AgentDetailTitleBlock title={config.title} subtitle={config.subtitle} />
@@ -356,6 +362,7 @@ export function SplitLayout({
   selectedAgentId,
   onSelectAgent,
   onRequestPairing,
+  screenshotHistory,
 }: SplitLayoutProps) {
   const styles = useThemedStyles(createStyles);
   // Agents-only focus mode: collapses sidebar + list so the detail/transcript
@@ -383,7 +390,12 @@ export function SplitLayout({
             </View>
           )}
           <View style={styles.detailColumnWrapper}>
-            <AgentDetailColumn agentId={selectedAgentId} focused={agentsFocused} onToggleFocus={toggleFocus} />
+            <AgentDetailColumn
+              agentId={selectedAgentId}
+              focused={agentsFocused}
+              onToggleFocus={toggleFocus}
+              screenshotHistory={screenshotHistory}
+            />
           </View>
         </View>
       ) : (

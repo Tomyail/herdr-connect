@@ -2,7 +2,6 @@ import { useCallback, useMemo, type ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Notifications from "expo-notifications";
 import { useMMKVBoolean } from "react-native-mmkv";
 import type { DiscoveredService } from "./discovery";
 
@@ -271,6 +270,7 @@ export function useSettingsCategories(
     async (newValue: boolean) => {
       setLocalNotifications(newValue);
       if (newValue) {
+        const Notifications = require("expo-notifications") as typeof import("expo-notifications");
         const { status } = await Notifications.getPermissionsAsync();
         if (status === "undetermined") {
           await Notifications.requestPermissionsAsync().catch((error) => {

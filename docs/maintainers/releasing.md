@@ -28,14 +28,29 @@ macOS（darwin arm64/amd64）在 macOS runner 上原生构建，并执行 Apple 
 
 ## iOS TestFlight
 
-iOS 使用 Xcode、Fastlane 和 App Store Connect 上传，不依赖 EAS 云构建。发布前递增 `apps/mobile/app.config.ts` 中的 `ios.buildNumber`，并在本机安全配置 Apple Team ID 与 App Store Connect API key。`.p8` 文件不得提交到仓库。
+iOS 使用 Xcode 和 App Store Connect CLI (`asc`) 上传，不依赖 EAS 云构建或 Fastlane。发布前递增 `apps/mobile/app.config.ts` 中的 `ios.buildNumber`，并在本机安全配置 Apple Team ID 与 App Store Connect API key。`.p8` 文件不得提交到仓库。
 
 ```sh
 cd apps/mobile
 pnpm release:ios:prepare
 pnpm release:ios:build
 pnpm release:ios:upload
+
+# 生成 English + 简体中文的 iPhone/iPad screenshot set，各三张核心营销截图
+# 首次使用需要：brew install cameroncooke/axe/axe
+pnpm screenshots
+
+# 只重新排版已有 raw 截图（修改营销文案/布局后使用）
+pnpm screenshots:marketing
+
+# 只生成 raw 截图
+pnpm screenshots:raw
+
+# 只生成一个 screenshot set，例如简体中文 iPad
+pnpm screenshots -- --device ipad --locale zh-Hans --scene all
 ```
+
+截图命令使用 `asc screenshots run` 和 AXe 驱动两个 Simulator（iPhone 13 Pro Max、iPad Pro），不需要 Ruby 或 Fastlane；它会使用固定的 Debug fixture，不连接真实 daemon，也不会写入本机配对凭据。默认生成 English + 简体中文的 iPhone/iPad screenshot set，每组包含 `agents`、`detail`、`settings` 三张核心场景，共 12 个文件，但始终只使用两个 Simulator。若只需要一个 screenshot set，可显式指定设备和语言。原始图片写入 `apps/mobile/build/screenshots/raw/`，营销版图片写入 `apps/mobile/build/screenshots/marketing/`（两个目录均已被忽略）；营销版使用本地 SwiftUI composer 加入本地化标题、说明和设备 mockup。iPhone 目标为 `APP_IPHONE_65`，iPad 目标为 `APP_IPAD_PRO_3GEN_129`，composer 完成后会自动执行 `asc screenshots validate`。
 
 公开外部测试组已通过 Beta App Review，邀请链接为 `https://testflight.apple.com/join/ZkRzJ6rm`。上传新 build 后仍需等待 Apple 处理，并在需要时再次提交 Beta App Review；用户文档不得把刚上传但尚未可用的 build 描述为已经发布。
 

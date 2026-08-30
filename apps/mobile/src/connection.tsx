@@ -81,7 +81,7 @@ export interface InstanceSessionStatus {
   readonly streamStatus: StreamStatus;
 }
 
-interface ConnectionValue {
+export interface ConnectionValue {
   /** 活动实例会话的连接状态(无实例时为 not_paired 或鉴权终态)。UI 主消费面。 */
   state: ConnectionState;
   focusResult?: { sourceID: string; phase: FocusPhase };
@@ -127,6 +127,21 @@ export function useConnection(): ConnectionValue {
   const value = useContext(ConnectionContext);
   if (!value) throw new Error("useConnection must be used within a ConnectionProvider");
   return value;
+}
+
+/**
+ * Supplies a deterministic connection snapshot to UI-only harnesses such as
+ * App Store screenshot scenes. It intentionally exposes the same value shape
+ * consumed by production screens without starting Bonjour, polling, or SSE.
+ */
+export function ConnectionFixtureProvider({
+  value,
+  children,
+}: {
+  value: ConnectionValue;
+  children: ReactNode;
+}) {
+  return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;
 }
 
 /** Rationale shown by Android on the second (already-denied) permission prompt. */
