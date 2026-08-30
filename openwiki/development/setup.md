@@ -3,6 +3,25 @@ type: Developer Guide
 title: Development Setup
 description: How to build, run, and develop Herdr Connect from source for contributors
 tags: [development, setup, build, dependencies, environment]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T21:43:29.677Z
+sources:
+  - id: openwiki-source-e86fe7b76c693666bc2cb828
+    resource: repo://apps/mobile/package.json
+  - id: openwiki-source-7bd911fdd3026b7b031a01e3
+    resource: repo://go.mod
+  - id: openwiki-source-07d77e7f317cf6efc47a9b12
+    resource: repo://internal/demolan/rate_limit.go
+  - id: openwiki-source-0052d3001cc35889006e9c50
+    resource: repo://internal/demolan/server.go
+  - id: openwiki-source-b3b42f4a3fbd26d2b780c8bf
+    resource: repo://internal/demolan/snapshot_cache.go
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-40275cb92c3610938f16ade3
+    resource: repo://pnpm-workspace.yaml
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 ---
 
 # Development Setup
@@ -17,8 +36,8 @@ This guide explains how to set up a development environment for contributing to 
 - **Xcode** 16 or later
 - **iPhone** physical device (required for testing — Bonjour does not work on simulator)
 - **Node.js** 24 (recommended; 22 LTS may work)
-- **pnpm** 10.28.1 or later
-- **Expo CLI** (`npm install -g expo-cli`)
+- **pnpm** 10 (the exact version is pinned as `packageManager: pnpm@10.34.5` in the root `package.json`; use `corepack enable` so corepack supplies it)
+- **Expo CLI** (included via the `expo` dependency; `expo start` is invoked through workspace scripts)
 
 ### For Daemon Development
 
@@ -82,7 +101,7 @@ corepack enable
 pnpm install --frozen-lockfile
 ```
 
-This installs dependencies for all workspaces (mobile app, protocol package).
+This installs dependencies for all workspaces. The pnpm workspace (declared in `/pnpm-workspace.yaml`) covers `apps/*` (the mobile app) and `packages/*` (the protocol package).
 
 ### 4. Verify Herdr Installation
 
@@ -123,7 +142,7 @@ For development without Herdr:
 pnpm dev:daemon
 ```
 
-This runs with `--source fake`, providing two synthetic agents.
+This runs with `--source fake`, storing state in `./.data/fake-daemon.db` and providing synthetic agents.
 
 ### Run Protocol Trace
 
@@ -149,9 +168,10 @@ pnpm ios:mobile
 
 This:
 
-1. Runs `expo prebuild` to generate native iOS project
-2. Runs `expo run:ios --device` to build and install on connected iPhone
-3. Starts Metro bundler
+1. Runs `expo prebuild --platform ios --no-install` to generate the native iOS project
+2. Runs `node scripts/strip-push-entitlement.mjs` to remove the push entitlement from the development build
+3. Runs `expo run:ios --device` to build and install on the connected iPhone
+4. Starts Metro bundler
 
 #### Subsequent Runs
 

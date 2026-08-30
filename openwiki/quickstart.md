@@ -3,6 +3,23 @@ type: Project Overview
 title: Herdr Connect
 description: Local-first companion for Herdr that enables LAN discovery and control of AI agents from mobile devices
 tags: [herdr, lan-discovery, mobile, ios, react-native, go]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T21:43:29.677Z
+sources:
+  - id: openwiki-source-7e2feff63ac717cadd6c55fa
+    resource: repo://.github/workflows/android-release.yml
+  - id: openwiki-source-39c3295efc089133e87a9c80
+    resource: repo://CONTEXT.md
+  - id: openwiki-source-570db0334c73da0ce96799d8
+    resource: repo://docs/maintainers/releasing.md
+  - id: openwiki-source-54ceaf4a4a761305b1ea1256
+    resource: repo://docs/protocol/v1.md
+  - id: openwiki-source-4d337f0c7fd897a8626e5c73
+    resource: repo://docs/security/lan-tls-pairing.md
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 ---
 
 # Herdr Connect
@@ -51,10 +68,12 @@ Supported features:
 - ✅ Foreground local notifications, haptics, and completion chime on agent finish
 - ✅ Localized UI (English and Chinese)
 - ✅ Light/dark theme
+- ✅ App Store screenshot pipeline — fixture-driven simulator captures (English + 简体中文, iPhone + iPad) composed into localized marketing frames via `pnpm screenshots`, with no live daemon or real credentials involved
+- ✅ Android release workflow (builds APK/AAB against an existing release tag) — present but dormant pending signing secrets
 
 Not yet implemented:
 
-- ❌ Android app
+- ❌ Published Android app — an Android release workflow exists (`workflow_dispatch` only) but the release keystore signing secrets (`ANDROID_KEYSTORE_BASE64` etc.) are not yet configured, so tag-triggered automation is disabled and the pipeline is dormant
 - ❌ End-to-end encryption (HPKE-based protocol exists but is not yet integrated)
 - ❌ Remote connections outside LAN (relay milestone)
 - ❌ Remote push notifications (APNs/Expo Push)
@@ -68,6 +87,7 @@ Start here for project context, then explore specific areas:
 - **[Agent Projection](domain/agent-projection.md)** — State synchronization and persistence
 - **[CLI Commands](cli/commands.md)** — Daemon management, pairing, device management, and diagnostics
 - **[iOS Client](mobile/ios-client.md)** — Mobile app structure, pairing flow, discovery, and interaction
+- **[Mobile Release Pipeline](mobile/release-pipeline.md)** — fastlane-free iOS TestFlight releases via `asc`, App Store screenshot generation, and the dormant Android release workflow
 - **[Secure Pairing & TLS Protocol](protocol/secure-pairing.md)** — LAN pairing, TLS pinning, device lifecycle, and future E2EE design
 - **[Development Setup](development/setup.md)** — Build instructions and development workflow
 - **[Testing Guide](development/testing.md)** — Test suites and quality practices

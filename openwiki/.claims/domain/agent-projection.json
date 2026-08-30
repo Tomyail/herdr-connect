@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:18808c52a9d8b5e2b2cb6d133caf35ecfc59837bc70083a91b20a4f77b5f37fd",
+  "claims": [
+    {
+      "id": "claim_2ed2c12cdeee4ee4aa991ba2d1248d58",
+      "statement": "Projector.Sync requires the observe_agents capability, normalizes every snapshot observation, and applies one ProjectionBatch with the snapshot cursor and observed SourceIDs; when the snapshot is online it is treated as authoritative.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection.go#L37-L69",
+          "version": "repo-lines-v1:sha256:61ff89d1c985d783ad8d31a8e34997da886dd97fdaafc2e9b49e93fb6e91757b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxM2YzZDM2ZjAwMzkxOTI2NTlmYjRiYzgyNTMwNDk2ZWQxZDhlYTlkOGRlY2VkZGY5M2Q2ZWZkMjQzZWFhMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MzZkMTI3ZTVkN2YyMDgzOWUxZWY3YTRkMWM1MTYyMzE2ZTQ3ZmM5MmM3MjZmNjUwZTViZjYwZGVhYTU0ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkM2ZhODg3Y2FjNmQ3MjI3NGRmMTNkYWMxNDNjMTZiMmFkMmNkOGUwNmNmNDNlNjdlMzlkNzMwNzU2ZWVmMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5cc9fbad187549ce820df1ea74dd46ac",
+      "statement": "Projector.ApplyChanges requires the incremental_changes capability, converts ChangeUpsert entries via normalizeObservation and ChangeRemove entries into AgentRemoval, and persists the batch with the returned AfterCursor.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection.go#L71-L108",
+          "version": "repo-lines-v1:sha256:f984097fdbffe485c826aed1ed7c16d0e6b737acf55fb7d424f4f9a69c0597ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzMjllMzQzZjY1ZjY1ZmEzODg3YTJjNWZjYTY0ZTVjYTNjNzdkMzA3ZDUzM2Y1MmM1OTkzNjhmYmI4OTA0ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwN2FmODFjODFhYzQyOWFlYzkwNTkxMGMwMGEzYzBiMTcyMWQxZjkyMjM5ZjE0YTRhZjZhMWUzNzc2NGU3NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NWNjYzZhNDNiYWE1ZWU2NTdkNzExZDQ0MDJjMjM1OWJhOWI5YTcxMTUwZjU2MTgzOTRjMGEyNzIxMGFkODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a33bc0cdc45d4b9085cc4c178cc2c6e2",
+      "statement": "normalizeObservation rejects observations lacking a stable source_id or positive revision, downgrades interaction_state to unknown unless the source declares trusted_interaction_state, and only stores turn_outcome when trusted_turn_outcome is declared, validating enum values.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection.go#L110-L136",
+          "version": "repo-lines-v1:sha256:85f2e051bd070a8afa4e13ef7d9d99c2168972ba3dcc68b327b66c7a805b16cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZGFkMmI2ZDlhNjQ2MmMxMThmNjQyZjRlZDE1MjZmYTAxOGY1ZDg1YzBlODhmODVmNzdlMzg4M2YxMThjMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjNWVjYWY0OWEwYjZjMmQ0MDc1MTlhODZkM2VjMmI3OTIzYzU5Y2M2OTg1ZjFkZjM5YzRkMTY3Mzc0YTc2ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMTE5ODZlMTI3ZjYyYjk2YzVkMGEwNTY5MzMxNjAwN2M2ZTNmNzdjNWQwNGY1ODljMzQzMzQ2ZTYwZWJjNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0718547af1b7430bb7339569ac322304",
+      "statement": "Agent identity is assigned by the store on first observation as a random 16-byte agent_<base32> ID; it is not derived from SourceID, and identity persists in source_agents across deactivation and re-observation.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store.go#L202-L221",
+          "version": "repo-lines-v1:sha256:9d4118e507d8aec93baad804f89bb1c6e31d30ab6c5098d068478267942c9343:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjU1NTBhYjc3YmU0ZTk0ZjFkMTIzYTg1YjA2YTg5NDA4M2Y2ZWYxNjBiZThkZWQzODQxZmMzNTdiOWYyZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhYmE5M2YzMWRhOTMyZjhlNGMzZTEzODc0MDUyZmFmZWUwN2ZjMWE1NzkyYzg2MmFkM2M2MjdmZWViMzMwYzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MzFiNmUyY2EwN2Q4YmFmMGViNDRlNzQ5ZGJmNDkwYjM5MmUzYTUzNGVmNjEwMjI3NzExNDZjZGY5YWYxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMTA2ODBiZTI5NzE1M2ZlZWNlM2JiNDg5ZGM1N2Q0MmJkMzM2OWM2NWRlMDAwNTgyZTQyMGQxNGY4OGMzMGYifQ"
+        },
+        {
+          "resource": "repo://internal/store/store.go#L416-L422",
+          "version": "repo-lines-v1:sha256:3c2443158b7d0f7e076b98da33ff55a4c660f89d65448901d3471fe883fef631:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg3MGFjYjFiYmY4MDQ3ZDM1MTQ5YmRkYzExODUxZjRlZTA4YjlkMWQzOWMxYTVkZTlkODQ2ZjMzMzVkODRlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDQ5ZDAyYTUyZjI5YjIwMTczZDI1OWQ2ODAxOTM2NDI1YTYwMDQxNDBlZDkzZGE0YThhYzBhNGM0ZTk5MDljNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjc3YWQ5NDliNjg2NDdkY2FmZjA3ZTA1MjNlOTE0MzJjMjY0MGMxZDA5ZjM2NGY1Y2U1ZDhhNzNlNmI5NTE3ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_da6197681c1d43488ed3b58e354bb991",
+      "statement": "ApplyProjectionBatch applies updates, removals, optional snapshot reconciliation, and the per-source cursor write inside a single SQLite transaction, so a crash either applies the whole batch or none of it.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store.go#L170-L200",
+          "version": "repo-lines-v1:sha256:46f6b02c53a2440157bcbf5d7b6d5b4487b4020bb77a7a4070b3116fc7587969:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwOTg2YTE1NGE0MzI4NDRkYTdmOTI5NjUzODdhMjJhOWNmMGZiMTg0ZGYxOTg2ZjA1MTFlZThhZWExMzExZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkYTZmZmY1MTFjNTY3N2ExZjIxYWVhOGRlOTI2ZDYwZGYzNDVjMGQxZTc2ZTNiZTljZDA1Yzc4OTIwNDlmOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNzU2Y2ZkMWM3NDZmYjYxNmI2M2VmYjc5YzYzYWEzNDlhZDQ2YTMyMTk0MzMxMTA3YTAxZGRhM2ViNzhkZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe2aca5762f54ffb96ecb6ead1321883",
+      "statement": "applyAgentTx and deactivateAgentTx ignore stale deliveries: incoming source revisions not newer than the stored one cannot overwrite current facts or trigger removal, and unchanged facts do not bump lifecycle_revision or append events, so restarts and out-of-order syncs never regress agent state or the event sequence.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store.go#L202-L267",
+          "version": "repo-lines-v1:sha256:d7d69769fffea19890c0edf3c235230ec39c1e66df48bad4a0059c2032c49aae:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjU1NTBhYjc3YmU0ZTk0ZjFkMTIzYTg1YjA2YTg5NDA4M2Y2ZWYxNjBiZThkZWQzODQxZmMzNTdiOWYyZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MzFiNmUyY2EwN2Q4YmFmMGViNDRlNzQ5ZGJmNDkwYjM5MmUzYTUzNGVmNjEwMjI3NzExNDZjZGY5YWYxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0M2QyMzZhNGU3MmQ2YmI2MWE5NThiMDcyN2UxMzViNGQ0MTJjY2I4ODM4ZjA4NzZiMTA4Y2JjZDllMzk5NmMifQ"
+        },
+        {
+          "resource": "repo://internal/store/store.go#L342-L377",
+          "version": "repo-lines-v1:sha256:a83040ee0f62059f6406648bbe94536789702400cd325bc79e32a6a41d2464f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjODE1M2U1OWYxZjc2ODllMmJkNDE2OWM0OTg0MTQ0YzJjM2VhMDRjMjdhM2NkNzg0ODZkYjA2Nzg3ZWJmOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMzJhZmE1MDNmMGQyOWZiMmNhNDU2MTFlYjUyZTc5NzQ5ZjQyM2M3Yjk4NjBlMjY5YWYxNGJkNzcwMWZmMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhOGVhNzJkYTBlYzgxODcwMGVkY2JkYmEzODE4YzkxNTI3NDM5ZmY4YmNjNTI2MDM4ZjgxNmFlMWNiY2U2N2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_000b6a4f40f742c58288f6256d1f62db",
+      "statement": "Every applied domain fact (upsert or deactivation) increments installation_meta.event_seq and appends a JSON record to the outbox within the same transaction, providing the monotonic ThroughEventSeq exposed in projected State.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection.go#L138-L155",
+          "version": "repo-lines-v1:sha256:fda2a2582c5c784b5b5b9177e38ac616826b4d07354e470d2822c6612351b536:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExNzhhZjIxZDA5ZmJjZWNlM2Q2NWUxMDAyZDVjN2JhZjU4ZmQ3M2NmNTIxNDE1ODUyYjBhZmFlYmQ2YjEzYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwZmRkMjFkYTJmMDA3MjRhYTQzYmRjYWYyNjAzZjUyNzc5MzUwOTlkNjEzZmEzZGMwMGIxZGY3YjI3OGQ3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiY2E2Y2E0ZTAzMDBiOTZhNGQ1MjhhOGY0NGNkYmM1MWFmYzdiOTdiYWRhNDQzZDI0MGVjOTMxZjQxMWJkMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmM2VlNzc5Y2ZkZjgxYmRlOWM3YTVmODk4Mzk0MjRmMDU4MTFjYzA5MTM2YjQ0ZWIyOGM5NmIyZmU4ZDgwNjAifQ"
+        },
+        {
+          "resource": "repo://internal/store/store.go#L392-L414",
+          "version": "repo-lines-v1:sha256:735e0ee66abcf8327d73c9579a6bc504757c33965c96a197c78c94e8333a48db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNjBkNWM2MjU0ZDE0M2RlYWI5YmYyN2NiYzViNDU1Yjk4MGEwNDg0NzZhZjQzMTRlNDlmYWQ5ZWFkZGNlMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNzE4NTUzYTFkYTYwMGZjNTljNWQ4YmEyMWIzNDI1ZGQ0OTdkOTc5ZTliOGYyODQwYTU2NjBlMDFjMTFlNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NGU0ZTQyMTg4Yzk3MzJhNjA1ODIwNzQ3MDc2ZDViOWQxMTA0Y2ExYTczYjI2NGE4MjA5NjU0YzUzMGVlYjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc381a1366a1440798e1091a5be6e677",
+      "statement": "For authoritative (online) snapshots, reconcileSnapshotTx deactivates active agents of that source absent from the observed set using stored_revision+1; offline snapshots are not authoritative so an unreachable source does not wipe the projection.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection.go#L59-L68",
+          "version": "repo-lines-v1:sha256:ee27ab0752b2dbec01332a7912a43af82bb49f20da8537b662d45245c93e65da:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYzE5MjEwYmU4MGFlMmFlYjAyMDkxMDBiOWZjMDkwOTEyYTg0ZTEwMWNlMWFjMTc1MTU1MjQ2ZjE2ZTY2ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2OGU3YTVkZTk5ZmVkNDdmYjM0YWFiMGRmMmJmZmZkMDEzYWRkOTc0ZGZiZWVjMDMxMTQ4MjAxYjkyMzE2NzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZTBiNGMxOGYzZmJlYWY3NjdlYzE5ODhiODYyZDM5NjZlZjNmNTlkYjgxNmM1MDQ1ZmFmMTQ1MjczZWM3NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViYWQxOTczNTJhOGRmYjZmNzcyOTI2NDY0ZTFkNTlhY2M4Nzc0Y2E4NGE2ZTA5OTUyM2EzMzlhNjliMDhhZDUifQ"
+        },
+        {
+          "resource": "repo://internal/store/store.go#L288-L320",
+          "version": "repo-lines-v1:sha256:0def9ca33cfcfbabe0afac1ad59671782d3c673894629eb5c5ac5473cdf90656:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzM2M4MTIwZDY1NTc5NDMwYzQ2MTY1OTFhYTc3Mzg0OTY5YWRjMjMzNGY0NDFiNGJjYzc3M2RlYjEwMDY5NzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OTE3YmU0YjZmNTQ3MjdhZTk0YzMxZDU0OTkwZTJjZTJkZmM3MzQzMzc4YWM2YzZjMTUwMzlmMGEyNzRlMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YzJjY2FkMjRiYzBlYzI4OGJmZjYzNTNiNmNmNDY2MWJjNGQyNjBmZTVmYzYxNjI2NGJkZGJmODBhNWIxZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_08123b28b6044c63b66a3497f31e9c66",
+      "statement": "store.Open limits connections to 1, enables WAL/foreign_keys/busy_timeout, runs versioned migrations transactionally keyed on PRAGMA user_version (current v2), refuses newer schemas, and runs PRAGMA quick_check before use.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store.go#L59-L148",
+          "version": "repo-lines-v1:sha256:d7f848d6699f3edba512ec9428e6cf895ad9c4b7098b00e8d31333c092c51129:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMzMwOTQyNTMxZjEyODkyY2ZmZWY2NDFjZGMxNTNkM2ZiYzc0NTQ5NTkzMDI4MTk2NWFiMGE1NzFiOTNlN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkNWEzMjJiZmJlNTI1ODg3ODBhZWViMDg1NDJhOWYxNzcwZjg1N2EyMjQwNTE1M2NlYTNiNGYxNmYzMjhiYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhMmJlNmU2OGE4NzRjYjYyYTUyOThiZGU3MzgxMTUwMzMxZTJjN2IyYmU0MjNkZDNlNjNlOGIxOWNlYjhjYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4eb77f975024feaaef542ef7724c5ed",
+      "statement": "The Projector keeps the last built State in memory behind an RWMutex (Current()); Load rebuilds state from SQLite without contacting the source, which CLI commands use to serve reads when the source is offline.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L131-L145",
+          "version": "repo-lines-v1:sha256:4e2d568afabda281e57d864257172d7bfbf740a51233e924f50a0e5701fb6b5a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNzljNmE5MDU4ZmVkOWE4ODUyMWM2NzYzYmQzMzI3M2M0MDhmNTRhZjVkYWNmNmNmZGQ3NmQ5MzRkNGQ2MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiM2NiZDQ0NzQ3MzU1Y2YyZDMyY2I5MDY3NDUzMzE3NTBiYWZlODg4MDJmYmUyZjNkMDcxNDJmMDcxODYxNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMWU5M2FkODJkZTRlODU0Y2I3OTdhODNiNTJhZDgyMGU3ZTUwMjhhN2M0YmI3NGU1ZDM4NDk5ZjVhYjgyMmMifQ"
+        },
+        {
+          "resource": "repo://internal/projection/projection.go#L172-L186",
+          "version": "repo-lines-v1:sha256:fd9358940611615632f28967e5550ab7bf36b6b3332b481fa03a09beb1d082c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhYWRlYWNhNzM4MmNkYWQxOGYzNGQ0ZGQ0NGEzZWIwZTQ0OTU0NzhlMWY3YWJmZmE0MTA4YTA3Yzk5YjEzYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyYTNjZDU2OGI1NWM3MDVlYmYxNjUzMzhmMGVkMGFhYWE5ZjQ5ZDU3ZjE2ZGNkMGI0ZGRiMGM0MGM3OGM2OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0297e82f8284d6ebd138f0c83f87748",
+      "statement": "The LAN server wraps source Snapshot in a 1-second TTL, singleflight-coalesced cache with a 5-second per-call timeout; success, offline, and error results share the TTL so transient faults are neither amplified nor masked, and the wrapper exposes only Snapshot so capability type assertions still see the real source.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/snapshot_cache.go#L12-L99",
+          "version": "repo-lines-v1:sha256:1ee45cfedcddf33e2d2f465e52dfc0e45aad110468f7f774d6cc5ebafe0c77da:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhZTRmMDE2ZTMxMDU3OTY1MzA5NjhjYjg5MGIyMWY4NjM2OGM2ZGM5NmZhOTAxMDljNTBiMjc3OTY1MGEyMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwODA0ODdhYmMxMmExMDg1NmE2NTA0MDE2M2MwNDE0M2M2OWEwNTg1M2E1ZjIxMGE3NjJiZGFhYzM5YjQ4YzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NjgxNzJjNTEyYjVmMmFiNmU5MjRhOWI0ZGQyMjdiNmFjNmZkMTc0ZTNlMDU1MDExYTA1MmNhNjI3Y2NiMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0YThkNDQ4NTk1MmRiYjMxMzI1NTAzOGUyZjBlMTUxM2RkMmVmZDRmNjliMDFmODMxNTQyMjcwMWU4Y2ZkMTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99a1c276c7474a0194973bab8d3cf3db",
+      "statement": "enforceClientVersion runs before auth on every path including /v1/pair: requests reporting X-Herdr-Connect-Client-Version below MinSupportedClientVersion (1) get 426 client_outdated, while a missing header is allowed through for manual probes.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L33-L61",
+          "version": "repo-lines-v1:sha256:d0827552d565cae2d816cf866da0044667b907ea5334b5c6e3305677cc8657e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5MTczMTQwNWMyNWE4MzgxYTE2N2YxZTNiNTJjNDczOTFhMzBkOTA3MGVhNDg0MjJjYjczZmFiNWQ1ZWM4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwMjk2YTNjMDQ3OGYxMTMxZDFjMzQ1ODI0YjA5ZDhjMTMwZDg3NmFkM2Q5Nzc2NjY4ZDIyNjE1YzkzNWIwMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMjVmYWFiMmFmZjIzMjIzY2IzZWFkYTBjZjkxZTg1NGJiZjgzOTFmZDJmMGE1NTBjODA0YTBhMTM5NDU3ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MDlkYWFiZTk0NmFjMWJhNDU4MTYzN2E1ZjMzZTQxODkzNWRmNDdjNDkyMDlmZTQxMmZmYTcxODljMmIyMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7db0b077f8fa4de3ae06ccea9675bfee",
+      "statement": "Token-bucket rate limits: per device reads 5 req/s burst 10 and writes 1 req/s burst 3, plus per-IP 1 req/s burst 20 for /v1/pair and unauthenticated requests; over-limit returns 429 rate_limited with Retry-After: 1, and the limiter is in-memory with no eviction.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/rate_limit.go#L34-L99",
+          "version": "repo-lines-v1:sha256:b50a0ddb46baabbd4f2786e557fc5cf4ac945b9349cfb1b20315fffd3e0709f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYmVlOGQ4MGUyMWY5ZDZhMzMwYWVlYmIwZDFiOTRjMmJhZTYyYTJmMWU5YmQ0YWIzY2YwMjc0MGFiYTEwZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmODBiZDJiYTgwYjQ0NGMzNzI5Yzk5NWVjY2VmMzQ4MTM0YTkzMTlmM2U0YmZhZjYzNDdmYWIxNWM5ZmIzN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4OWU4ZDgxNTljN2VjODEzZjZhNGQ1ZmI3MjhmMGE4NDRjMzc3NzNmZTM5ZjU0MTY0ZWQ3NTllZmI5ZjJjY2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_47f3156d349c4b95a4857c48f4a03700",
+      "statement": "On Unix, store.Open pre-creates the database directory (0700) and file (0600, with explicit Chmod) and re-tightens path, -wal, and -shm to 0600 after migration; a test asserts mode 0600 on the opened database.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/permissions_unix.go",
+          "version": "repo-file-v1:sha256:3dc0ba303bc2afb6c1e14f719c25e9f90470993ec6a46ebb991420ae69e00fe0"
+        },
+        {
+          "resource": "repo://internal/store/permissions_unix_test.go",
+          "version": "repo-file-v1:sha256:11387c7bdf230cdae6147030a9713f6a8c3c7bd929690273a033ff42adbb92a4"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6397d27697e4fc080c864166a94a75b",
+      "statement": "On Windows, owner-only security is a protected DACL with a single GENERIC_ALL ACE for the current user applied via SetNamedSecurityInfo after plain CreateFile; SECURITY_ATTRIBUTES is deliberately not passed because BuildSecurityDescriptor descriptors carry SE_SACL_PRESENT which would fail with ERROR_PRIVILEGE_NOT_HELD for normal users. Tests assert a protected single-ACE DACL and idempotent preparation.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/permissions_windows.go",
+          "version": "repo-file-v1:sha256:117f721f9ab79271974d9ee31482189ed78bfdb6c5918db9c41a68098116de08"
+        },
+        {
+          "resource": "repo://internal/store/permissions_windows_test.go",
+          "version": "repo-file-v1:sha256:8028af670d2f6cf60d92cfda2c6d3e93289f5e2f0b015b094228abf8327ef793"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c4469cf463144969cca2eba07d48261",
+      "statement": "projection_test.go drives the projector against a real SQLite file and the herdrsource fake, covering duplicate syncs as no-ops, out-of-order delivery, restart identity/event-seq continuity, capability gating, and removal/reconciliation behavior.",
+      "evidence": [
+        {
+          "resource": "repo://internal/projection/projection_test.go",
+          "version": "repo-file-v1:sha256:58586da7dac28f9589eeb339a92aea516315995a6053c4f925cc9563b6be9e30"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

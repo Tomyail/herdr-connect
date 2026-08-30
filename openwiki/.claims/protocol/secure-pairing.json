@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d997a5e96ac7650f8b8d97cf3d98f53ec853de2be3ecb33c4f4715f058123924",
+  "claims": [
+    {
+      "id": "claim_32652b7218d44e2fa39dab54f69414bb",
+      "statement": "The daemon's LAN identity is a self-signed ECDSA P-256 certificate (CN 'Herdr Connect LAN', no SANs, 10-year validity) generated on first launch by lanauth.LoadOrCreateCertificate, stored as lan-cert.pem/lan-key.pem next to the database; private key mode 0600. Regenerating the certificate changes the fingerprint and forces all previously paired devices to re-pair.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L28-L48",
+          "version": "repo-lines-v1:sha256:3c981f3ae12df2e7028edb5ebf91778315f84105ecddda1bd23241f03d7105d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMjA0ODA3MThkN2I3ZWQxYzEzZDc2YTQzMTRlNTBhOGIzYThlNmE0MGI2YTQxMTZjZjU0NTZlY2U4ODRlYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxNmQ5NmRkNTU5NDA3ZDQ3YTE4ZDBiOTZkZmRkNTE5MDAxYTVkMjc3Y2E4YzFmNTdhZDNmZTRmN2UxMjQ2NzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNjU2ZTkwMzdhMGM1ZGY0MjY3M2NiYWI5OTNlZDc0MDM3Yzk2YjgxOGY2YzNkNGFlYzVhMjBiYzQ1ODA0ZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMTAwMDdhYjRjYTE0MGU1NDNmMzU3MTc2OWIwOGVmY2ZjMjk4OGRmNGMwYWY2NDVkOGZkZWI3MWU5ODc4MmQifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L134-L164",
+          "version": "repo-lines-v1:sha256:70c43a797ddb26f91315ccb48456403fb0b8777edc206a5316744340d59b47b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMWI0NmYyNzE4YTRiNDkwMDM4NGMyYTEyYTYyYWEwNjkxYmRhMzg2M2JiYTA0MDRhMDg5M2RmOGVjMWEzMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZTJlODdjZTZhNzNiYTk5ODIzZjI5NDU1YWY3MTRkZmU3MTUxMWFhYTljYmZlMTAyYWIyODQ4ZTEwM2ZiNzkifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L30-L97",
+          "version": "repo-lines-v1:sha256:351086b093871355fe87d1f7769332291b93cb453831ae653941a32c1098c259:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMzY0MzczYjlhMWEwOTU1ZjUzZDk0NWI0MmE4ZDU2MjJkMDkwNjRjYWRiZjJhODg3ZmMzNzQ5N2U1MDJmMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a0f7580ada74699874b85367f310383",
+      "statement": "Devices pin the SHA-256 of the leaf certificate DER (base64 RawURL) instead of CA-chain/hostname validation; the fingerprint is returned by POST /v1/pair and advertised in the mDNS 'fp' TXT record. On iOS this requires NSAllowsArbitraryLoads because iOS ATS evaluation runs independently of the URLSessionDelegate and rejects the SAN-less cert on non-local-network paths with -9802.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L42-L48",
+          "version": "repo-lines-v1:sha256:30682112a3793404fc3ae106128925f7d8e2cc6db9030f435eda21aed9167ab4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzY4ZjU2NDNhNjYzZmI2MDlhM2YwMDhlMzNhZDExODU5MjJhNWM3YTg5ZDY0ZTJmMDY4NWVhYzM2MzljYjEwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE2ZDk2ZGQ1NTk0MDdkNDdhMThkMGI5NmRmZGQ1MTkwMDFhNWQyNzdjYThjMWY1N2FkM2ZlNGY3ZTEyNDY3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjM1NTY3OTM0OTQxZDUyYjEyMjA1ZmIwNDRmZTc4YTk5NmU4ZmE3YzljMTU5M2IwZDJkNzE5NjQxNTVjNmQ0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTMxMDAwN2FiNGNhMTQwZTU0M2YzNTcxNzY5YjA4ZWZjZmMyOTg4ZGY0YzBhZjY0NWQ4ZmRlYjcxZTk4NzgyZCJ9"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L25-L31",
+          "version": "repo-lines-v1:sha256:31cc000857476ef6c596187473e201090815a863b0740df1a52670dca9376188:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY4ZTU1MTFkZjAxMzk2OWMwMDk4ZDYxZmVkOTgyMWJlY2M1NjRlMjljNDQ0YWZhYjRmNDE0NWJlNWE2MWQ3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWQ5M2JjYjg0ZmUxNTQ4YzI5NThkNjgyOGNmNmEyZjBhODBlZGVkM2M2MjMzYWViYmI4ODlkNTM0YTZhNDY3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjUzMDA5ZjljZTU3NmQ5Y2M1ZTk0ZDEzZWNmZGU5NGYyMDcxMGI5MmY1Y2NhYzBkNDNmODJiMmNjODQwOTVkYyJ9"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L44-L51",
+          "version": "repo-lines-v1:sha256:faf5723cbd1ef4703c7176761b6e2a7eeb355e4db1c4e0f20bea80414f1bbacb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTExYjVmNTNjYzUzYThjYWVhZWVmYzUxYTYzNDdiY2QzOWYzMzUyZDBhZjhiZWNkZDhhNWRmOTkxZmQ5NzBlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E5NDQxMDYxNmVjZGMxMmVjYzUzM2ZiNDE0NGRhMjdjM2NlM2MxNDdlNzY2YThhMzhmNWZkMWExMjliYmFmMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzZkYjZkYmQ5NzgzMTVjMzQ4YzQwMzE0Nzg2MTQwZDc1OTFkNWNlMDNhM2RhOTg2NDFkZTA2OGQ5YWU0YzIyNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b28c4a35a5a549e99ed0dffebc7ecd29",
+      "statement": "Concurrent first-time certificate generation (pair CLI vs daemon) is made race-safe via O_CREATE|O_EXCL on the private key file; the loser polls for the winner to finish (2-second deadline), and a timeout indicates an orphaned partial generation requiring manual deletion and full re-pairing.",
+      "evidence": [
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L115-L132",
+          "version": "repo-lines-v1:sha256:8e4fb91147448d895cfc76046cce6437ce4090c534d117393204239996c6af85:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxZDU2OWIxZTY1NDdlMGRiMmZmYTUwYWY1ZjYyNzQ0NWJiNzk0MDY5YWM1MjUzZWFiMTQxMTJkM2ZlNDFiMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmMmFkNmIyNTcwMDVmZTM1OWFjMTE4Y2I0NWVlNDFjZjE5MzhkMTM3ZTFhZWNiMDFiMjU4NDNiZGI0YTZlMjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMmUwYWMwYzZiZjA5OTMxZDFiMzVhMDE3ZjRjODZiNDUxMzViZWEyOWE2OWM5ZDA3MDg3ODVhNDIxMTk1YTcifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L56-L97",
+          "version": "repo-lines-v1:sha256:72c15ce2eb922eb255fae61fe17ff3f12f6388e38144f78766f3ad14fca43299:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NDBmMzljNWMxMTQzMWZkNGRjOGZjZjhiY2ZmZThjNzVmMjM4NmU1YjE0ODVjNWNiODA0NWM5YmVhOTE3YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4OWI2Nzg1M2M4ZDBiNDQ1ZjgyNzU2NTc5ODc2N2VmNGIyZjQzOTg2MTk2ZjEwNjJlYWNjN2FkODZmMzRhZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMzY0MzczYjlhMWEwOTU1ZjUzZDk0NWI0MmE4ZDU2MjJkMDkwNjRjYWRiZjJhODg3ZmMzNzQ5N2U1MDJmMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_201c29ad5c0749c991070efd388a4ebc",
+      "statement": "Pairing uses a one-time QR secret: herdr-connect pair generates a 32-byte secret and stores only its SHA-256 hash with a 5-minute TTL (PairingSecretTTL); the QR payload carries {v, fp, hosts, port, secret}; the mobile client POSTs {device_name, secret} to /v1/pair, and CompletePairing returns a per-device bearer token exactly once, stored client-side in iOS Keychain. Only hashes of secret and token persist server-side.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L50-L64",
+          "version": "repo-lines-v1:sha256:ee9017e6f075d5780f50ea6aa910fe7500efaec2da4c08c6ed64e3740d5dcb1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmODc2MWU0YzlkMDdjYmRjMWJhZmZmODkyOGFkZjIxZDc1ZWQ2ZjdkMTZiMjFkMzUzOGNlNzQ4OGMwNDYxZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNTA2NTA2MGRmYjJlN2YxMmM5MzFjNGJhNDJhZmU3Zjc2NzcwNWZlM2Y2YjhlNmY0ZmRlNzk2N2Y5YTFiYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmMGJkN2Y4MjEyMjcwNzNkMzIwYjQ0MjY4NmFjN2Q4Y2QxMGM3MjVmMGU1YzBlM2I2ZjI2ZWY4OGY4Yzk5MzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMGM3Mzk0MWI4ZjBjYmU0YmRjODNhOTNkMzI5NGE0NzUxOGZmYjdiNzBjMTY4MTU4ZTAyMzhmOGE0ODY2YWYifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L151-L187",
+          "version": "repo-lines-v1:sha256:671e5f02a74947cc8131adf809f42d94afc30f4cd0e2f785a9610d7a3e83de02:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4MjJhM2EzZDNmMjkzZjhmYjA3YTA0ZTBkYjBmMzgwYWMyYzdlMGFiYmMyZDQ0ZDUzODVjN2JiNGIyZTVkZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YWFlMDM3N2Y3MmRiOTIwMWViNzRhY2MxZWU2NzYzNThlMTExZWE0Yzc3YjFiODJjNzFmNjJhZWZmMDVhMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NmE2YjJiMTJjY2MyNDY4ZDZkOWE3MjI2ODJlMmMwNzI5NGY0ZmE4NjA1M2RlNTI0NmYyOWNiOTk5NjFhNWYifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L201-L240",
+          "version": "repo-lines-v1:sha256:64fbcec013e8a0be818c63d4b547498797ee40aa1b5de6163b6b5c0d4142a873:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNjQ4M2FiM2VjYmMzYTljMzJkZjczZDAyZmNlOWI5NzlmMzkzYjgxYTJkNWU3ZGViOTFjY2ZjODk4ODlkMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1YzhkNTE5MDBmM2ZiOWNlMzhiZWMzNDU3NzZjZWY4N2JlMTg3MzI2ZjM3NjgzYzVjZmEyNzcwMWY4ODliYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkMDI2MWQwY2ZlY2MxYmFiNWQ1MTRmNzNkNzI0N2NhOGI0YzMwNDNlMWRjYTFjMTlkOGY3YzhjY2I2NDg5NmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46582d657ffc4c6881c2e214619e0b3f",
+      "statement": "store.CompletePairing performs validation and consumption atomically in one SQLite transaction: a conditional UPDATE consumes the secret only if it exists, is unconsumed, and unexpired, then inserts the paired device and links the secret to it; the write-first statement ordering avoids WAL-mode SQLITE_BUSY on lock upgrade, and all invalid-secret causes return the same ok=false to prevent status oracle probing.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L60-L64",
+          "version": "repo-lines-v1:sha256:1062a0a781e22924492d36eb9793d2e10a8626237de70366616871b41723b64e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdhMTM1OWE4OGM1N2MzYzQwYzQxZmY2ZWVjYTk3NGE0ODc3NmQyY2RhNzg3M2Q0OGE4YTc4ODQxMDE3YzVhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI1MDY1MDYwZGZiMmU3ZjEyYzkzMWM0YmE0MmFmZTdmNzY3NzA1ZmUzZjZiOGU2ZjRmZGU3OTY3ZjlhMWJiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgyMGRlYzhhZGQ5OTVkZmIyMTYyNjllMDk2ODBkNDg4OGU2ODkwNzc2M2E2Y2FjNjgzNzNkNTBhMTgyYzIyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjMwYzczOTQxYjhmMGNiZTRiZGM4M2E5M2QzMjk0YTQ3NTE4ZmZiN2I3MGMxNjgxNThlMDIzOGY4YTQ4NjZhZiJ9"
+        },
+        {
+          "resource": "repo://internal/store/pairing.go#L44-L80",
+          "version": "repo-lines-v1:sha256:a1dfc157d2fbc9fa1c3dbc9eb90ee6642e601f718b55bf13560c7b46939871e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwODdhZWI3YmUyNmY1OGM3OGQyNjcxOTU2YTcyNmQ3YjY5ZjcwNDM5MmUwNDEwOTFiMmM1ODE0MzI2MTZkZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzA3NmM1NGU4M2VkMDhjNmY5OWU1YmJiOTgxNjZmNmRiOGI1MTY1NDVlNjdkOGM4NjIxOGY2NDUwYjc5YzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZDViZGQzNTFlNWFiYjg5ZjFmMDM0MTY3ZmRiNmU4NDA1NmYxNTg0MzlhYWI0YTlhNDM5MjAzYTA1YTY1NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5MDQwY2EwM2ZmOGI4ZjRlODlhMzYxNWFmNzU5MTdlMTNlYzBmMzI4ZDlkYTI2ODRlNzQxZmFlNTJiNzYzYWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b828262b1b7423986da15648f34a792",
+      "statement": "Every endpoint except /v1/pair requires Authorization Bearer; lanauth.Authenticate returns a three-state result mapped by the HTTP layer: AuthStatusMissing (absent/unknown token or DB error) to 401 unauthorized, AuthStatusRevoked to 401 revoked (distinct so the client can prompt re-pairing), AuthStatusOK touches last_seen_at_ms and the request proceeds.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L74-L79",
+          "version": "repo-lines-v1:sha256:5837b29f4e714511f47d2d067ffe7d5f57b0551481d8b395a7b505ee0ce4982e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUyZDNhMGI1YjYyZmQxMDA5NWZiZGFlOGQ1YTlhYTI0ZWRjMjU5OGFiYTg4YmVlNTk3ZTJhZjdiNGZmMjg4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmRlMzIzYmU4NDliMWY1MTJjYmU2NzNhOTk0MTFlODA4M2JhMWJkNGFiN2JhOGIwZDcwMGUwZDNlODZhOGM4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGFmZjgyYjRmMDk3NDNiNmE4ZjE2M2MwMTVjMTMyOGIyMGY3NDNiYjg2ODlkYmRlNjdiN2U4ZGIzYzM0ZmNkYSJ9"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L94-L128",
+          "version": "repo-lines-v1:sha256:e5b88010057395e3729055fddfa7df7767c415c79b2e2ce04b0c48d2550ccc7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZGViNjYxMDRmZGMwNTkwZDUzMWM4MjI0NzAwOGY0YmM4MzViMjFlMmQ2MGNjZmU4MDQzMWQwMzE5NDQ2ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMGUyMzBkZDc2NGQxZTBkMjExOTg0NjBmOTdkYzgxNjZlMTY1YzYxMDNjZmUzZmZhYzY4MjY1ODZmMTBhODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzYzhjODdlNTc4NGY3YmM2ZDRhNTJkNTQ5YTdkZjQ3MGY5MmExNGNiYTdkNzkxNWI5ZWFjZWM5M2Y2NjUxNzEifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L242-L272",
+          "version": "repo-lines-v1:sha256:40478261a7e247de7b44d1416e5ec04eb7486f50464883d3d2f0b72b1b258e92:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3Mjc0MmIxZjk0ZWRjZGI1MTBmZmU1ODE3ODdlNzY0NGNhM2M4OGFkZmEyOTQxMmM2OGNkMzdiMDQwZGRlNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5NWQyMGI4YTM2OWJmZmU1ZTBlYmJiYTdlMTBiMGIxMzYzOGVkZjQxNTdjNjExNzgzMTEzNTNjNDY3NzU2OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNzE4NGYyNjc0Y2E0NDQ5Yzg0ZjFiMTM4YjcyN2FmOWNkM2RlMmQ3OGJiNzFmZDY4MDQ1OWU4ZjU2ODU5YTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca459d51acc341b2964159004b799b13",
+      "statement": "The daemon enforces token-bucket rate limits: per-device reads 5 req/s burst 10, per-device writes 1 req/s burst 3, and per-IP 1 req/s burst 20 covering /v1/pair and all unauthenticated/revoked (401) responses; exceeded limits return 429 rate_limited with Retry-After: 1.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L80-L129",
+          "version": "repo-lines-v1:sha256:d8bf712a5f8b646428c3435c963b7b5804a19cf1f0a41804696fdca91ddb6313:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmN2VmYjAwMGRlODIzMjg3Yzk0ZjUwODQ0MDUyOWZhYzZmOWVlYzBiZWNjMTQzNWY1MWI2YTQwZmM1ZWM5OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YTliNWU5MDE5YzhkYjg3ODNlYzljM2ZlYmIwYTJjOTg2MmY2MWEwNWMzMDhmZTg5NWU0YTliZWQwM2VkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzNzdhM2FjOGM4YzY2YzVkYzQxZjFjOWYzN2I0NTU1YmZhODgxMWQ5NmI2MDRkODZmN2JmZDk0M2YzMGM5ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0OGM1NzM2NzU3M2FkOGViOGJlNzdkMDJkZjVmNzgwYTEwNmUyYzJjZDI2ZGQ1MWRjMDAwYWMwY2FlYzc5ZDAifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/rate_limit.go#L12-L44",
+          "version": "repo-lines-v1:sha256:c2561d3963bf7ae0cbb5bacf8e330aca05073872665c23acdb3bae20bd679b96:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjYxYjIyOTlhZjEwYmM4ZDFkODIzNjc4NjgwMGFmZWI0MDM0NWI2YTQxMWM3ZGViMDE0OGE2NzM5MTU0ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1OWUxM2FiOTFlMjk1ZDg3NWEyNjY5ZmZmZDcxNDRmZGVjNTg4MDBlOTJlZmYyYTJkZmE4ZGQ0ZWM5MDJhMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhM2M2ZjhhZDQ4OGFhOTZlZjg0NzRiOWI0Y2VkYTU3ODUzZDZjODNlMDYwZjUwYTU2MjdhNjViZDI2Y2FhOWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_346974603d1744c3a1f0beb3cf3a7b61",
+      "statement": "The daemon runs enforceClientVersion before all other handling on every path including /v1/pair: an X-Herdr-Connect-Client-Version header below MinSupportedClientVersion (1) yields 426 client_outdated, while a missing header is allowed through for curl and health probes. Conversely the mobile client checks the daemon's api_version against MIN_SUPPORTED_DAEMON_API_VERSION (1) and enters a terminal daemon_outdated state if too old.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/agent-contract.ts#L31-L35",
+          "version": "repo-lines-v1:sha256:1d5090576a9929502936562658dc645f2a93255d97b548416082e8d26e5756ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjg4ZWM1OTA5YmNhNThiYmJmMjc2ZjdjOTEwMmYzMmQ5NTlmNWRkOWQzM2M1MDMzNjQ3ZDYwMzVhZjg5MTM4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMyZGFiYzQyZjY3ZTA1MmZjMjAzODgwOTcwZDY5OWVmYjA4NTNiMGJhNmY2YzIwYjdlNzM0YjBjNzIxMzViYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU0NmY1NDkwOTZlNWFhM2ZhNTRlODYyZmY1ZDQzM2Q4ZWU4MGNmNzA5OTIyZDdmZjEzMjE5OGVkY2U0NTdkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzY3ODE2YWU2NjcwNTZlOTIzNzBkMTVhZGRhY2M0OTdmZjk5MDBiODMyMGQ3ODU0MzIwMTJhYzUwYjFkNGRlNiJ9"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L33-L66",
+          "version": "repo-lines-v1:sha256:5ac0f7843ea09a4c8a36cc1aa2477f8c9812188cb64bd9358e440ef445f14ea1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5MTczMTQwNWMyNWE4MzgxYTE2N2YxZTNiNTJjNDczOTFhMzBkOTA3MGVhNDg0MjJjYjczZmFiNWQ1ZWM4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMjVmYWFiMmFmZjIzMjIzY2IzZWFkYTBjZjkxZTg1NGJiZjgzOTFmZDJmMGE1NTBjODA0YTBhMTM5NDU3ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmOTE4YWI0ZGRiOGNlMzA1YjljN2VkZTZlZmMyYzVkZDVlODAxMTM4MjA3MDEzZWU0ODc0NmE0MTg1M2IwYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d972b84a144427a99c5452dfed8b98b",
+      "statement": "Devices are revoked host-side via herdr-connect devices revoke (setting revoked_at_ms) or self-revoked by the device via DELETE /v1/device (handleSelfRevoke), where deviceID is derived from the bearer token so a device can only revoke itself; both paths share lanauth.RevokeDevice and subsequent requests with that token receive 401 revoked.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L74-L79",
+          "version": "repo-lines-v1:sha256:5837b29f4e714511f47d2d067ffe7d5f57b0551481d8b395a7b505ee0ce4982e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUyZDNhMGI1YjYyZmQxMDA5NWZiZGFlOGQ1YTlhYTI0ZWRjMjU5OGFiYTg4YmVlNTk3ZTJhZjdiNGZmMjg4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmRlMzIzYmU4NDliMWY1MTJjYmU2NzNhOTk0MTFlODA4M2JhMWJkNGFiN2JhOGIwZDcwMGUwZDNlODZhOGM4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGFmZjgyYjRmMDk3NDNiNmE4ZjE2M2MwMTVjMTMyOGIyMGY3NDNiYjg2ODlkYmRlNjdiN2U4ZGIzYzM0ZmNkYSJ9"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L122-L149",
+          "version": "repo-lines-v1:sha256:8b55ed4b91be8f058a792d2c46ce3a01e95e772d1c7b613c379b18caff91e8ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyOTIyMDhhMmZjNDc4Mjk1Zjc4OGZjYWYzY2Y1ZmY1YjRhOTQyMTVlZGI5MDZhMzc3NDIyMDE2ODQ2ZDcxMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNjMwOWM0MWU4YmEyYWRjMWM1NmMwZmJmYWI3NTk2MWY2MDYwNmQyOWM2M2ZjMDNmZTBjOWNhYTViMjRkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2NzI3Y2M5MjJhZTJhY2Y2ZjQ2ZDRlNjc2NGNmOWJmY2M1NTg0ZThhOWYzZjIxNDU4MTI0NTg5NjI1ODVmYjAifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L274-L276",
+          "version": "repo-lines-v1:sha256:1508ab8e9cb118d5ba790d57cb4ee984bd6f5e860dd946450adbf54f4c5da0f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAyZTFiZTEzNDk3YTZjMzkxNWY0ODkwM2M2NTdlNGNkYzQ1NTMwOTI1OTJhOWNiMTBkOWQ2MGNiYjlmZjg1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjg2YzJkMzhmMGVhZmM5YmNjNjgwZGZiOWJlYjEyOWJlMDVmZTM3YjAyMmM1ZjkyYTJmNGIyODRkNGMzNzEwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDRlNmViYWQ3OTIyY2I4ZWZlM2E4NjIzNTVjNGMyNzFjZTZiNzI1MzBiN2QzMDAzYjA0Yjc3ZTg4MTYxNTJhNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_abeb07c055764026bdd45539753ac18a",
+      "statement": "The internal/lanauth package owns all LAN security logic (certificate identity, secret/token lifecycle, revocation) without depending on net/http; HTTP route mapping, status codes, and rate limiting live in internal/demolan.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L68-L80",
+          "version": "repo-lines-v1:sha256:5d017de69353ded86892ca019840953f568ba1eb0ea3458dea522c31bf921f50:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YWUzZDhhYmVkNmJhZWU4NzhlMDc4OTRjODBiOWEyNDJlYjU0OWFkZjcxZjI0YzE0YTE2MjM3MmIyM2FkZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmN2VmYjAwMGRlODIzMjg3Yzk0ZjUwODQ0MDUyOWZhYzZmOWVlYzBiZWNjMTQzNWY1MWI2YTQwZmM1ZWM5OGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNWZmMTI0OGM0OTY4Mzc3NjgwODhmODgxOTAyYTc1NDRjMGIzYTliZWNjOTE0MzU1YThlY2QwZWU0YzExYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNmEzZDcwMmM2YjgwY2M4ODc0YTYwMTRkNGU5YzMyZTE0YmM1MzY0Yjk5MWQ4ZGI3Mzg1Y2Q0ODg0MmIzYWMifQ"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go#L1-L5",
+          "version": "repo-lines-v1:sha256:5a56ebd43c0c4df8ee1898feec3e3c03707cd09d2ecae01157d301450b279f95:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTVmOTc5YTc2N2JiMmNhYWE2NWNjNTc2MzlhMmQ1MmVjMzc2YjU0MzcwZmZiZjFmY2I5Y2Q2MzE1NDY4YzdhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzg3Y2Y0MDBlZjU3Y2QyNWUxNDAyMjdiYmEyMzkzMzIzNGUzMjAxZTgzNzgzOWJiMmM2MDQzY2U4YTNlZDNjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzJjOTRkNmVjOTQ2NjFjNjY2NTY5ZmJmMzJjMTE3YmQxZWUwNjU1MTRiZjUyN2JmNGM3OWZlOWM2N2I2OGRmNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fcf7abc9825c4254bdf60f8d43569a2a",
+      "statement": "Pairing data lives in paired_devices and pairing_secrets tables (token_hash and secret_hash stored as SHA-256 BLOBs, secrets carry created/expires/consumed timestamps and a device link), separate from the schema v1 devices/device_cursors tables reserved for the future HPKE relay milestone.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L80-L94",
+          "version": "repo-lines-v1:sha256:825c8d30ad1ea7d96dad98a084f9e3f52acd35a7db5c67561ed0342fd9dff165:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZmQxYWY5MTQ0NjhhMjM5ZjJjNDY3YzU3N2FjODg0ZTVmZmM5YmE4MWYzOGU0OWQxN2Y1MWM0ZGQ5Zjc5ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YTUyNzRjODMwNThlZDdhZThmNTM5M2M0ODhiNDY0ODViOTk3NGM2MjVlNWRiNWZiMDkyZjBiYTE5ZTNiMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzYzgxZDQ0YWFiZDhmZDAyZDc4MmY5NGExZTNjZjFkYTkzNzM1YmI0MGYzYWNmYTVhMDU3MTU2ZTY5MmRmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3NzRhMjdiY2Y0MGRlYTY3YWEwY2YxNjlkYzVjYTA3Njk4MDNhOWMyN2YyZTQ3NDljNjRkMzFhNDk3ZWExMzcifQ"
+        },
+        {
+          "resource": "repo://internal/store/pairing.go#L10-L42",
+          "version": "repo-lines-v1:sha256:2332d02727dbb8dc107dbf484709426daf1a6ec1e568d1331100ff398cfce0b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYzY1ZWJiYjIzYzU1ODU5ZTlhZmE4MmIxYzg3Y2JkYzZhNjRhMDE3ZGVjYzUyNzdiZDc4ZDk4ZjM2MmVkZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZWRkNzJiYTZiNDAwODNjZTk1MjY5ZmE1NmZjZjNhYzFiZDk4MjIxYWE2NjIxYTY4M2Y3ZDU2MzJiYjIxZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYzc0ZTJkMzZmZGY1YzFiYzk0OGQxZmM5ZDE2ZWY1NjhiZTNiOWYwODFiNDUzYzAxNWFiMzE0ZTAwZGIxOTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ab9587e91234bbd932e1350b7a376d2",
+      "statement": "The future E2EE protocol (packages/protocol, mirrored in Go at protocol/protocol.go) uses the single cipher suite HPKE-X25519-HKDF-SHA256-CHACHA20POLY1305+Ed25519 with per-message HPKE encryption, Ed25519 signatures over a domain-separated envelope, event-sequence replay protection, TTL enforcement, a 256 KiB max plaintext, and structured error codes — but it is not integrated into the LAN transport.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L22-L26",
+          "version": "repo-lines-v1:sha256:44f3fa69669af2941e7a4633d8f43a81e0141770beabee9e088e3a39825dc9df:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY5MGNiNGVmMzJjOWFhZTViMTQzM2EwZTIzMjQ5OThmYzlkYzMzYWVjYzgzNWY3NGFlMTBjNzZjZGIzZDEzOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODNhNWRiMGRhZDUwMzU4ZWE3NDNlM2YyZDMzZGQzODVlNTJmMzM1OGVjZTMzYTFlOTAwNGVjZTc5MzRmM2QwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODhjYTk5ZGNlMGFiMDJmNmY0NWMxNDIzNTBlZjgxZGE0ZGJlMzJiZDVkNDUzNThkMDExNzU0ODVlMDgwNDljMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjIyZWQ5ODg3Y2RhMzNlZTliN2Q2ZGNjYzhkMmE1ZTZiOGI1ZjhlZTAyMjJiODQ4ZGY1MjNmYzBjMTI2OGY0OSJ9"
+        },
+        {
+          "resource": "repo://protocol/protocol.go#L19-L35",
+          "version": "repo-lines-v1:sha256:5cabdaba926a8dd6a59a2527a649da77991a001596cdd2afefcb5f7fd26422b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMWJkYTgzZWU3N2M0OGIwOWUyZDU5MGYxMTY3NWY1ZGYzNWIzNDgxZWYyNzA3MmZjNjZkMzU0YjYwMGNkN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmM2Y1NGMyYWNmMjM4MzQ3NDM0OGJhNmQ0N2NkYjRmYjBmODhjNjUxNTUyNjVmODJlOGQ2Y2I0NzMwMDAwOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NDgzY2VkZDkwOGIwN2RiMWIyNmFjZTkxYTNmY2RlYzk4M2MyOGU5N2VlOTIwZTFkZGE3MjU3YTQyYTIzZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6c6795f467714323bfb55e1f0f90d18d",
+      "statement": "The LAN transport intentionally mirrors Protocol v1's pairing model (stable installation identity + revocable per-device credential) with different primitives: self-signed ECDSA cert fingerprint instead of Ed25519/X25519 identity, bearer tokens instead of keypair grants, and QR one-time secret instead of out-of-band identity exchange — shaping the storage/CLI seams for a future migration, though no forward compatibility is promised and devices may need to re-pair.",
+      "evidence": [
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md#L80-L99",
+          "version": "repo-lines-v1:sha256:8e404aa5931ce487c050bf3ad809af768566ea454b59cc7fb65624c3f0f5f075:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZmQxYWY5MTQ0NjhhMjM5ZjJjNDY3YzU3N2FjODg0ZTVmZmM5YmE4MWYzOGU0OWQxN2Y1MWM0ZGQ5Zjc5ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZTAzNDZjNzE0OWM4Yjc3Y2Y5MDA0MGM0YzQ3NjgzNjNjN2E1ZTQ1ZTU3YzdlODFkMGU3MWI0ZWY0ZDNkNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzYzgxZDQ0YWFiZDhmZDAyZDc4MmY5NGExZTNjZjFkYTkzNzM1YmI0MGYzYWNmYTVhMDU3MTU2ZTY5MmRmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZDY0MTY4Njg0N2QyYmNjZjAxZjM3NmY0MzAxM2NlMDE4N2E4MjMxMWY3NTVkYzY0OTk2NmJiZGU0ZTU3NzEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

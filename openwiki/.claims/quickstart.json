@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a26075884fbdcd744edda61553c501a8165b1729bc1e87848065ae36302334fe",
+  "claims": [
+    {
+      "id": "claim_c9a672843b8d44969adfae50c7571c02",
+      "statement": "Herdr Connect consists of three components: a Go daemon that talks to the Herdr CLI, maintains an agent-state projection, serves a bearer-token HTTPS API, and advertises via Bonjour/mDNS; an iOS React Native client; and a research-phase protocol package for future E2EE.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:8913931edb72457d0b98b1236414ccbedc5a034593c9fce5645f718679884aad"
+        },
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:70806d5d5cfbda469f69c7cb2a3b733471814b67e3475969d3cc7a1d5dbac144"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e4b4a23ce4b4baa91c68c5c3ca4d5ee",
+      "statement": "All LAN communication is secured with TLS using a self-signed certificate with SHA-256 fingerprint pinning, and authenticated with per-device bearer tokens obtained through a QR-code pairing flow; there is no E2EE layer yet.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:70806d5d5cfbda469f69c7cb2a3b733471814b67e3475969d3cc7a1d5dbac144"
+        },
+        {
+          "resource": "repo://docs/security/lan-tls-pairing.md",
+          "version": "repo-file-v1:sha256:c6e9c8b7def2e8fd9c598f6eb3d03bd065b68a80b8fd4df2f320243646ee8152"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a4246cf852c480ba792f05d463015cc",
+      "statement": "An Android release workflow exists in the repository but only triggers via workflow_dispatch with an existing release tag, because the release keystore signing secrets (e.g. ANDROID_KEYSTORE_BASE64) are not yet configured; tag-triggered automation is disabled and the pipeline is dormant.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/android-release.yml#L3-L7",
+          "version": "repo-lines-v1:sha256:911dc1328f1e5c822340926361546301440f7451dfde10c78dff1c978b2c44c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZmE3M2YwNzA0ODlkOTcyNGEwMjlkZmI1MDJhYTA4ODUwN2QwODU3OWJiYmNjOTRlZDkzNWMxYTA1MzMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTJlMWUyNzc2ODFlNGM2NDU1YzBlODcwMmUxMzcwN2Q5OTNiNzMzMGY5NGJhMDQ2MGM2YTQ2NjBhYWY5ZTZkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYzOTIwYThjZjk4ZDQ4ZGUzOWQxZDIwZmRmMjgwNGU3M2E4M2FlZjAyYjcyYmE1YjgzM2IzOWU5Y2JhZjQxYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6dd9781a58af43efbb483bfcd7dc6c52",
+      "statement": "The App Store screenshot pipeline (`pnpm screenshots`) generates English and Simplified Chinese iPhone/iPad screenshot sets from fixture data driven through two simulators, using `asc screenshots run` and AXe, without connecting to a real daemon or writing real pairing credentials; raw images go to apps/mobile/build/screenshots/raw/ and marketing frames to apps/mobile/build/screenshots/marketing/.",
+      "evidence": [
+        {
+          "resource": "repo://docs/maintainers/releasing.md#L39-L53",
+          "version": "repo-lines-v1:sha256:ed5e3eed321c4ca2535bc6c595d66cb56220d83cd98e8f0396b919bb38c81793:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNDM0Y2RjOTVkODhiOTc0OWM2NjA1YWNhNGM1OWM2OGQ3NDJhYzljOTNhN2M1YTEyMGY0NWUyYTQyMzc0MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNDBjOGJiZGFkNTc3ODU4Y2IwMjMxZTM4MWRlMjYzN2VmNjMzNGI2MjhiMDJhOGFlYjE0MTM2MWIzOGIzNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1YTE0MGNlYzFlODM0NjFiZjJkN2ZjMjQ4N2IwNjQ1NDVlMDc2MmYxODVjNjhmNjcyMTc4OGU5ZTExYWQ0M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1N2JhMjA2YzBlYjFkMTM5YmQxNzI2MjhmZmU5NjczNzgyM2EyYjVkNWYwOGJiYzQxY2RhOWYyNDhhNTY5NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_59d8e6e14d424e1dafdd69be7398a190",
+      "statement": "The daemon communicates with Herdr only through its CLI interface, parsing JSON output to track agents, without embedding or linking Herdr source code.",
+      "evidence": [
+        {
+          "resource": "repo://README.md",
+          "version": "repo-file-v1:sha256:70806d5d5cfbda469f69c7cb2a3b733471814b67e3475969d3cc7a1d5dbac144"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec11fa99feba40798455b8395ec17132",
+      "statement": "End-to-end encryption, remote relay connections outside the LAN, and remote push notifications (APNs/Expo Push) are future milestones, not implemented features.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L79-L86",
+          "version": "repo-lines-v1:sha256:2a29999fab7ba680a1b85a9acbe633007d29c415ef477f6410c4713238b9338a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM2MjVjYWJkMjBjZGNiYzcxYjUwNGZmODk2Njk0ZTA2ZTMwZDdiYmEwZjE4ODI2YjE0MGEyYmVkYmQ3YzUxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzU1ODU5NDVhZTgwY2U0ZjlhMTUwM2U1NDNhMTlhMzczYzMxNDZhOThhMTFlMDEzZDBkMDk3YjM3NDdhZWZjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGUxYzFjY2U4YzUyNWJkOTBkYjcyZmZiNDkyOTUxMjdmMjM3YTlkNTc3MDk3MzA0OWU1YzAxYTAxZjk5ZmIwYiJ9"
+        },
+        {
+          "resource": "repo://docs/protocol/v1.md",
+          "version": "repo-file-v1:sha256:939739a963bba45280da07a485c69e89217277fee5cb45a408ff472fff416725"
+        }
+      ]
+    },
+    {
+      "id": "claim_93f9d183bd2943a59d0fae959520e4b2",
+      "statement": "The project's domain language, defined in CONTEXT.md, uses owner, installation, device, and Agent as canonical terms (avoiding user, account, pane, terminal), and LAN discovery establishes reachability only, not trust or agent permissions.",
+      "evidence": [
+        {
+          "resource": "repo://CONTEXT.md",
+          "version": "repo-file-v1:sha256:8913931edb72457d0b98b1236414ccbedc5a034593c9fce5645f718679884aad"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

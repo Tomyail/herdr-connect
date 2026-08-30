@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:11e1a40d2e8f2d813bf7b004c710581b3e7337a876463e99820d6f0a7ca6cf30",
+  "claims": [
+    {
+      "id": "claim_a9bc93cd14aa4879921d86b4f1adb25c",
+      "statement": "The repository is a pnpm monorepo whose workspace includes apps/* (mobile app) and packages/* (protocol package), with the pnpm version pinned as packageManager pnpm@10.34.5 in the root package.json.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L1-L5",
+          "version": "repo-lines-v1:sha256:0d668a3b85e1b3fa4a41edae66822e085f05c405bd8c65f76b2de10ee9cab7fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZmYjA4ZmRhMWFjYjk1N2I2MTE2YmQzNzgxMWExZmU0MWEwMTYxMWMwNjMxZWRiZjc4NmQ2ODg5YTI3YTU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4MzNkNTk0OWMwM2E0MGNhOTUyNDkxNjEwYTY2NTk2NDRiM2FhNDY2MzYyZjc5OTAyMGRiZjE5ODE1NDdkYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzkzYmM1NzhmYzg0NWIxN2JkOGFhZDE1NDE0MjNiYWQ1MWI2ZjRlY2JlNzliY2RlOWY3OGJhMGVlYzljODkxOCJ9"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml",
+          "version": "repo-file-v1:sha256:08d75840c97ab0e72d1d9b5b84a17e47a2e06cb159a5fbec5ee0a6a56682dad7"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6084b364008499086bd18c885b4a6d6",
+      "statement": "The `pnpm demo:lan` root script runs the Go daemon from source via `go run ./cmd/herdr-connect --source herdr demo-lan`.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L6-L6",
+          "version": "repo-lines-v1:sha256:d207c13f0ac2d01554229ff4c9b1d5ca5bb700604fd0e0c08dcd0d9b0ba77f26:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwN2MxM2YwYWMyZDAxNTU0MjI5ZmY0YzliMWQ1Y2E1YmI3MDA2MDRmZDBlMGMwOGRjZDBkOWIwYmE3N2YyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDIwN2MxM2YwYWMyZDAxNTU0MjI5ZmY0YzliMWQ1Y2E1YmI3MDA2MDRmZDBlMGMwOGRjZDBkOWIwYmE3N2YyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRiYzQyODY1NDYyMmViMGIyOTk2MzlkZjJmNzg5ZjhkYzVjZWQ3ZTc2MmE3NWQ2NGVkMTVkNjJlMWNmNDc1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTljY2Y4ZGE3MzNhZDdjNmIyMmI2Y2FlMThiNTkxZGFmN2NlMWU0OTdkNmMzMGVhNDJmNTdkNDZhMzhkNmExNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_29af024daed2424199eb9ae29b3d741b",
+      "statement": "The `pnpm dev:daemon` and `pnpm trace:daemon` root scripts run the Go daemon/trace commands with `--source fake` and database file ./.data/fake-daemon.db, allowing development without Herdr.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L9-L10",
+          "version": "repo-lines-v1:sha256:17e5e6217402cc9fc7e7438eb974c324006dcca1b7053723198021e814283a04:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg3NDY5YjQxMGJlZWNjMmMzMWRjNDJlNjI5MmIxYjBmNGQ3YmQ2ZDA4Y2ZiZWY3NTBlNzEwMWExNmQ2MDY0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI0NTA0OGU0ZjFlYWUwZmU5ZmM0YzZiMGE1OGZjYzc5YWIwMzBlYTMwY2FjNDg2YmExZTFlNzEyOGQxYjVkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzkzYmM1NzhmYzg0NWIxN2JkOGFhZDE1NDE0MjNiYWQ1MWI2ZjRlY2JlNzliY2RlOWY3OGJhMGVlYzljODkxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTYyMjA5OTg0OGYzMjFjZThmYjhjNGVmZTMwZDc2OGUyNTVlMWU3YzNhZWRmMDBiNjhlNGE0MGViYTA4MzRhMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f75ef4215b3e43c08d90da13db2b4570",
+      "statement": "The demo LAN daemon listens on TCP port 9808 (DefaultAddress \":9808\") and advertises the mDNS service type `_herdr-connect._tcp`.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L20-L31",
+          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49d472b95a85420d9a21197c11ea2d44",
+      "statement": "The demo LAN server serves agent state over HTTPS with endpoints under /v1/agents (focus, history, messages, interrupt suffixes), using herdrsource sources, lanauth identity/bearer-token auth, and SQLite storage.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L15-L31",
+          "version": "repo-lines-v1:sha256:e43ae8ac80976cb6d6b4c707a0697a4fea367f193c33fa55f108f9d474b1b51d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NzI3ZmM1MzMzNWJlOGQ5NWU1MDNmMTUwMGNjY2Y5ZGM4NjkzMTkzZWNkZGFjMzExMGNhMzAyYjU4YTcwZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZGQ0YTNmNGI1YTY2YTM3ZGFjZmYwYzBhOWUyODQzY2VhOWI1ZDU0OTlhYmNjMzlkYzZjMTVjMjcwZjM4NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L75-L80",
+          "version": "repo-lines-v1:sha256:f90311a9e29a05caa9d74a6665696876b7dfd334508fcceda250ab0ca953ff73:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4OTI3OWUzMGQyMDljM2JlNmVmODA1ZjQ3YjQ0NTZkNzk3YTZkMWUzYTM5ZmNiMDhjZmQ2YjI0ODAyMmMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJlMGFlY2ExNjJjOGVhZDdhY2E4YWIxY2Y0NjIyYjA2NmM3ZWQ4M2QxYjNhODE4OTRlZGE0NWE1MDY2NWU2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcwMmIyYzI1ZGQxMDc3YWI2NGYyMjI2NzJjMTdlZTYxNTRmZTA2NDQxMTIyZThmZTc4MDAzZWU3NmVhZGZjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ4ZTMwY2EwZTEyMmM3MGFhMDVhOTBiMDVkMTY5MTg5NGJmNDlhYjMzMWJmZmViOGU4YTk2YjJjM2ZlMWI3ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b913754dbd1745168fa174a1c2d16f0b",
+      "statement": "The demo LAN package includes SSE broadcasting driven by subscriber count, per-device concurrent connection limiting, rate limiting, and a snapshot cache.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/rate_limit.go",
+          "version": "repo-file-v1:sha256:fe4b771c533cd301dcd4b4194bceef4d176cea06e283af8bd0f4034bdf79f86a"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L75-L80",
+          "version": "repo-lines-v1:sha256:f90311a9e29a05caa9d74a6665696876b7dfd334508fcceda250ab0ca953ff73:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY4OTI3OWUzMGQyMDljM2JlNmVmODA1ZjQ3YjQ0NTZkNzk3YTZkMWUzYTM5ZmNiMDhjZmQ2YjI0ODAyMmMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJlMGFlY2ExNjJjOGVhZDdhY2E4YWIxY2Y0NjIyYjA2NmM3ZWQ4M2QxYjNhODE4OTRlZGE0NWE1MDY2NWU2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTcwMmIyYzI1ZGQxMDc3YWI2NGYyMjI2NzJjMTdlZTYxNTRmZTA2NDQxMTIyZThmZTc4MDAzZWU3NmVhZGZjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ4ZTMwY2EwZTEyMmM3MGFhMDVhOTBiMDVkMTY5MTg5NGJmNDlhYjMzMWJmZmViOGU4YTk2YjJjM2ZlMWI3ZCJ9"
+        },
+        {
+          "resource": "repo://internal/demolan/snapshot_cache.go",
+          "version": "repo-file-v1:sha256:afb3bbd1a252701be4c541f4759031e0d2f026eb80f8d5c2e5f2714085d9977c"
+        }
+      ]
+    },
+    {
+      "id": "claim_8786e20a7389470b8cad3e57bac03c98",
+      "statement": "The mobile workspace package @herdr-connect/mobile builds its iOS development client with the `ios` script: expo prebuild for iOS without install, then scripts/strip-push-entitlement.mjs, then expo run:ios --device; `start` runs `expo start --dev-client`.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L6-L8",
+          "version": "repo-lines-v1:sha256:1293af378f915e5a6f0d2683dfa759f6b3b69c6871f0e7c08055498c83e67e92:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4MzNkNTk0OWMwM2E0MGNhOTUyNDkxNjEwYTY2NTk2NDRiM2FhNDY2MzYyZjc5OTAyMGRiZjE5ODE1NDdkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU4YTJiNTEyNTUyOTFhMjkwZjA1NTQyMGZhM2Q0NTU4NDhlMDUwYjhlOTIwY2ZjOWE3YmUzY2IwYzEyZWE5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFiNzc1OWY4MzA4ZDhmM2Y3MzE1YjkwYWQ3ZTEzZGIxZGQ3MDhjYjQzN2ExNjhiMWE0YjE1OTM3ZjlmM2ZhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTEwNTMxZDI5MzRkZjQxMTU2MzZhZjE1OGZiNzE1YTYxYjRkYjFhZGVhOWYyYmJkOTIzZjJmODQ4MmYyMzBhNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9e3ca78e01547cebc313d1c9cab0e21",
+      "statement": "The mobile app is an Expo 56 / React Native 0.85 / React 19 app using local file-module dependencies (pinned-fetch, pinned-stream, screenshot-launch-options) plus expo-camera, expo-notifications, and Bonjour discovery via @dawidzawada/bonjour-zeroconf.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L21-L48",
+          "version": "repo-lines-v1:sha256:a3053cb1e56968ae282e31e6a654a2083784e48363f264d1e76427faf9b576f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2I0NjlkOWUwOTc1NzIyNDY2NjczNGM5ZWY3YjI1NGQ4ODUzNGY1ZDViYjcwOTg5NjA4MDVjNTUzZGMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzA0NDNlMDI3YWRkZmY2ZTY0NWFlMDVjOGMwODJiMTU2Nzg5OWI0OWFkYzZiNmNhMzllNjI5ODQyOWEyMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWVlNDVhNzllMjY1NDFhMTJkYjlmNDc4YTZiMTY1NzI3MTdiZGJjOTVlMGZmZDQ5MTlkM2U2ZDEzY2U2NGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_639a0848c4c94d998a536f2d7af46cf8",
+      "statement": "The Go module github.com/Tomyail/herdr-connect requires Go 1.25.0 and depends on modernc.org/sqlite (CGo-free SQLite), grandcat/zeroconf (mDNS), mdp/qrterminal (QR pairing output), cloudflare/circl, golang.org/x/sync, and golang.org/x/time.",
+      "evidence": [
+        {
+          "resource": "repo://go.mod#L1-L13",
+          "version": "repo-lines-v1:sha256:b07cdae247f0b882c257db64e965cefe4d337ef3c101c94432da9c3cd7cd54ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1NTMzNmFmYWQ2YTFjYjBlZDBkNWM2MDU3ZTZkNzA1ZmYyMGFmYjQ3N2I1ZDJmYTZhNDliMmQxN2I3ZjgxOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYmVkYmQ0YzdlZGQ0ZmQyZmM2NjM4Njc4ZGNmZGFhODI5MjI0NjA0M2U1YzI4OWEzOGQ4OWFhYmUyZDUzM2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95862818c6f547e7b7acc2074027328e",
+      "statement": "The root `pnpm test` script runs the full suite in order: Go tests (go test ./...), protocol package tests, mobile tests, conformance tests, and install-script tests.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L11-L17",
+          "version": "repo-lines-v1:sha256:3b8c09d028ee820f4bcc060dd0258ef2d0fdb219b5c715182e8e52843ea0b56f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IxZDUzZmJiNGJjYjlhZjFlYzQ1ZmQ3MDQ0OTFlYzc3ZGM5ZjY0MmZlZjY0ZmNjYmY1NmYyODU3MjMyYjQwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJjZDE1YzYwMjk5MGE1YzE3ZTJmZTU2MTc4NzAwNzg3MTg2N2NiYTMwZmQ2ZjA3NTQwYTJmZDA1NmUxODczOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg1MjA5ZjEyMTI5Y2M4ZjgxOWEwMWI2YWY3Y2QwMmJiNDJiNmI1ODFkZWI4MjAzNWI1MGM3N2IxYThjNWZmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQ5NGEyYjJjNDY1YjlhYzY4NDI3Mjg5MDRlNjMxZmU3OGQ5MTdhNzQzZTMyNmY1ODAxZmE5YTIzYjYxZWUxOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4620537fe68c4f3fb3f83c395eda1a1d",
+      "statement": "Conformance tests first build the @herdr-connect/protocol workspace package, then run test/conformance.test.mjs with node --test.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L11-L11",
+          "version": "repo-lines-v1:sha256:7b1d53fbb4bcb9af1ec45fd704491ec77dc9f642fef64fccbf56f2857232b404:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IxZDUzZmJiNGJjYjlhZjFlYzQ1ZmQ3MDQ0OTFlYzc3ZGM5ZjY0MmZlZjY0ZmNjYmY1NmYyODU3MjMyYjQwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IxZDUzZmJiNGJjYjlhZjFlYzQ1ZmQ3MDQ0OTFlYzc3ZGM5ZjY0MmZlZjY0ZmNjYmY1NmYyODU3MjMyYjQwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg1MjA5ZjEyMTI5Y2M4ZjgxOWEwMWI2YWY3Y2QwMmJiNDJiNmI1ODFkZWI4MjAzNWI1MGM3N2IxYThjNWZmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMxZTJmODcxNTM2N2YzNTIzYzJhYTI1YTQ1ZTFiOGFiYmY5MTg5Nzc5NjIzYjY4OGI4MDY4NzNlOWQ0NDRmNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fd8db5ce893460082d3160255b65e17",
+      "statement": "Root scripts `dev:mobile` and `ios:mobile` delegate to the @herdr-connect/mobile workspace via pnpm --filter.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L7-L8",
+          "version": "repo-lines-v1:sha256:82ea7079459a4e0a1fcaa7258345c4f60ab6b1d3d6e2b4427dbc58c0c1c87eff:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM1YzZmMzE1MzA0ODFmYThhM2E5MzM4YzVlYmRjN2NhZmJkYWNmZWYyZjBkZGEzNTA4YWIxNjg1NGE2ZTQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYyMDM4ZWUxMjRjMGY5YTdmNWJkNjNjNThmNGZkNDc3YjQ1YjE0YzUzZjY2YjQwYWE0OGQzMjZiNGRhM2FlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU2OTg3NjA1NjZkNmVlZDJjN2ZlMDI3M2Y4NTJkZGJhMDU3NGZhZjMzNGZlZDEwZGEwNzY2MmZjMjlhNmRjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJhZWNiYzQzNDE2NjZkMDZjN2M3MTJlZTdjMmY5YzM1YWQxOTJkZTIwOWI4YWI3MGU2NmFiMmFlMzI0MGE4YSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

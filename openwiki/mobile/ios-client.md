@@ -1,14 +1,60 @@
 ---
-type: Component Documentation
-title: iOS Mobile Client
-description: React Native iOS app structure, discovery flow, and agent interaction patterns
-tags: [mobile, ios, react-native, expo, discovery, bonjour]
-resource: /apps/mobile
+type: "Reference"
+title: "iOS Mobile Client"
+openwiki_generated: true
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T21:43:29.677Z
+sources:
+  - id: openwiki-source-a6ba9053969a3e00cd971742
+    resource: repo://apps/mobile/app.config.ts
+  - id: openwiki-source-995bb1cd56a296e6ac7f3df8
+    resource: repo://apps/mobile/modules/pinned-fetch/ios/PinnedTrustEvaluator.swift
+  - id: openwiki-source-8caa1ed5da285a5ed12f3882
+    resource: repo://apps/mobile/modules/pinned-stream/ios/PinnedStreamModule.swift
+  - id: openwiki-source-a04d6c803675fbfe778f6010
+    resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
+  - id: openwiki-source-b57c14e2289bd72ec98a37db
+    resource: repo://apps/mobile/src/agent-favorites-storage.ts
+  - id: openwiki-source-38b1150eee85f40b715de4da
+    resource: repo://apps/mobile/src/agent-favorites.ts
+  - id: openwiki-source-499f916017f3cb05929bdb42
+    resource: repo://apps/mobile/src/App.tsx
+  - id: openwiki-source-43d4f42f412969cc052e9370
+    resource: repo://apps/mobile/src/connection-session.ts
+  - id: openwiki-source-58d41289f518ea53048b32fe
+    resource: repo://apps/mobile/src/connection.tsx
+  - id: openwiki-source-73bcd9523bd31ff199d48ce0
+    resource: repo://apps/mobile/src/credentials.ts
+  - id: openwiki-source-1c00c5e46276a4db0e941f92
+    resource: repo://apps/mobile/src/discovery-match.ts
+  - id: openwiki-source-2da2051c8302a8d6fdfd2aca
+    resource: repo://apps/mobile/src/host-fallback.ts
+  - id: openwiki-source-c890f5c82333113835480c0a
+    resource: repo://apps/mobile/src/i18n/I18nContext.tsx
+  - id: openwiki-source-ba3c1aaf102f6f4307cebe0e
+    resource: repo://apps/mobile/src/instance-alias.ts
+  - id: openwiki-source-e22812b6232342b6874f6df8
+    resource: repo://apps/mobile/src/instance-revocation.ts
+  - id: openwiki-source-9956f6026b75bdd26e6a59cd
+    resource: repo://apps/mobile/src/instance-ui-state.ts
+  - id: openwiki-source-406614178af5130c2df52f4d
+    resource: repo://apps/mobile/src/keychain-write-plan.ts
+  - id: openwiki-source-6e1c70c12c16082f95e5339f
+    resource: repo://apps/mobile/src/layout.ts
+  - id: openwiki-source-87dcad706e8b16dc2215dbbd
+    resource: repo://apps/mobile/src/paired-instances.ts
+  - id: openwiki-source-7207eb989e1e3e7ccc0ce4dc
+    resource: repo://apps/mobile/src/pairing.ts
+  - id: openwiki-source-e6a02cada834f505385d247c
+    resource: repo://apps/mobile/src/session-registry.ts
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 ---
+
 
 # iOS Mobile Client
 
-The iOS client (`/apps/mobile/`) is a React Native application that pairs with the Herdr Connect daemon via QR code, discovers the daemon via Bonjour, displays agent state, and interacts with agents (view output, switch focus, send text, interrupt). The app is distributed via TestFlight beta and requires a development build due to native service discovery and pinned-fetch modules.
+The iOS client (`/apps/mobile/`) is a React Native application that pairs with one or more Herdr Connect daemon installations via QR code, discovers daemons via Bonjour, displays agent state, and interacts with agents (view output, switch focus, send text, interrupt). Each paired installation gets its own credential record and its own parallel connection session; switching instances is instant because all sessions stay live. The app is distributed via TestFlight beta and requires a development build due to native service discovery and pinned-fetch modules.
 
 ## Architecture
 
@@ -98,6 +144,102 @@ Key characteristics:
 - **Dead-connection detection** — 30-second request timeout (daemon sends a 15-second heartbeat; two missed heartbeats trigger `.timedOut`)
 - **One active stream per instance** — A second `startStream` call silently replaces the previous stream
 - **Non-iOS platforms** — Throws `unsupported_platform`, no network touched
+
+## Multi-Instance Credential Model
+
+The app no longer stores a single pairing credential. Credentials are a set keyed by the daemon installation's certificate fingerprint: one Keychain record per instance (`herdr-connect.instance.<fingerprint>`), plus an index key listing all fingerprints and an active-instance pointer key. The split keeps each SecureStore value small (single-value ~2KB advisory limit) regardless of instance count.
+
+- **`paired-instances.ts`** — pure model logic (`Seam B`, node:test covered): record validation (`parseInstanceRecord` rejects missing/empty `fingerprint`/`token`), and `resolveActiveInstance`'s fallback rule — when the active pointer is null or dangling, the most recently paired instance wins (`mostRecentInstance`, tie-broken lexicographically by fingerprint for determinism).
+- **`credentials.ts`** — Keychain I/O and migration orchestration only. The legacy single-credential key `herdr-connect.paired-device` is migrated on read (read old → merge → write → delete old), idempotently: a crash mid-migration replays the same rules next launch without duplicates. Records are stored with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. Plaintext tokens appear only in the pairing response, this model, and Keychain — never logged, never in MMKV (MMKV is reserved for non-sensitive settings).
+- **`keychain-write-plan.ts`** — pure write-ordering plan that makes every interruption window converge to an existing self-healing path: (1) delete instance keys removed from the model (index still references them → "index references missing entry" self-heals on next write), (2) write the index, (3) write each instance key, (4) sync the active pointer last (a stale pointer self-heals via the most-recently-paired fallback). This ordering never leaves orphan instance keys outside the index, which have no cleanup path.
+
+## Parallel Connection Sessions
+
+### ConnectionSession (`connection-session.ts`)
+
+One `ConnectionSession` owns the complete connection lifecycle of exactly one paired installation: discovery match (pinned TLS probe of candidates) → connect → SSE event stream (preferred) → 3-second polling fallback → exponential backoff reconnect → AppState foreground/background start/stop. It is a React-free orchestration object driven by the provider:
+
+- `begin()` — (re)start probing; idempotent, cleans up old probe/snapshot loops first.
+- `handleServices()` / `handleDiscoveryFailure()` — mDNS discovery events dispatched by the provider.
+- `pause()` — app backgrounded: stop polling/SSE/reconnect; connection state and data are retained and resume on foreground.
+- `stop()` — terminate (instance removed); all callbacks go silent afterwards.
+
+When probing or polling observes an auth terminal state (`unauthorized`/`revoked`), the session reports it via `onAuthInvalid`; the provider removes that instance's credentials without affecting other instances' sessions.
+
+### Discovery Match (`discovery-match.ts`)
+
+The daemon advertises `fp=<fingerprint>` in mDNS TXT records, but the Bonjour library does not expose TXT, so instance identity can only be verified by a pinned TLS connection: a candidate whose certificate fingerprint mismatches fails during the handshake. `selectCandidates` orders probe candidates deterministically — services already verified as the target instance first, unknown services in discovery order next, services verified as foreign instances excluded. `classifyProbeFailure` maps a probe error to `wrong_daemon` (fingerprint mismatch → next candidate), `unreachable` (transport-level failure → next candidate), or `terminal` (TLS pin passed, error came from the target daemon → stop probing and surface it).
+
+Verified `serviceKey → fingerprint` associations (`ServiceAssociations`) are held by the provider and shared across all sessions, in memory for the app session only: once one session verifies a service, others reuse the hit or exclude it as foreign, preventing a probe storm after parallelization.
+
+### Session Registry (`session-registry.ts`)
+
+Pure decisions consumed by `ConnectionProvider` (`connection.tsx`), which performs the side effects (create/destroy `ConnectionSession`, timers, mDNS calls):
+
+- `planSessionSet(desired, existing)` — reconcile desired instances against existing sessions. New instance → start a session; instance removed → stop; re-pairing the same fingerprint with changed credentials (any of deviceId/token/deviceName/pairedAt differs) → stop old, start new. Sessions carry no active/inactive semantics: all sessions stay long-connected in parallel, focus is only a UI rendering choice.
+- `planForegroundTransition(prev, next)` — `background` → pause all sessions; `active` → begin all sessions and restart mDNS discovery (only when actually returning from non-active); `inactive` (notification center, system dialogs) → hold, do not drop streams. Idempotent for active→active.
+- `planSessionRetry(phases)` — sessions in `not_found`/`failed` phases get their probes restarted (with one mDNS kick); `probing` is true while any session is still discovering, which suspends the retry timer but **keeps** backoff counts so the not_found→retry→discovering loop cannot pin the backoff at its first step. Counts reset only when all sessions settle.
+
+The provider additionally owns: a single shared mDNS discovery listener fanned out to all sessions, throttled retry timing shared across sessions, the active-instance pointer, and per-instance connection status exposure (`instanceStates`). Switching the active instance only changes the pointer (persisted + UI focus); sessions are never torn down, so switching is instant with data already live. The UI's `state` always reflects the active instance's session.
+
+```mermaid
+sequenceDiagram
+    participant M as mDNS discovery
+    participant P as ConnectionProvider
+    participant S1 as ConnectionSession A
+    participant S2 as ConnectionSession B
+    M->>P: services / discovery failure (shared listener)
+    P->>S1: handleServices(services)
+    P->>S2: handleServices(services)
+    Note over S1,S2: each probes candidates with pinned TLS<br/>sharing ServiceAssociations cache
+    S1->>S1: SSE stream, 3s polling fallback
+    S2->>S2: SSE stream, 3s polling fallback
+    P->>P: planSessionSet reconcile on instance add/remove/re-pair
+    P->>S1: onAuthInvalid revoked
+    P->>P: remove instance credentials, stop session A only
+```
+
+Provider-side orchestration: one discovery listener fans out to per-instance sessions; auth terminal states remove only the affected instance.
+
+### Host Fallback (`host-fallback.ts`)
+
+Daemons are multi-homed (Docker bridges, VPNs, internet sharing put unreachable addresses in the QR hosts), and host ordering carries no reachability information. `withHostFallback` tries candidate URLs in order: connection-layer failures (`PinnedFetchError`, or `NetworkError` codes in a caller-supplied set) log a warning and try the next address; application-layer errors (daemon already answered over HTTP) propagate immediately since switching addresses is pointless; exhausting all candidates throws the last connection error (or `no_address` if none). `pairingUrls` (`pairing.ts`) generates one `https://<host>:<port>/v1/pair` URL per QR host (IPv6 bracketed) in payload order for this loop.
+
+## Pairing, Aliases, and Revocation
+
+### QR Pairing Payload (`pairing.ts`)
+
+Pure parsing and URL building — no network requests. `parsePairingQRPayload` validates the JSON shape (`v`, `fp`, `hosts`, `port`, `secret`) and throws a single unified `NetworkError("pairing_qr_invalid")` for any structural or semantic problem, deliberately not revealing which field failed to an attacker crafting QR payloads. The actual pairing request lives in `network.ts` (`pairDaemon`); the QR fingerprint is trusted because physical proximity to the terminal screen is out-of-band confirmation (see [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md)).
+
+### Instance Aliases (`instance-alias.ts`)
+
+Aliases are a purely client-side concept stored in local MMKV (`instance-alias-storage.ts`); they never enter the pairing protocol or the daemon. `defaultInstanceAlias` picks a prefill after pairing with fallback priority: mDNS service name → mDNS hostname with `.local` suffix stripped → first non-empty QR host (the practical main source, since mDNS usually has not resolved the new instance at scan time) → `…` + last 8 chars of the fingerprint (always available). `normalizeInstanceAlias` trims, treats empty as unnamed, and caps at 64 chars. `displayInstanceLabel` renders alias-or-fingerprint-tail consistently across the instance switcher, Settings rows, and alerts.
+
+### Instance Revocation (`instance-revocation.ts`)
+
+Pure decisions for consuming the server-side self-revocation endpoint `DELETE /v1/device` (Bearer auth, 204 on success). `classifyRevocationFailure` classifies an attempt: `revoked` (204), `already_invalid` (401 — the server already has no valid record of the token, e.g. CLI-revoked or DB reset, so the target state is achieved), `unreachable` (transport failure, result unknown), `failed` (other HTTP errors). `planForgetInstance` maps classification to the forget-instance flow: revoked or already-invalid → delete local credentials silently; unreachable/failed → keep local credentials and prompt the user (local-only delete / retry / cancel, never silent). `planReplacementRevocation` decides old-token disposal after re-pairing an existing fingerprint: skip on first pair or identical token; otherwise `revoke_after_store` — store new credentials first, then revoke the old token so there is no window without access; revocation failure never blocks the successful pairing.
+
+The `ConnectionProvider` API ties it together: `unpair` (active instance, local only), `forgetInstance` (local credentials + alias deletion with coordinated remote revocation, returning a `ForgetResult` outcome), `switchInstance`, and `instances`/`instanceStates` for the Settings UI.
+
+## Per-Instance UI State, Favorites, and Filtering
+
+### `instance-ui-state.ts`
+
+Per-instance UI memory so switching the active instance is instant and the UI restores exactly. A reducer holds a fingerprint → snapshot map plus the currently displayed state; the memorable state is what `AppShell` lifts: destination (Agents/Settings), selected agent, and the three-dimensional agents-list filter (status / workspace / favorites). `focusSwitch` lazily saves the outgoing instance's state into its slot and restores the new instance's slot (default: Agents list, no detail, no filter) without touching any connection. `prune` clears slots for unbound instances to avoid leaks. Memory is in-app-session only (unlike Keychain credentials): dropped when the instance disappears.
+
+### `agent-favorites.ts`
+
+Favorites are a purely client-side, per-instance set persisted in MMKV (`agent-favorites-storage.ts`) as an ordered string array of `Agent.source_id`s. Because pane source_ids are never reused after close (agent-contract), a source_id missing from a live snapshot is a dead reference and `pruneFavoriteSourceIds` removes it immediately — guarded so an *empty* snapshot (disconnect/loading moment, not "all panes closed") passes the original reference through untouched, preventing wiping an instance's favorites on a blip. `parseFavoriteSourceIds` degrades corrupted storage to an empty set without throwing. All UI (star display, long-press menu, filter) share the single `isFavoriteSourceId` predicate.
+
+## Internationalization and Theme
+
+- **`i18n/`** — `I18nProvider` reads the persisted language choice synchronously so the very first render uses the correct locale (no flicker); when the choice is "system", the device locale is re-read on every return to foreground. It exposes `t` (UI messages), `tError` (stable `NetworkErrorCode` → localized message), `formatTime`, and `setLanguage`. `expo-localization` plus the `locales/` catalog (`en`, `zh-Hans`) supply platform locale data; `CFBundleAllowMixedLocalizations` is enabled in `app.config.ts`.
+- **`theme/ThemeContext`** — light/dark theme consumed via `useTheme()`; also feeds `NavigationContainer` `DefaultTheme`/`DarkTheme`.
+- **Screenshot determinism** — `I18nProvider` accepts a non-persisted `initialLanguage`/`fixedTimeLabel` override used by the screenshot harness.
+
+### `screenshot-launch-options` native module
+
+An iOS-only Expo native module read at `App.tsx` startup (`__DEV__`-guarded) that returns launch options (`scene`, `locale`) passed to a Debug build, powering deterministic App Store screenshot scenes (`AppStoreScreenshotScene`, `screenshot-fixtures.ts`, `ConnectionFixtureProvider` — a context provider that supplies a fixed `ConnectionValue` without starting Bonjour, polling, or SSE). The JS binding loads the native module optionally so Android and Expo Go run the same bundle harmlessly; production never reaches the screenshot route due to the compile-time `__DEV__` guard.
 - **Graceful degradation** — Polling always covers freshness if SSE is unavailable
 
 ### Credential Storage

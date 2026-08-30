@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:db29f2aec0b84ba8d83eaeabfab01ac8eeb9d3dae568ac12857ada12aefae5ca",
+  "claims": [
+    {
+      "id": "claim_0c1a682818444f59916c6a05970d3833",
+      "statement": "The app adapts layout by window width, not device type: below a 768pt breakpoint it uses a narrow bottom-tab + native-stack layout, at or above it a three-column SplitLayout (220pt sidebar, 340pt list, flexible detail); selection state (active destination + selected agent) is lifted into AppShell so it survives live resize across the breakpoint.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/App.tsx",
+          "version": "repo-file-v1:sha256:9c163693493b07199486a31bf974c6533be3624769012c686848bc5db13aa649"
+        },
+        {
+          "resource": "repo://apps/mobile/src/layout.ts",
+          "version": "repo-file-v1:sha256:0c11dba72a8c46af54ff5d07f4c776722cc2e45c7219ff59ab33ed62bcff049b"
+        }
+      ]
+    },
+    {
+      "id": "claim_02ae02c80c0440cab5c5530386f90430",
+      "statement": "The app runs at native iPad resolution (supportsTablet: true) with requireFullScreen intentionally unset, enabling iPad multitasking and free rotation while the root orientation: portrait field keeps the iPhone (and Android) portrait lock.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L20-L31",
+          "version": "repo-lines-v1:sha256:157d8fe10d8dc530e51dcf4c05b9d2d7ace49b869866be2528c76c7c68816cd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiN2Q4MWNiNDRjZTdlMDJlY2NlNjMzNTdmMjcxNTJlZjE1YzU4MDJhMDVkNDc0OTc1ZWIwYTM0YTU4MjBhMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWU2ZDFmNWQ1NWMyYmU2ZjlmNTY2NDRiYjQwZWQ4ZmYzZWFhMGY4YTQzNTgyYjNiMzZkZDFjOTIwMzViM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YjhkNDYwNWJlZTI2MDQwMmYxYWUzYmNmZWQyZmFlODY2YjM2NjEzMWY2YjY5ZTMxMDU2NDgxZDM3NDg2MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1ZGQ1ZDg4MzVjZjQyOGQyNjFhZTk3NTQyMmZhNDU5ZjdkNmM2NWJhYWUyMjVlOGJkZGM2YTMxNGE4MzVkODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_63f7c1a4e21343a4a006d06c492b89bc",
+      "statement": "app.config.ts sets NSAllowsArbitraryLoads: true so that PinnedTrustEvaluator (TLS fingerprint pinning) is the sole trust decision on every network path, because ATS's own evaluation rejects the SAN-less self-signed daemon certificate on non-LAN paths like Tailscale.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L48-L50",
+          "version": "repo-lines-v1:sha256:caa27d277e7ab0cec84631583e54dca113275244f114554f6560e77598bcccf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0NjY2NGIxNTYyZDcxOTkyMmU0NzBjNzI3NDU3NGQ4YzkxYmRkZTMzYTExYjM0MDAzNjE1NzJjNGMyM2RlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk3OGUyNTAzYjhjZjM3YTA2ZjdkNmYwYTNhNmI2ZmUzNTY5MWZiY2FiNTBiODc3NWNhYjZmYWJjNzFjNTkyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdlYWRjYWMxNjNhZWY2MmY0YmJlMDIzMTA5ZTgxMjJjYmUxMGI0NGQ0MzU1NzlkNDNhOTFiNGZiYzJmMzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI3NDQ2ZGU1MzI2NjE3YzkyMzUzZDZiMmU1MzYzNmZiMTNmYjJjZDE2NWQ2OGVhMGFkYTgzOTk5NWYwYTE4OCJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/modules/pinned-fetch/ios/PinnedTrustEvaluator.swift",
+          "version": "repo-file-v1:sha256:4e1dfaeb39857bb0a69eb34cc06437f0ceca4e9e978654b3dca776ddc2513436"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b14168b70534c198b5cae70d83526bb",
+      "statement": "pairing.ts is pure QR payload parsing plus URL construction: parsePairingQRPayload validates the JSON shape (v, fp, hosts, port, secret) and throws a single unified NetworkError code pairing_qr_invalid for all problems to avoid leaking which field failed; pairingUrls emits one https://host:port/v1/pair URL per QR host (IPv6 bracketed) in payload order for host-fallback iteration.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/pairing.ts#L45-L84",
+          "version": "repo-lines-v1:sha256:2fb0e3bd82165395df173db8d4abd8d31a838129be830aad771ec5a36dfce7e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNjNkMWQ4Yjc0ZjFhMTQ5MzNkMTE4ZTY2MTZhZTU5NTEyNzM3Y2I3NzE4OTk5ZWQwNDExMzYzNzM5MmIxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNmEwODUwYjJlYzkxYzcwMzYzY2NhYThhMjcyNzU5NTk1NDdjNmNlOTY4YzBhZDQ3OTE1NmRkYzcxYzUyYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4Mjg5NWMzNGU5YzVmODlmNzU4YWVhYmRiY2QyM2JjM2M4ZTYwOTRjMGY0OTM4OTMxMTcxNjhkMzU5NmQ1MWUifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/pairing.ts#L96-L100",
+          "version": "repo-lines-v1:sha256:1f2d7447f470bab6a80f43eb5f4a357aa26c5c9a6732c79bf8a04b5bc517c709:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzk4MmQwZmQxODRjMzM2ZGVkNDNmZDMwZjM4YjAxYjE2YmE2MWU0ODE3MmU1N2E1NmE0YjQ1NTVhMzdjMjRlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2MDk5ZDM3Y2Q0ZmJmZGJjN2FjNzVlZWRiNDA3MTQ1NjRlOTg5ZWU5ODVkNWRjZDkxZjZiNzAwYzhiN2EyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1d914e370594e21925c63a6d2d7cbad",
+      "statement": "withHostFallback tries candidate daemon addresses in order: connection-layer failures move to the next address (with a warn log), application-layer errors propagate immediately, and exhausting all candidates throws the last connection error (or no_address), because the multi-homed daemon's QR host ordering carries no reachability information.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/host-fallback.ts#L22-L56",
+          "version": "repo-lines-v1:sha256:4a7a785d53f4afddf96e681743f2a4661f728842272d47d29b2d40ccc21ed106:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2OGQ1MjdlMWZkODRmZTNmYWNkOGI2YjNmZDhhMDI3MWI4YzU3NmVmNjk0MWQxZDcyZDI1MzY2MTE1ZmU3ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ODNmZjgyNjczMTI3MTdiMGI3MDA0YzBmMDFiZjhhMTU2NjViYTNhNzJhNDVhYzY5YmE0ZTE1OGY3NzQ3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxNGJjYzBlMWRiMTEzM2U3YjFhN2Q5MTNiOGNhNTMwNWQ3MDJmNDgwY2JkYjkyNTc5NzFlYzZhNmQ3MGFjZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_015990ea02094fa1ad7862056c16e3d6",
+      "statement": "Pairing credentials form a multi-instance model keyed by certificate fingerprint with an active-instance pointer; pure rules in paired-instances.ts (record validation, legacy migration merge, active resolution/fallback) while Keychain I/O and migration orchestration live in credentials.ts.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/paired-instances.ts#L16-L38",
+          "version": "repo-lines-v1:sha256:3eb91b8728f0e30f269c94805e4ad921c92d8446ebb8edec6457dc3c88d9391d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0OGFmZDJkZmQ2MmFhNGVmYTIzYzRjYzY0NDhmZDlkZmE2MWU2ZjgyMmQ3OTY5ZDBjYjQ2ZGE2YzcwNWI5Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2ZTEyNmUxZWUzMTA0YTc5YTg1NzUyNmZmZTM5NmJkNmU3NzI2NTVhOWMzZDNiNjRjNjIwOTU2NjZlNTEyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkY2Q2MDNlOTUzYjhlODYyMWM3ZDQyZmEyMzQ4YjMzM2E5NzNhZGI0NDAyMjc3ZWZmNDUzOWE2OTg5MjZjZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_929f93dd20154b5395f1068bdfb2aa1d",
+      "statement": "When the active-instance pointer is null or dangling, resolution falls back to the most recently paired instance, tie-broken lexicographically by fingerprint so the fallback is deterministic.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/paired-instances.ts#L91-L99",
+          "version": "repo-lines-v1:sha256:8306d2aa2b975b74326661350d6767392b548e4a4f225955f82f539f263dc8fb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM1NWUwNDFmNDAzZWI2MDA5YWI3NmYxMWNjMzliNTEzMDk2ZjJiNTI4NzY3Y2M4NjI2ZTk4OWQ0NjBhNTY3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmNiN2QzYzRkMmE2ZDUwNWQyZTYyOGJmMjFlYjk2MTJjZDIwM2YyMTg2Y2VlYTVkZWYzMTg2NjdlZTAzMTQ0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_849b84be7a024670aa6618a9b0e372f0",
+      "statement": "Keychain writes follow the planKeychainWrites ordering — delete removed instance keys, write the fingerprint index, write instance keys, sync the active pointer last — so any interruption window lands on an existing self-healing path and never leaves orphan instance keys outside the index; the legacy single-credential key is migrated idempotently on read, and tokens live only in Keychain (never MMKV or logs).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/credentials.ts#L5-L21",
+          "version": "repo-lines-v1:sha256:f360775f4d00f0109bd6aadbf4c8b112665c4861aa5abc01280c6ff9b2b942d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ZWVjMGU4OTUzZTAzODAyNWI5MTlhMjI1MzlkZWRmNTBjODBjM2NmNTgyNmJiMTVmMWU2M2U4NWEwZjVmYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZmQ2Mzc3NWVjMWYzNjhkYTM1ZDAyYmYzM2E3ZWYwMWMwMGM1ZjUwN2QzNmQzOGNiMGRmODFiZTMzZjM0YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3ZTJlMWY3YTA2ZTQzYzM4MDk3NWViYjMyZmY5ZmJmOGY3OTc0NDQ0YmU1MjhmNDliNzA0OWU0N2E2NzYyZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYmJiYmIyNjJlMDZhODdmZWJhODMxZDhlMDViNzIwM2IwMWFjN2E2YWY2Y2EyNjNkNDkxMjNjZjg3MmYzODcifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/keychain-write-plan.ts#L29-L60",
+          "version": "repo-lines-v1:sha256:c66d3d38bb01ed0b5e5bc973b4887d2ed3439822679c8fb8075d07e00b69a1f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmY2ZkYzJiOWFlZGNjNDFhZDA3NDU1NjMwNzYxOTczY2NhMGI5N2YyNmFhNDc2ODMwNTBmNGE4ZjdjZmU2MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1NTk1MGFlZDgyZDgwNTJiNDgzMGUzODRlNDI5ZjQyZDE4NWFhMWIxOGVlZjdlNGY1OTI4OGE0ZTgyZDRjYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YmQ3ZWZkMjFkN2Y5Yjk3Mzc1ZDdlNjNiYzNkMTA4ODBjZWVhZTAwMDk3MTc3M2Q0MTJkYTAxNjJjY2E2ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6239f3932bf94412af3c44a88642b26e",
+      "statement": "One ConnectionSession owns the complete connection lifecycle of exactly one paired installation — discovery match via pinned TLS probes, connect, SSE stream preferred with 3-second polling fallback, exponential backoff reconnect, and foreground/background start/stop — driven by the provider via begin/handleServices/handleDiscoveryFailure/pause/stop, with pause retaining state and stop silencing all callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/connection-session.ts#L1-L120",
+          "version": "repo-lines-v1:sha256:aa066e095deadb549431ff7ed6c07fac006e01c8f6f1d0abc8d53843f53dd837:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZGMwN2FkZDk4ZTViNjA4ZGNkMTdkOGQ3OTAwZmZhNTVhMzViZTgxZGMyNzAxOTNkMDU3MWI1OTg5M2U2MDUwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1N2VjYTk0ODQxZWM0ZTNkZDE5YTFhOTE2M2M5NmExMGI3YjJhYjdkMzYyM2I5MDIyMDAxYmE1YTBhMzE3NDM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_28185d76fcdc4e9e8e26e286376c931f",
+      "statement": "Because the Bonjour library does not expose mDNS TXT records, instance identity is verified only by pinned TLS: selectCandidates orders probe candidates deterministically (verified-target services first, unknown services next in discovery order, foreign-verified excluded) and classifyProbeFailure maps failures to wrong_daemon/unreachable (try next candidate) or terminal (TLS pin passed, surface the error).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L42-L81",
+          "version": "repo-lines-v1:sha256:8d183beddff9823387e61a9225d9ca53a5a3dc7408e5eca28ff26ae4ab84fa9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZTg4OWZjYTFiYmZmNzM4Y2RiYTU1NzNlMTljZGZhZTgwMTQ4Yjg2NzEwNDc3MGU0ZTFjNjIzZGMxNjA5ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjRiYmIwYTEyZDkxZDYyM2U1ZmQ5YzUyYWRhMGNkNTQwMmIwYmU1YWU3NGYxMDRlODViMWQ5YzlkNDk2MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MTIwOTkxOWNiZGY2M2Q1OWQ2OWRmYWQ0ZjdmZDc4MWZjNjY3NWJiMDQyYjYxYjk3MTZjNzg5MzQ0Y2ZkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b022102449bf44ddb6e6e4df83acfb7c",
+      "statement": "Verified serviceKey→fingerprint associations are held by the provider and shared across sessions for the app session in memory, so one session's verification lets others reuse or exclude candidates and prevents a probe storm under parallel sessions; an auth terminal state (unauthorized/revoked) observed by a session removes only that instance's credentials.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/connection-session.ts#L57-L70",
+          "version": "repo-lines-v1:sha256:be770d3d2eacb04bd9d1b0d90234f1aef70995731e66cca753d05551578bd4b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmFmZmNjOWRiNGM4YmY1NGJlMzhiNzMzN2UxNjBiOWRlMjU2YzQ1Zjk2Y2Y3ODJiZTJjNDk5YWEyZjVjZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzdkNTE5M2U3MDc2M2MyYzRmNGI0M2U1N2Q1MzA5ZDRkNGI3YTA5NzliOWYzMTI5MzU2ZTMzZjY2NzNmMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjViNTFhM2U3Yjg4ZGFmN2MxNDc1ZDI4ODMzNjQzYWVjNzk0YTUzZWY1Y2NkN2EzYjA4MjM5MDJiMmI2NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzOGYyNTI4YzljN2M3ZDcyN2ZkN2Q2ZGRmMzRlNjc3YWUyOWVjOGZlYmVjNGQ2ZTVkY2M4ZjE3ZWM0YWY4NTAifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L24-L25",
+          "version": "repo-lines-v1:sha256:023f41fbf61cfe87747fb756a53c27b20a622fdde4a1111f978215eaf7cae5d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhjNmI5YmJmZWVjOTBkNzYyM2Q3YTcxYTgzODFiODdjOTg4MDRlZTI4YzkxN2E1ZDRkZGIyYWVjN2NiZDQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc1MDQ2ZDk4MTcyZmMxMzRhODc4NDJlNDA1OTk5N2JiYWU1NGM1YjNkZjNmYmRhYzRjNjdjNDc3ZjkyYjExMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjJlNzkzZWU2NGE3YTY4NGUyMGFkNDhjYmY5ODliNTVlNzkxZDkzYjk2MWM4MmIzM2NmNTU2ZTNiMjZmNjFhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJlMWM3NWE2ZGQyYWYxOWQ0MTczM2MxZjViYjU0MTAwZDE4YzNlYmQwNjUyNDcxODhhNWQyMzk2NTYyYzI0NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7349f07a21964215a69e3968f5fc5be1",
+      "statement": "planSessionSet reconciles desired instances against existing sessions: new instance → start, removed → stop, same fingerprint with any changed credential field → stop and restart; sessions carry no active/inactive semantics — all sessions run in parallel and focus is only a UI rendering choice, so switching the active instance just moves the pointer and is instant.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/connection.tsx#L1-L20",
+          "version": "repo-lines-v1:sha256:328da41d90b40b66b4c49ec174b043cd8b07f120a8bcf036be13257828285efe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNmU3ZmVlYzc1ZjdjMmI5MjExZDIyZjZlZWY0NDU3MTZhNWZhM2RmZmY2N2U1MGNiMDU2NTcyZmMyM2I1MDcifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/session-registry.ts#L50-L95",
+          "version": "repo-lines-v1:sha256:48ebd25bae85409b89a7b2cad0305b3326301718c010a0799a2c6cfb83c824b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyODkzYjdmYzM1N2QyYWM1NDMyMzE4YWFlYmI0N2FlM2YyMDRlMjIxNmUxOTJmMjU1OGQxYmQ0NGIwYTE5ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyOTJhODdkNTc1MDJjNmJjMDVhYzE5N2IzYTdhMTNlYzBiMDg1NDg0MmZlOTY4ZDY4YjYzMjAwOWQwY2JiZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ODMxNGY0MmFkYjFiNmY3NDUyNjQyNzQwZTQ4YjEzNGQ4MjdhZGVjNWJlYTJiNmY0YjZmYjNjMTRlZDM1ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9da9f92bc34948398e61c3ff30e497bd",
+      "statement": "planForegroundTransition maps app state changes to all-session actions (background → pause all, return to active → begin all + restart mDNS discovery, inactive → hold), while planSessionRetry restarts probes for sessions in not_found/failed phases with one mDNS kick and keeps backoff counts while any session is still discovering so the retry loop cannot pin backoff at its first step.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/session-registry.ts#L117-L131",
+          "version": "repo-lines-v1:sha256:6a29a544f5d55e3a30521226e4ccc160952cba3e6506f96c781abcbbb073e22f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2ZkYzA5YzU1Yjg4ZDVlNjRhNTAwMzZlNTUzNzY3MzA1MWY2ZmJmYTE3MjBmOGEwMTBjNDk5OTgwMzRmNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhYzA3YWU2ZGRkOTYzZGRhOTA0YmMzOGNmMjUzYWFhZjcxMzJmOGQ2NDRlNzdlNTQzYjNiYWIyOGE1MTcxMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/session-registry.ts#L90-L95",
+          "version": "repo-lines-v1:sha256:9ba0b4b95841345545f566ce3d8e3f16f62e23c99f15f06a6cc166d479f470f9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY4ZTZhYjE1OTNjNTZmYWFhMGI4Mjc0NDgxNTVkNTg5MzcyNWVkZTI2ZDRjMjY5NmI0OTYwOGIzODliZDc1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjkzNjkxYmFjMmYzM2ZiN2JiY2Y4NDc2M2E1MzQ5YmRjMTRjNmY4MDQ2NTc4YzBhOGM4NjBjMmQ2Y2UyOGQ1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY4MzE0ZjQyYWRiMWI2Zjc0NTI2NDI3NDBlNDhiMTM0ZDgyN2FkZWM1YmVhMmI2ZjRiNmZiM2MxNGVkMzU4MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_49935613a1f74ee08ab1d093c8a677aa",
+      "statement": "ConnectionProvider owns the single shared mDNS listener fanned out to all sessions, throttled retry timing, the active-instance pointer, and exposes per-instance status (instanceStates) plus unpair/switchInstance/forgetInstance to the UI; the UI's state always reflects the active instance's session.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/connection.tsx#L84-L122",
+          "version": "repo-lines-v1:sha256:980ca69190cb47aef693d8dc4555eba39a03fcdfbeb4ec523c84662c558ee6e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMjVlZGFjMTBlYjFlYjJmODc2NDA2YjdjNmNiMGYzZTQ1OGU0MTk4Y2I0NWY0MzFlMGU0MTc2MWJlNzU1ZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYjM1YTJmYjc1ZDhmMTg0YzA1NjdiZmJjNmNhYWZlYTQ1OGYxYjU0NWM5MWVhY2Q5MzQ4NTU5ODQ5MTdkZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkMmViMjNjNzVmYWRmNDcyMTdkY2EzZjUzMTZhZDIzNjMwNTRhNDIwODAxYzYwYTE2OWYxOTAwMDM5ZTMwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1YjdmZTEyNzZkZDhlY2FjMzI3ZTYxM2I4YTdjZmI1MzExOTc1ZDA4NGY0NzdjNGE0ZGM2ODlkNWZiZmEwMDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_01f1a73177a448cea6fbfe04d66c487e",
+      "statement": "Forgetting an instance uses the DELETE /v1/device endpoint with classification-driven decisions: revoked (204) or already_invalid (401, server has no valid record) → delete local credentials silently; unreachable/other failures → keep local credentials and prompt the user; on re-pairing an existing fingerprint, the old token is revoked only after the new credentials are stored, and revocation failure never blocks pairing success.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/instance-revocation.ts#L45-L96",
+          "version": "repo-lines-v1:sha256:e08f2d8b185b8ae9e10d7f01400acb529152b19c4e52dac0b79988123d063f22:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZjI5YzYwNTc1Yzc1NDQ2YTI4MDIxMzg5NjA0YmRhY2JmNjk5YzRlYmYwMjZmMTBjMDhlOWE1MTJiMDlhMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwNTdiNDQ5NzVkMDA5YTBkNjJhNmQxMjVhMTNhM2YxMmQ1NjhiMjZiZTA1ZWNjMTgwYTY2YjVmODkyNjA5NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NjZiOGE5ZWU1ODdjN2Y5ZmY1NWE5MTNlOGViMGY1YWY3Mzk1NzcwYzdhMTFiODUyZWExNTI3MzM1ZjNhZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_358a453d7aeb40cb9191f9d5475b5275",
+      "statement": "Instance aliases are purely client-side (local MMKV, never in the protocol or daemon): the default alias falls back mDNS service name → hostname minus .local → first non-empty QR host → fingerprint tail, user input is trimmed with empty treated as unnamed and a 64-char cap, and display falls back to …<last 8 fingerprint chars> uniformly across all UI locations.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/instance-alias.ts#L38-L89",
+          "version": "repo-lines-v1:sha256:f17b68f1c4c58be09cd64cc51c7850ff482c0a0397abbd51e756335151d6a997:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjE2MGZhMGEzZDFkOWFjMDFjYzM4NmQxMWE3YTU4NzIzN2UxYWJlNWIwYTc4YzUxNmI5NDExMWUxZWE5OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzODFkMGM0NTRhZmIxZGUyMmE1Y2RkNjgzZGU4NjQxODBkMjEyYjQ2MWEwNzRlYWM4Yzk0ODI1M2MwZWMwN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1f6fa4d2dc674d62a2059234c2d495e5",
+      "statement": "Per-instance UI state (destination, selected agent, three-dimensional agents filter) is kept as an in-memory fingerprint→snapshot map via instanceUiReducer: focusSwitch lazily saves the outgoing instance's state and restores the new one's without touching connections, and prune clears slots for unbound instances; memory is app-session only, unlike Keychain credentials.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/instance-ui-state.ts#L22-L100",
+          "version": "repo-lines-v1:sha256:bda1a59ea00d9914653f72387ea5d416b2a6371030de3e0401fa8444127f16bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMTY4M2ZlMmEzN2FjMThhNmJjMzcxMGUzYWE4ZTUxNjcwYWJkMjAyZjNmYjczMTA0YWE0ZmNjMjY0YmJkYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1Y2RlZjgwODVhZTc0YWI2MzZkNjQ1OWY1YzZkNWZiZmIwZGIyNjRmMWIwZDc1YmFjNTE5YzliM2Y2NzE3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwM2Q3OGEzMmM0NzVhZWY0MmIwOThiOGNjZDQ3MDc4M2IwMzBjM2I4NDVlZTE2MWY3YTRmMjJmMmE4ZDRhOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZDk5M2ZlODExNjgwNGViMTM0OTFjZTJjM2EwZjZjYmExZjI2ZDVkZTBjNTM0MTc2ZjgyM2UyMmI2YzAyNDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76ec58d1ec404d018a4a7f4892f0547e",
+      "statement": "Agent favorites are a client-only, per-instance ordered set of Agent source_ids persisted in MMKV: dangling favorites (source_id absent from a live snapshot) are pruned immediately because pane source_ids are never reused, but an empty snapshot (disconnect/loading) passes through untouched to avoid wiping all favorites; corrupted storage degrades silently to an empty set, and all UI shares the single isFavoriteSourceId predicate.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/agent-favorites-storage.ts",
+          "version": "repo-file-v1:sha256:48abe5bfbe3b7e9191dc05818412315f9147ec1081446372a7a065f8288a6b5c"
+        },
+        {
+          "resource": "repo://apps/mobile/src/agent-favorites.ts",
+          "version": "repo-file-v1:sha256:be06979c7924f8076f8ee5f70ddaba6b574aeb39c07253ed1e51ece26238d32b"
+        }
+      ]
+    },
+    {
+      "id": "claim_bdcaa377149543eb8f38b14d9b382d83",
+      "statement": "I18nProvider reads the persisted language choice synchronously so the first render uses the correct locale, re-reads the device locale on every return to foreground when the choice is system, and exposes t/tError/formatTime/setLanguage (plus non-persisted overrides for deterministic screenshot scenes); the app ships en and zh-Hans catalogs.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/i18n/I18nContext.tsx#L65-L101",
+          "version": "repo-lines-v1:sha256:7c7a3a09f9d89b2a216bbcb1d3d4014160c2dd377c861c1c18163a226c102ddd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjODI4NmNjZTZlMDkwYTFjN2I2NDQ1ZmM5ZTM5ZGZmMzNhODRmMDFmOTk3ZjYwZWZkZWE0MDhhYzY1ZWE5ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkYzUyZjA4YjM5YjA4YjAxYzhkMzA4YmY4ODBiMGJlZjAyZmQxZGZjYzlkOWFhOTNhNGQxYjVmNGQ1OGI2Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMzAwOWMzOGNmMmU4YjliMTIxOTRhZDA2Y2Q1NTRiMjQ5NDg1YjQ0NzlkZmExYWI5OGY5ZTU5NTFhZDkwYzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49eb4be7fb434c6492b64c8f2deb77e8",
+      "statement": "The screenshot-launch-options iOS-only native module returns Debug-build launch options (scene, locale) read once at App startup under a compile-time __DEV__ guard to drive deterministic App Store screenshot scenes with a fixture connection provider (no Bonjour/polling/SSE); the JS binding loads the native module optionally so Android and Expo Go run the same bundle harmlessly.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/modules/screenshot-launch-options/index.ts",
+          "version": "repo-file-v1:sha256:9452344ecbf8580b4fdaa7fe4217b7d754089077377f7d8c0ef7bfc1fd0e128a"
+        },
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L44-L46",
+          "version": "repo-lines-v1:sha256:986b8009ea252db5b9035b989ef01cf5f46eb80df3eb0daefd244b8a29747cee:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE1ZTlmNmYyNWRlMThlZDg2ZjQyNDA4MmM5ZjZmOGM0NDIwZGM2MGI5ZmE0NTNhNmMzZGE4ZTk2ZGMyNjk5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzNTIxYjBmMjc3MWFmMjYxNTNlYzMxYzc3MzhiODBjNjUzMWFhYWNmN2EwZmZiNmNjMzQzM2M3ZGFhMDhjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGIwNjc5MzVhMjEzMjliMTNlOTUyNjIxNTEyMWU3NjJiMDIwYjBhZWNlMjE2MTFmZDMwMGRmZjFlNjA4MWFmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRjY2VlNDZiOWUwNTI2Yzg1NTQxYjBjNWYzOTIwYzQ5ODg0YWYzNTk3MGVlNmU1YjVlZTgwNTM3YWZmZWZlYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_07cdcf7c5ddf4c81a51804eb34e43027",
+      "statement": "The pinned-stream iOS native module provides a long-lived SSE stream with the same TLS fingerprint pinning as pinned-fetch, keeping the native layer to byte transport while JS parses events into {cursor, online}; the session marks streamStatus live vs polling (3s) fallback, a second startStream silently replaces the previous stream, and a 30s timeout detects dead connections against a 15s heartbeat.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/modules/pinned-stream/ios/PinnedStreamModule.swift",
+          "version": "repo-file-v1:sha256:907fde7044e0feb4ef24f0857e526b0a3d790fbe5c9d085f49c17324910f6506"
+        },
+        {
+          "resource": "repo://apps/mobile/src/connection-session.ts#L52-L53",
+          "version": "repo-lines-v1:sha256:a18d953ddff7c651200d06e4552571d30f4dcf9a9570604581311885509090f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxYTdlODA1OTE5OTk2NGY0MjdkODQ5ZTQ1YjczM2EwYmJiNzg4ZTRmZDczNTRiOGQ4ZmNhNTM3Yzc4NjM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhMTcxNGE5MGQzNTM3ODU5OGEzNTZmYzYzNTZmNDE5OWVkMzI0MTY0ZjBhZWUwNGNlNmM1ODdjYzljOWMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIyNDQxYjVlNDEzMGQyNzQ4MzE4NWQxYmM0YTk3ZTIwNWZhMDljMWM5ZDlkMWY1YTJjMmFjYWU1MTkzZGExOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmNWI1MWEzZTdiODhkYWY3YzE0NzVkMjg4MzM2NDNhZWM3OTRhNTNlZjVjY2Q3YTNiMDgyMzkwMmIyYjY1NiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

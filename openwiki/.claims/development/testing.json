@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b09ed775982e4db79793e86ff4d90e3fa893dedae166c3199e45ae4b81b7ab23",
+  "claims": [
+    {
+      "id": "claim_564ffed8b4444598bc0086c333d71f74",
+      "statement": "The root pnpm scripts define five test entrypoints — test:go (go test ./...), test:ts (protocol package), test:mobile, test:conformance (builds the protocol package and runs node --test test/conformance.test.mjs), and test:install — and `pnpm test` chains them in that order.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L5-L18",
+          "version": "repo-lines-v1:sha256:7ed0c07a62650a7669aa72c34f3b0587470994354893b3d45830ccaf4d3decc0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ODMzZDU5NDljMDNhNDBjYTk1MjQ5MTYxMGE2NjU5NjQ0YjNhYTQ2NjM2MmY3OTkwMjBkYmYxOTgxNTQ3ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZjIxMzZkOWQ1YjgyZDk3MmY3OGIxMjlmZTdjMDU4NGRiNDUxZWFmMWUyMzkxNDFjMDZjMjBlMTY5ZjM1OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmOWNkNzY1Y2JmMmU1NzFiOTRkMGIyYzZmMTFlOGQwNWRlOTRhYmE5ZGM4MWY4ODA2OTFiMmNkYWQ2OTJjNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5c1a26e866d49dcb3bee1ec10082f21",
+      "statement": "The mobile package's test script runs Node's built-in test runner via `node --import tsx --test` over globbed colocated *.test.ts files in src, src/i18n, src/notifications, src/theme, and modules/pinned-stream, so mobile tests execute under Node rather than a React Native runtime and new test files need no registration.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L18-L18",
+          "version": "repo-lines-v1:sha256:5e41ff631bae6aa461c82b29f7904e6180fe4ca658d2d00a2445efe8cc3fb049:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU0MWZmNjMxYmFlNmFhNDYxYzgyYjI5Zjc5MDRlNjE4MGZlNGNhNjU4ZDJkMDBhMjQ0NWVmZThjYzNmYjA0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU0MWZmNjMxYmFlNmFhNDYxYzgyYjI5Zjc5MDRlNjE4MGZlNGNhNjU4ZDJkMDBhMjQ0NWVmZThjYzNmYjA0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjVlMWFiZmE2M2IxYzM3ZDYzYTQxNDQzMDFkY2IyN2JiMTI2ZTY4NmYzMDQ4MjRiOTJhYjJjYmRiMmNlYjUxNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGM0MjE2OGRmZTIyN2FhOWZmMTg0NDljY2M1NjM3NjFlZDZlZDY4MWEwYzc3YjhjYThiZThiYmRhOGYyMDRiNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f419b59fb91047908984dd94c5accb6a",
+      "statement": "Store tests verify that reopening the same database re-runs migrations safely at schema version 2 and that the monotonic event_seq continues incrementing across a restart instead of resetting.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store_test.go#L13-L61",
+          "version": "repo-lines-v1:sha256:845690dc53f2faf4711c9802de14f367f3000241844320d67a63714883e8e65e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNDZkNmQ4MTQ1ZjYwNzBiODg3OTBiNmIxZGNjYjU1MTFiMWJiZTMwYmQzZThmM2ExNWM4MDVmMjYyNTMyNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlMTBjMWNjZDUwZTE3ZDdlZmY3MDRlYWZmYzQwMDI1MGI3MGU0MTZjMmIxZjA3NGEwZTVhZjQzOGRjN2RlMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66d9d6e972e24b8bbcf6c77829bb6fe8",
+      "statement": "The store refuses to open a database whose PRAGMA user_version is newer than supported, failing with a 'newer than supported' error rather than proceeding.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store_test.go#L63-L83",
+          "version": "repo-lines-v1:sha256:d3a67def4b03f313fccb103d0740487beb644f8cd40c364f08c827d7a5ddd331:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkOWZmN2U0NWZjNTk3YTJmMWQ1Mzg2ZmNkNTNmMDI0YzFiMmJlNWM2ZTgxYzcxN2FmNTlhNTlkNTNhMjY0ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMDAxMTk0ODgwNGM4NDAxNzk3MzU2ZGZmZDc1MmRjNDA1ZDUwYTI3OTBlNmFhZDM3ZGRiZDU4ODY1NTI1ZjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0357ce7cadb0464fa49f501fe3d80541",
+      "statement": "A projection batch containing an invalid update rolls back atomically: event_seq, the source cursor, and agent rows all remain at their pre-batch values.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/store_test.go#L85-L119",
+          "version": "repo-lines-v1:sha256:2f6ae9258e917338ee5362d5864703991e3deef3bb0c0667f5c90fa31f65be7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NWNiMTQ2MDJjZGQ2YzhjNjI1MDNkMTVmNDk4NmZjZTEyZjEzZDRkNWI0MjU4YzY3YTgyMDAyMGZjMGQzZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43a01fc8db9247e6bd421a0a160ec9d2",
+      "statement": "Owner-only database permissions are asserted per platform via build tags: on unix the file mode must be exactly 0600, while on Windows prepareSecureDatabase must produce a protected DACL with exactly one ACE granting the current user and be idempotent across daemon restarts.",
+      "evidence": [
+        {
+          "resource": "repo://internal/store/permissions_unix_test.go#L1-L33",
+          "version": "repo-lines-v1:sha256:11387c7bdf230cdae6147030a9713f6a8c3c7bd929690273a033ff42adbb92a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MTA2MTA4NmE4ZThlYjQ2MzcwYjZlYTdmMzlhODE0NzY3YWI4NjU1N2I4MWVlMDNmODY5OWU2Y2U4Y2U4OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://internal/store/permissions_windows_test.go#L1-L62",
+          "version": "repo-lines-v1:sha256:8028af670d2f6cf60d92cfda2c6d3e93289f5e2f0b015b094228abf8327ef793:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYmNjYmY1YWRmYzk4NGZlYmIyYWYwOTY0OGQzM2JkYmEyZjYyYWRhNGNkMzU0M2ZlZjljYmY1MzgzNWQ4OGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_398ecc42e75048c2a7294184e71b2830",
+      "statement": "demolan auth tests exercise the real handler stack (secureHandler over NewHandler with a real store database and lanauth certificate) via httptest, asserting that unauthenticated requests return a structured 401 that still carries the X-Herdr-Connect-Api-Version header and api_version body field for liveness probes.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth_test.go#L29-L59",
+          "version": "repo-lines-v1:sha256:0cd20a5c41028be8842cb832d241c086064f7c1c7e511af8721255f28ba34a29:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxMTMwMGM4YmE4MzUyYzliODM4OGUzMGYzNzQ5OTQxODM4YTEwYzBhY2U2ODVlYjk1MGQ2OTJhNDhlYTMyYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3NjZmMWFmMGVhNDA1NjIzNTBjYTc3ZjM4ZGI1NDFkODQ3MjU2Zjc5NjFiZDFiZjVkOTg3Mzc0ZTI4MTQxNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkZjQ4ZGUzZjk2ODk3OWE1MTRmZGEwNjc2N2M1MTRiMTczZjU0YmRlMWIxMzQ5YmRmYzkwZTJlNDRmZGNiZTkifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/auth_test.go#L61-L85",
+          "version": "repo-lines-v1:sha256:04f08c41b61e6351d716339ef4db6cd45d75c4ea1b491011d7e4223b2cac420b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZWJjNWFhM2JmZmUxNDhiYmExMTdmMDAyZGRlY2I5ZDdhYjNkNjA1ZWRiZGFhM2YxNWMzNWQ5Mzg2OGViZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MzU4Njc0NjhkNzU4ZTM5OGY0NGIyN2E2MjczNDY1MjAxOWEwNWI0NTE5ZWQ3NGIwNTdmNGM0MTE3ZDEwYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzODU0YzJkYjU4MjhhNzQ3ZTQzMjA3NTZhZjkwMjg5YWRjZWMzNWUyNTJjOThkY2NmN2IxMThkMzdjMzJkNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe593a29a23e4a18afccd3ef9476b62a",
+      "statement": "The pairing flow tests verify that a one-time lanauth pairing secret is exchanged for a token, device ID, and certificate fingerprint; that replaying the same secret fails with 400 pairing_secret_invalid; and that an expired secret returns the same unified pairing_secret_invalid response.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth_test.go#L87-L137",
+          "version": "repo-lines-v1:sha256:5971df7fbffd7cdfd93c918b0c8a98d7d4c81e5e14d35204aa3ae54a0ea110e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMWMyMTk5ODMxOTMzN2Y5YjdkYzZhOWI1ZTNjYmRjNDIxZDNjMDJlOTBmMDY0NTE2NGVjMGM2Y2E0NTkwMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyOWQ5Y2YwMDMwNjYxOTFkNGNhNWNiNjgyNTBjNDU2NTlhMzA2OWJmMDdiZGQ1MWQ5MzcwYzgxN2NkYjU0ZTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0471184de74c4863992e8d2daa680bab",
+      "statement": "Token revocation is observable in HTTP semantics: a server-side revoked token returns 401 with code 'revoked' (distinct from 'unauthorized'), and DELETE /v1/device lets an authenticated device self-revoke with 204 No Content, after which the token is immediately rejected on all protected endpoints.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth_test.go#L139-L200",
+          "version": "repo-lines-v1:sha256:d928e93d51209c5413b0571ac49b8198f2c9bdd19e438e184d155e92c0553867:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZTlmODU5OWZiZTY4Yjk2YWQ1NjUwNjNiYjliZDIyMGM5MjRiOTUyZjUxZDVlNDM1ZjUyZTNkNjkyYjVmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDljYzk4YTE5Nzc4ODQ0YzFjNDMxZmQ4NzgzOTY4MDY5OGFjMzVlMDExNjFlYjRjZjFlNDJlYzhkODhlODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlYjdiZThhZjYxZGVkNWVhMWNiODA1OWQxMjVjYWZjNmNkMzU3OTQ0Y2U0MmUyMDBjNDMxZDc5NjA0ZjVmNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlYjBmZjVjYjMxN2QwYjk0NTkyOWVlMjI2OWY5MTJiYzQxNDFmNjlkZTA0MWZhZWIwZTEyNDVlNTg2ODA4OTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_362436e5160d48aeb4ea11786e8e8bba",
+      "statement": "Go protocol tests use injected in-memory replay/pairing guards to verify Seal/Open round trips preserving event identity, replay rejection with the stable ErrorCodeReplay code, a 30-second TTL cap on remote commands (31s fails with ErrorCodeTTLExceeded), and tampered-ciphertext rejection.",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol_test.go#L147-L166",
+          "version": "repo-lines-v1:sha256:8e83fe16e919e0d91076756f156dccd6b9f2907e5f3fa3af38f4047d27d62514:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOTFhYmE1ZTA2NWNlZTcwOGUzNGZlNjRhN2JiNzBkODZmN2MyYmMyZDhkMWJmNjJlOTAwMDY1ZTA1NTRkYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0ZGMzYzdjOGM0Y2M3Yzc5MWJlYjdkNTE1NzY2NWZiOTMyMTE5MGI4YmNhNDQ4YTlmNWFjYTM3YWVhNGU3NDYifQ"
+        },
+        {
+          "resource": "repo://protocol/protocol_test.go#L35-L145",
+          "version": "repo-lines-v1:sha256:6ca05323865f199bb96de82718393a0deaa8c14da5bcb97569d8be85a1b20954:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2N2JmZjdmNzc0NGU5OTc5NDU4Yzk0ZmE5NWZmMjVkYWNlN2U4OGJjNWEzN2ZhZjlhMTY0M2E5MTgwNDA5ODlkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwMTJiZmY4YWI3NDhjNzI4Njc5MzIzNTM3NTJlOGU0MWNmOTI4YmUxZTUxMWNjMGY3ZWFmMzM1NDZmNWQ3NzJkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0ZDRlMGVkMjk1ZjM4MzdmMjhkODM3NDg1ZjQzN2Q2NjQ2YWFjMzYxMGY1MDQyYTVkZDI3MTEwYzkzNGYxZjczIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_20bcceca99cb4bada2ca3a9dc65caedb",
+      "statement": "Conformance tests pin cross-implementation compatibility: the TypeScript protocol package is built and run against test/conformance.test.mjs so the Go and TypeScript envelope codecs must stay byte-compatible when the wire format changes.",
+      "evidence": [
+        {
+          "resource": "repo://package.json#L11-L11",
+          "version": "repo-lines-v1:sha256:7b1d53fbb4bcb9af1ec45fd704491ec77dc9f642fef64fccbf56f2857232b404:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IxZDUzZmJiNGJjYjlhZjFlYzQ1ZmQ3MDQ0OTFlYzc3ZGM5ZjY0MmZlZjY0ZmNjYmY1NmYyODU3MjMyYjQwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IxZDUzZmJiNGJjYjlhZjFlYzQ1ZmQ3MDQ0OTFlYzc3ZGM5ZjY0MmZlZjY0ZmNjYmY1NmYyODU3MjMyYjQwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg1MjA5ZjEyMTI5Y2M4ZjgxOWEwMWI2YWY3Y2QwMmJiNDJiNmI1ODFkZWI4MjAzNWI1MGM3N2IxYThjNWZmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMxZTJmODcxNTM2N2YzNTIzYzJhYTI1YTQ1ZTFiOGFiYmY5MTg5Nzc5NjIzYjY4OGI4MDY4NzNlOWQ0NDRmNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_54d72ee0cb1a4148b6cbccd06bedcee4",
+      "statement": "pairing.test.ts locks the QR payload contract: parsePairingQRPayload accepts only a well-formed {v, fp, hosts, port, secret} object and throws NetworkError with code pairing_qr_invalid for every malformed shape, while pairingUrls preserves daemon host order, brackets IPv6, and uses the payload's port.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/pairing.test.ts#L15-L175",
+          "version": "repo-lines-v1:sha256:8564bd99549e110927dfa50bb0446d5b98cae2be71ef8150225df0009e3e220c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMjdmY2NmZDZiN2ZmYWIzOTJiMzJlNjUzZmE4ZDYwYTQxZjNjZWFlZDYwYWY3ZThjZjA4ZGEyMmYxMzI1YmI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNDg5OTdhZjFiMGY0ODJmOGU2MjQxYzgxZjA2NzBhZmE0NmUwMWJhZTE4YWZhMzhhMDJiNDVlNDAyYjI5NWFmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjUzNzEzNWM1NWI2Y2I1MTM5YjFhZTc2Y2QxYzY0NTNmZjhiMzc0NGE0YjY0M2JiZDY5YjZjZjg5NjRiODNjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWJhNDc2MzRjOWM2ZGI3MjY3MTM4Yzk3ZWY4ZTk0MjY0NDk2NGU4ZDM0MTc3NDdmOTE1MGE5MmNhNTQ3MDcwIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_351c6353ffb540a9924de899906cee0c",
+      "statement": "session-registry tests verify planSessionSet plans one session per paired instance and replaces sessions on credential or display changes while staying idempotent, planForegroundTransition resumes sessions only on return to active (brief inactive keeps streams), and planSessionRetry retries only not_found/failed phases.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/session-registry.test.ts#L28-L216",
+          "version": "repo-lines-v1:sha256:7721242fa7cfe62b83edcb46fe1c3c8c746e4e2360bc6feb79c91cd6fb11a8d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YzhkMzM0MjE1ZWJmNzkyZmJmODYxYmUxNzdiN2VmMjNhYmZkNGZiZmI0ZDU2NTFlYTJmMjc4YTg4M2RjMjExIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyZmM5YzQ2M2I5YjQwMzc4ZmYzODA0MTQ5ZTJiYjVjNjkwMDJhYmZmZWFlNzZhNDIyZGNjYTAyY2ExMjM2YjNiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlODAxODk4MzlkNjVkOGVmYzE5ZTNlNzM1MDI5ZmI4MGEzNzc2ZGE4MGQxMmY0OTZiMjU5OGMzNDRiN2UwMWFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMmNhZTYwYmEyY2MyNzBmOWYzMGJlZTI0YjNlYmJhYTFkZmJmNWZhYTRmYmM0OTcwOGM1MTM1OTdiNTA1Y2UxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_fadcc56bcbc5461997a1ff412392b86d",
+      "statement": "keychain-write-plan tests enforce ordering invariants: index before instance keys on add, delete keys before index rewrite on remove, active-instance pointer written last, and idempotent full replay when model and index agree.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/keychain-write-plan.test.ts#L31-L94",
+          "version": "repo-lines-v1:sha256:f86f2b2ee5fe5591e2e96cb61edaa2d90ba4a0be2a42968ae857586b2cb2c153:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MDNmNGM5MDVmZTQ1MDAwMWUzNmIxZjY2MjE0OGQwNDIzODViZTZhNDU4MmY0NzZkNjE5N2E2ZjU0Yzk1ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMWE3ZGZmMGEyNjA1ZmNiMDI1MTk4YTY4ODkzZjQyMjdmYzA2NjRkNTVmMTA1OWRiODk0OGU4ZTRjZGY5YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwOTFjM2EwZTNiNGFhYjhiNzNmMDBmYzAxNGMyOWZlOTZiYmJhMjFlNWFkODBhMjg2ZTkzMjgyZTg3OWY2YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NTZjY2QxMDA4NWY4NzlmZWE1NWI3NjQ4Y2YzYzY2ZTMwMzlkNmUyY2NlNzBlOWZkZWMyNzhmNmNmNWNmMWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8fa8a2288594fae98c93af1ec1acf21",
+      "statement": "host-fallback tests define connection fallback semantics: transport failures and fingerprint mismatches advance to the next QR host candidate, application-level NetworkErrors (daemon business responses) are raised directly, and exhaustion maps the last error through classify (empty candidates throw no_address).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/host-fallback.test.ts#L16-L120",
+          "version": "repo-lines-v1:sha256:1767ce2b95c22f056996ef68c46af6672fe8da568f626cdaf7dbdb7197810263:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlM2JhZmUzNDU4ZjU0YmY0ZjYwZGMxODA4YTNlYmExMzBjY2RmZWJhYjdlYTQyYjg2MDJiNTY0YTM5ODg5NzE2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYzkxYzliZjIyNDZkZjUwYzUzYTJiZDM1MmEyOTM0ZjBjNThiNmU0ZTNiYTU2YjYwMWMyYjY3ZDA0YTJmYTA3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1NWM4MDEzMzUxMzNiOGU0NDQ0ZjA4YzcyNGUxMGQ0MDZiNzY2ZmUyMDY2OGVhNTMxNDg5ZmMwNzAzYzc1NjI0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NzA1ZWI5OTFlZDYyNjI1YzQ5M2Q5Y2UyM2I5YTZlZjcwMDJkMGQ2Mjg1MjA1ODExMzk2ZTdmMjA2ZTIzOTA4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a27c47c9ac554701b425d82fcf8a55db",
+      "statement": "discovery-match tests verify candidate selection prioritizes the service verified for the active instance, excludes services verified as another instance's daemon, and that classifyProbeFailure maps fingerprint mismatch to wrong_daemon, transport failures to unreachable, and auth/TLS-pin-passed failures to terminal.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/discovery-match.test.ts#L23-L94",
+          "version": "repo-lines-v1:sha256:854a8379e285bda47739538d079f31dc3b801a6f5ff73dd433a0b820e65b1a22:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiY2JkODkyMWFhYWZlOGI2ODQ3MjBhMGYxZDY3MDI0MWM0ODcyNzE1MzY0NmYyOWNiNjg4YmFhMjcyYjdhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWY0MjU4MzRlMTgwYzc3NGYwNDE1MjVmN2Q2ZjAyZmIwMzY5MGQ4NDBmZGUzODYyZjVlNjhiZGMxMTZkNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMTZhOTM0ZGU5MTk3OWZjZjA2MmI0OGQ0MTUxYjM5MTAzOGI0ZTNkODFjYWFhZjA0YTU1MzZlZTc5MGNkOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2OTk0NmM0YWNmYzljYzBlNzhiOTY3MjE3NzcwM2IzZGE5ZjkwMjFiYzA2MDcyOWEzMThiYmEyNzE0OTI1NWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04146f2b021e438d9b4b8aadf20bf5f7",
+      "statement": "Additional mobile suites pin pure-logic invariants: instance-revocation error classification and forget planning (local credentials removed silently only when server side is clean), instance-alias normalization and the mDNS-name→hostname→QR-host→fingerprint default chain, per-instance UI-state memory slots with pruning, favorites pruning that never clears on an empty snapshot, and screenshot fixture scenes.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/agent-favorites.test.ts#L16-L95",
+          "version": "repo-lines-v1:sha256:115c4ebeb45955145ef4d962a46e5aaf11a9452bd5e1a8631a5963bb165ed720:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMzQ2NjMzZjdjNjMzODk5MDQ2MzI3N2IyMGJiYmEzYzQ0NThkNWY2NzEzYWQ0ZGYxM2ExY2M4MzRjM2Q2ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExN2E1YTk3NDEwNzBmYjZlOWU3MjM5MjZiMzMyZWM4YjIyN2VmYzRhNjc0YThkYmQ3NDBmOWNmZWM5MGIyOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjMDY3YmNiZjViY2ZmN2UzNzdiNzM4NmM4NGRjZmUyNTA5NjQxMTNkYmIyOGE2MTRmMjA2ZGZiMDc3MjIyM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxYWMxYjc3NjI0OGEzNTE5NDQ4OGNmZmI3YTFjNmZjNGEwOTM4ZDYwYzdlMWE2MzQ2MDBlNDQyZjIzNGNjYTMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/instance-alias.test.ts#L16-L121",
+          "version": "repo-lines-v1:sha256:ea0b595b949b4bdef9a14fbc6f2e3803e8140398d81f1fccc398947abb5c3437:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMTg2MzMxMWIxZDQ4NmZmNjUyOTNkOTY3YmFhYTI1MWNmM2JjZjFlZmVhY2U2NWQ4Yjk0ZTUxMjBmMzA4MDg2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmZDk2NDA4YmU0YWY2Mjg2M2Q0ZGNlYTllMzhiNDA1MWU4MmQzYjg1NjI1ZjcyMDhmOGUxODI4NjYxY2I2NGI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4ZWUwZTlmOWUxZGVlNWM3ZTdhNzhlNmQ5MDNiNTM3ZDQ1OTRjOTRmY2RjNWFhNTlhOTNjZWUzODIzMTExY2M2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MmYyZjUwNTVkOWU2MGI3Nzg2Yzk1YWU1NGRkMDZkYjZjMzY4YmNiYmJhODgzZWI0OWM0YTI2MmE5NTJhMzVlIn0"
+        },
+        {
+          "resource": "repo://apps/mobile/src/instance-revocation.test.ts#L16-L92",
+          "version": "repo-lines-v1:sha256:6413d5409af32b69262c90088f357501707792c7a6397a8ca18cb5d36a3e6941:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwM2U0M2QwYzc3ZjJjYmU5YzczZjdmYmUyMTBmMjY1MzMyOTk2YmQ4YTlkZjQyNTY5YTkxYmIyN2UxOWM5NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZTQ5NWJhYzZmNDQyNDFhNGMzMDk1Nzg1ZWNiYWRhNTA4ZDMwNGViYWFlNTZlNGE3MTAzZTNhN2I4NDBlOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViOWZmZWIzMmE4N2E3NDgyMmM1NWNiMWNjNmJjYjcyOWZhYmFmZWYxNmYyYzQ4MGIxNjk4YTY1NDM4NDQ5MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1MWQ5OTUxMjNjOTVlNDdjMDUwMjU5YmMyM2Y1YzU0N2EyNzIwNzFjNDliYWIxM2U2NDVjZTUzNDRhZWNjZjYifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/instance-ui-state.test.ts#L33-L254",
+          "version": "repo-lines-v1:sha256:b657c98672a0cc6be4b7ffb03de311a6fac2752974b60c026596ea7009d2a49c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2MTA3OTc0NDAxM2FmNjE1MjllNTkzZDQwOWJkMDgxMzQzOTg4YjhlMjQ4ZTZkYTAwMDYwMDE3ZTg3OTM5NDQwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MDRmMDhkMTljNDA5YzY0NjI3MTA1YjNjNmUwYTY0NWMyODMyMmYzMjg5YzIwMjg2YTAzM2IwOWIyYjg1ZDQ2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNTU3ZDA2ODRkNzhhZTcyNzU4OWRlNmFmZDE3NWI1NmFmZTVhZTA4NzNmZTIwYmM4ODBlNzQ1ZTZlMTBiNzAyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2ZTg4NTg2ODM2ZDFlNDEzMjBhNmM1YjU3ZGM5MTI5OWYwZTRlNDRhYzFlNzdkMTc5OTU3NmM3NGZhNTA1ZDdlIn0"
+        },
+        {
+          "resource": "repo://apps/mobile/src/screenshot-fixtures.test.ts#L6-L6",
+          "version": "repo-lines-v1:sha256:6241e283f2bb6361a5358a8d28fe03561d30a7b37a14fd2587e71a8fdd452b3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI0MWUyODNmMmJiNjM2MWE1MzU4YThkMjhmZTAzNTYxZDMwYTdiMzdhMTRmZDI1ODdlNzFhOGZkZDQ1MmIzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI0MWUyODNmMmJiNjM2MWE1MzU4YThkMjhmZTAzNTYxZDMwYTdiMzdhMTRmZDI1ODdlNzFhOGZkZDQ1MmIzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU5NmQwMmEzMDNjMjFiOWZhZmQxMGVkNjQ1NGNjMGQ0YmYwNzA0Zjg3N2UwNzYyOWZkZWM4NjBmODU5ZmE5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjBjZmUxNWUwZWM3NjZhNTdiMWZiNmVhZTVlZDc5MTM2OTJjZDRkZDcwZGM1ZjI5YmZmZjQ4ZGVkMzJjOGY4MyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

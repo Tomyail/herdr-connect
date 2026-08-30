@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8094c125e4eaf3604e31b48757b71c6c934486964d302acbd7e48dcb527973af",
+  "claims": [
+    {
+      "id": "claim_03a34e42218e4028862c97df298f888a",
+      "statement": "internal/herdrsource defines the Source interface (Name, Snapshot, Changes, Capabilities) plus optional AgentFocuser, AgentHistoryReader, AgentMessageSender, and AgentInterrupter control interfaces, letting callers type-assert capabilities rather than assume every Source supports control operations.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/source.go#L67-L99",
+          "version": "repo-lines-v1:sha256:ba159b041fe51d022c4126b11e8661497824ee779efebe33774d57752599db04:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NzdhNzliNTBlMTRlYjczYTYxNjZlNGNhZDg0MzczOWE5MTFlYmNhNzY4NDllZGVhMTU4MjVhMTFiZGVjYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWFkNWFhMDdlMDA5ZTIwOTdhMWMwNmZmODM3ZmU2NDlkMTQ2ODdjYmFjNDgxMTdmMDhlYzQ3MzNlNWE1NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f700cca9fcd84af6b20109d7ceb3e26a",
+      "statement": "HerdrCLIAdapter is snapshot-only: Changes() returns an error, and Capabilities() returns only ObserveAgents=true, not declaring trusted state/outcome, read, send, or interrupt; the test suite asserts this conservative matrix.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L35-L43",
+          "version": "repo-lines-v1:sha256:1dc0bb05e1f89e5111df90f6f6fca07ecca1322c94fff8add9b9c92e26065bed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNhNWYwNThiMTBmYjY4MmZlYWIyYTUyYWViMTQyZTM1YjgxNjk2ZTUyM2MxMjIyOTZkNTQzMzgxZWY0MWZjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjI0NGRmYWNlYWFiMTM0YTY5YTQyMzhmYzIyMzBmZmUzOGU5NDExNzE5YjQ2YWFkZDRjZTk0MDU1NDBiMGFmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRhOWRkNWI1MjM0N2QyNDlkNDAzZmJmMjg5N2Q0ZDQwMTIzY2JjZTZkN2M0MWI0MTBhYjgyNjFlNTU2NDI3MSJ9"
+        },
+        {
+          "resource": "repo://internal/herdrsource/source_test.go#L92-L98",
+          "version": "repo-lines-v1:sha256:bd32c1a76c12de8fab17551a1ca93e1138cabea816f180866625a6c60b60e6f7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZmN2NlZDVhMjg4MmFiNjc4OWVkNmZiYzM1NmMxN2U0ZjQzYTA2OTE2NzkxM2M5ZmFiZjVhMTliODgzODdjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjZGE4MmRhNjA2MjM4ZTA1ZTYyMzk5NTY5YzVlZTAzOTkzNDE5NjQ4YWU1ZDQzYTJiZjhjZDYzNDdmODI2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmY2YjJiOTljOGI2MjBmNWY4MzU5ZjMwYTM5YWI2NDQwMWEyYTg4MjYyYTUxYjIzZjYxMGMxZDI3Mjc1NjdkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzhiMjk0ZjkxY2RjMGI0MTViNmJiNmE4OTkzNzE5ZDhiMzM5ZDU3MjQ1YjNjYjcxMGQ2MzNkMDU3ZDBlNjY3YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_47d021b91cbb423cbc39acceb7b57d46",
+      "statement": "Snapshot() uses the pane_id returned by `herdr agent list` as AgentObservation.SourceID rather than terminal_id, because Herdr CLI 0.8+ only accepts pane_id for agent get/read/focus; terminal_id addressing fails with agent_not_found and caused 502s on focus/history/messages/interrupt endpoints.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L146-L193",
+          "version": "repo-lines-v1:sha256:0699279fd8fb2404c83a28d724652ae5de2a00aa116ef0ebf3cc04e8ba171e14:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZGJhMjMxYzEyMGJmZTNjMDk4YmVkMTllZDY1NGRjMzgwNDEwZjc4MmYwZGMyNjY2OGI2NTkxNzNjMzgxMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MzFiNmUyY2EwN2Q4YmFmMGViNDRlNzQ5ZGJmNDkwYjM5MmUzYTUzNGVmNjEwMjI3NzExNDZjZGY5YWYxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzN2I2ZDY0ZWE4NWFkMDI2ZjhiMDAxMGRmN2FmZDE4ZTlhOWViMzNhNmYwZDMxNTkxMzJiMzg4OTdjOTIxYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a2a85038cd94835bc7659f371811609",
+      "statement": "Snapshot() enriches agents with workspace/tab labels via `herdr workspace list` and per-workspace `herdr tab list` (failing soft to empty labels), coerces zero revisions to 1, composes display names as workspace · tab · agent, and sets the cursor to the max agent revision; a CLI execution error yields Snapshot{Online:false} plus the error.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L152-L269",
+          "version": "repo-lines-v1:sha256:e1fb73220acd18e00e8c5845369b721e285ccf3f2abe7d0b886b173b2023624c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzMTFiYzE2NWNlMzZiZmZmNzM4MGNiNzc1ZjI3ZGNmMTZkYTFiYjJkYTUyYjg3NjQ1ZjIxZmE5NzdmZDk3NTljIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkMGQ1MGZlMDZjMzI0ZDZmZjZkNTcxOWJiZjg1OThkYzA1Y2FjZjI4ZDVhNDNiNmM1NmE2YTZjZTUwOGMyNWMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MDU3ZTUwYmE3MWU4NmM0YzIwMzZmYTJmODUzM2JkYmE2MTA4NWIyZGIyNTg0NjJmM2RlYzkzMTI2ODNjZDUzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ba9655aab8144079ae51e8ee227ba56",
+      "statement": "`herdr agent read` writes raw terminal text to stdout with no JSON envelope on success (errors go to stderr as JSON with non-zero exit and become Go errors via the runner); ReadAgentHistory therefore treats output as plain text and fetches the revision with a separate `herdr agent get` call expecting result.type == agent_info, returning chrome-stripped text with a Truncated flag when line count reaches the requested lines (1–200).",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L55-L104",
+          "version": "repo-lines-v1:sha256:3a3d97fe019372e9650963c826d64ed7610cd48526b73b60f50c7eecdf858fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NWQyYTljN2VjMzUwMmM0Yjg4YTMzYmIzZDcxNmVmZDBiMTUyYjQxYWY2YWJhODgyNmYzZDljNGM1MTU3ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2MzFiNmUyY2EwN2Q4YmFmMGViNDRlNzQ5ZGJmNDkwYjM5MmUzYTUzNGVmNjEwMjI3NzExNDZjZGY5YWYxYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYTQwOTY3OGQ4ZjdmZTIwYTc2ODNiZTBlYjkwNjMxZjEyMjExYjMzNjE4NDA4ZTdkZTY4MmJmNWM4YjdjOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bf9751561bf46cc9110382e6248aa00",
+      "statement": "SendAgentMessage runs `herdr pane run <sourceID> <text>` and Interrupt runs `herdr pane send-keys <sourceID> C-c`, passing sourceID directly as pane_id with no agent-get indirection; C-c demonstrably interrupts a real running agent TUI even though bare background processes may not react.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L106-L144",
+          "version": "repo-lines-v1:sha256:37743c5c353d6b44c76b538c7743176f26d25ff132a3af910737123d0e8afac2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMDNlMjA5YTBiOWIyYTRmMDBkZTE5NWViMmRlMTIzZmQwNGU2NTYwODdjMWZkYWU2NDNlZWU2YjNhZDc5MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MDUyNDUyNmQ1OGI4OTUwZGYzODY0NWM3MGFjMTc2MDM3OTE0M2FhZjliMWY0NDgxYTMwNDFlNWM4NjUzYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjOThlYTA3NzNjZGFjMGM2NGU1NTFhMGQ4ZDMyNTQ1ZTQ5ZDA4Y2MxMjM0NmI1ODYyNWQyMDUwZjRiZWNmMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f167b2054c0d42e1b9383321b5ab39b6",
+      "statement": "mapAgentStatus normalizes Herdr agent_status: working→working, blocked→blocked, idle→ready_input, done→unknown+succeeded, failed→unknown+failed, cancelled/canceled→unknown+cancelled, default→unknown with no outcome.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L195-L216",
+          "version": "repo-lines-v1:sha256:8a13b79515a8e0b53c966df28732d51da7f4710470dcb90b599083ed2844cf97:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjQ4OWJlNDYwODA0NDk5MTc3ZGQ0ZTIwNTU0YmRlNmJkYzg5NjYyZWJkODFlZDA2N2JmZjJmZDE1ZTllZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZjk3YjcxMzIxMDc4MDFiMDhmN2RhODQwZWY1YWUyM2MyMjQyOGM5MmM5ZWU0Mzk0Y2ViMWY4ZmY1MjhmM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1ZDdmNWE0YWM3ZGMwMmQ2YzI5NTYzY2MzNDQwZDM3YzQ3ZWY0ZDg1M2ViYzMwYmE2YTBkNDJlNmYxOTg3Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0cdbfce002be4831b7b9c8e84c8b85fe",
+      "statement": "stripTUIChrome removes bottom-of-screen TUI chrome by walking backward and peeling structurally-classified lines (≥70% box-drawing glyph frame lines with a 12-char ASCII floor, keyboard-legend vocabulary using Unicode separators, bare prompt markers, ANSI escapes), bounded by at most 2 presumed-status rescues of ≤200-rune lines so real content cannot cascade away.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/tui_chrome.go#L9-L85",
+          "version": "repo-lines-v1:sha256:5ba4b49b4b564fbc7f8e649fb45e39d46fb68faf46e94a928b87e634f9ccf38f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmMjNjMmYwNDZkY2NmNDg2ZTQ1MmQ5Y2MyMTM3YTA3Njc2NjVhMGRlZGRhMTA3YjYzMGJmM2UxNmE2NGQ5M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZTI4YTU4MTRhYjc3OWQ3M2ZjM2Y2NGQzNWEzMDZmMjRiMWZmNWQyNmNiYjg2MWI4YTFlMzYwOGFiYjEyYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1806c34aa87f438c9c47b568b1aae19e",
+      "statement": "HerdrCLIAdapter runs the CLI through an injected CommandRunner (default ExecRunner using exec.CommandContext().Output()), and NewHerdrCLIAdapterWithBinary allows overriding the default `herdr` binary name, enabling stub-runner tests against fixtures like testdata/herdr-v0.7-agent-list.json.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/herdr_cli.go#L12-L33",
+          "version": "repo-lines-v1:sha256:6a01633fcce017e19b02c8fe5c9daa8d1f6a218b942fafbf435a0020d6f3ef42:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxOWFmMjA0MWRlZGM0OWY5MWI3NDljY2RjOTdlYzRjZGU5ZDg2ZTdkMjY2NWY1NWUxZjhjOWNmODkxYTRjNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNWRlNjczOTBjZTMyYmZmZWYwZGU5NjRjMWM3MjAwOTk1ZDY4Y2EzZWVjYWRlYjNkZDA5Yjg3MmE1NGViNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyOWZhNzdiNjBiMWEwYzE0YzU4OWQwZTdkOTJjZTNmZDk0MjZiNzViYTlkMjkzZjJkODc4ZmI1NDBmZDgzM2QifQ"
+        },
+        {
+          "resource": "repo://internal/herdrsource/source_test.go#L66-L73",
+          "version": "repo-lines-v1:sha256:9c3487329784dd69a9aefc4859248282fac243e28eb2d623e5a173bcbf06fb5e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNhNDEyYWIzYWY5YWYzN2E4NDY5NDliNDg0OGM0ZGRlZjdmODljN2I0ZTAzYmI2NTdlY2Y2YzhjNzNjMzJkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNhOGY5NWMwNTA5N2M5MGRjNTFmNDc5YzZiMzU5MDQyMTgyNjhjODgyNmEyODM0MjAwZDNhMDYyZDc2ODY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI5NjQwNzljM2M1YzgxNTIwZWYzM2EyYjlkMmUxNWExYjg0ZDcyODBkYjg1OTBkY2Q2NTc0N2UzZTAxMmE0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWE2YTcwMTQwZDQ3M2UyM2Y0OWNmMjdlOTYwOTg2YjI3ZDdiOTdiODNmMGMyZTJiOGIyMWEzZDI4ZDI1NWQ1ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fce4ac0c800f492ebf671431422f73f1",
+      "statement": "Fake is a mutex-protected in-memory Source that applies appended ChangeBatches (upsert by SourceID or remove), advances its cursor, serves Changes only for known cursors (unknown cursor is an error), and can advertise arbitrary capability matrices for daemon-level tests.",
+      "evidence": [
+        {
+          "resource": "repo://internal/herdrsource/fake.go",
+          "version": "repo-file-v1:sha256:b7a9780c73aeac14127df1947df635b286676a73badb9623427570cf8c32b039"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

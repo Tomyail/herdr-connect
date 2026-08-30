@@ -1,461 +1,136 @@
 ---
 type: Testing Guide
 title: Development Testing
-description: Testing practices, test suites, and conformance requirements for Herdr Connect
-tags: [testing, conformance, unit-tests, integration-tests]
+description: Test suites across Go internal packages, TypeScript mobile unit tests, protocol conformance tests, and integration scripts, with how to run each suite and what invariants it protects.
+tags: [testing, conformance, unit-tests, integration-tests, mobile, protocol]
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T21:43:29.677Z
+sources:
+  - id: openwiki-source-e86fe7b76c693666bc2cb828
+    resource: repo://apps/mobile/package.json
+  - id: openwiki-source-15c3610f95e73a659cefda30
+    resource: repo://apps/mobile/src/agent-favorites.test.ts
+  - id: openwiki-source-acf237d40aa5df5bc7e1e02a
+    resource: repo://apps/mobile/src/discovery-match.test.ts
+  - id: openwiki-source-f93667697c045439aca100ee
+    resource: repo://apps/mobile/src/host-fallback.test.ts
+  - id: openwiki-source-a3a6872bfc7c8d71f7022f7c
+    resource: repo://apps/mobile/src/instance-alias.test.ts
+  - id: openwiki-source-3df1eba041f61065a6fd9e51
+    resource: repo://apps/mobile/src/instance-revocation.test.ts
+  - id: openwiki-source-f892fa577cc0f42221234c33
+    resource: repo://apps/mobile/src/instance-ui-state.test.ts
+  - id: openwiki-source-2f85d3d47bf1192c20cea1cb
+    resource: repo://apps/mobile/src/keychain-write-plan.test.ts
+  - id: openwiki-source-3c080d7e526fb30073b717a8
+    resource: repo://apps/mobile/src/pairing.test.ts
+  - id: openwiki-source-cb02881fb84a5b280aff9dd2
+    resource: repo://apps/mobile/src/screenshot-fixtures.test.ts
+  - id: openwiki-source-d72f4ac504cc4295762c4136
+    resource: repo://apps/mobile/src/session-registry.test.ts
+  - id: openwiki-source-e799143838233b0e8981fdbd
+    resource: repo://internal/demolan/auth_test.go
+  - id: openwiki-source-ba429e1c8db84aa50c809255
+    resource: repo://internal/store/permissions_unix_test.go
+  - id: openwiki-source-e76dc777eb0d61a030b438de
+    resource: repo://internal/store/permissions_windows_test.go
+  - id: openwiki-source-6d8c1cdec697aee752bd7c32
+    resource: repo://internal/store/store_test.go
+  - id: openwiki-source-5b54a58d1b51cd490b0e7162
+    resource: repo://package.json
+  - id: openwiki-source-d7d84306409d5a2bb025542b
+    resource: repo://protocol/protocol_test.go
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 ---
 
 # Development Testing
 
-This guide explains the testing practices for Herdr Connect, including test suites, conformance requirements, and how to run tests during development.
+This guide explains the testing practices for Herdr Connect: the four main test categories, how to run each suite, and the invariants each suite protects. Most suites are deliberately plain — Go's `testing` package and Node's built-in `node:test` runner with `node:assert/strict` — so no bespoke test framework is required.
 
 ## Test Overview
 
-The project has four main test categories:
+The project has five test entrypoints, exposed as pnpm scripts in the root `package.json`:
 
-1. **Go unit tests** — Test Go internal packages (projection, store, source adapters)
-2. **Protocol conformance tests** — Verify cryptographic protocol behavior
-3. **Mobile app tests** — Test React Native components and utilities
-4. **Integration tests** — Test end-to-end workflows (install script, demo server)
+1. **Go unit tests** (`pnpm test:go`, i.e. `go test ./...`) — daemon-side packages: store, projection, source adapters, LAN auth, demo server, daemon CLI/service.
+2. **Protocol package tests** (`pnpm test:ts`) — the `@herdr-connect/protocol` TypeScript package.
+3. **Mobile unit tests** (`pnpm test:mobile`) — pure-logic modules of the React Native/Expo app, run under Node with `tsx`.
+4. **Conformance tests** (`pnpm test:conformance`) — build the protocol package and run `test/conformance.test.mjs` to verify that the Go and TypeScript implementations agree on the cryptographic envelope format.
+5. **Installation script tests** (`pnpm test:install`) — `test/install-script.test.mjs`.
 
-## Running Tests
+`pnpm test` runs all five in order: `test:go && test:ts && test:mobile && test:conformance && test:install`.
 
-### Run All Tests
+### Mobile suite wiring
 
-```sh
-pnpm test
-```
-
-This runs all test suites in order:
-
-1. Go tests (`go test ./...`)
-2. Protocol package tests
-3. Mobile app tests
-4. Conformance tests
-5. Installation script tests
-
-### Run Individual Test Suites
-
-#### Go Tests
-
-```sh
-pnpm test:go
-# Or directly:
-go test ./...
-```
-
-#### Protocol Tests
-
-```sh
-pnpm test:ts
-# Or:
-pnpm --filter @herdr-connect/protocol test
-```
-
-#### Mobile Tests
-
-```sh
-pnpm test:mobile
-# Or:
-pnpm --filter @herdr-connect/mobile test
-```
-
-#### Conformance Tests
-
-```sh
-pnpm test:conformance
-```
-
-#### Installation Script Tests
-
-```sh
-pnpm test:install
-```
-
-### Run with Verbose Output
-
-```sh
-go test -v ./...
-pnpm --filter @herdr-connect/protocol test -- --watch
-```
+The mobile package's `test` script is `node --import tsx --test src/*.test.ts src/i18n/*.test.ts src/notifications/*.test.ts src/theme/*.test.ts modules/pinned-stream/src/*.test.ts` — every test file is a colocated `*.test.ts` next to its module, and adding a new test file inside those directories requires no registration step. Because the runner is Node (not a React Native runtime), tests must target pure functions and reducers, not components or native modules.
 
 ## Go Unit Tests
 
-### Projection Tests
+### Store tests (`/internal/store/store_test.go`)
 
-`/internal/projection/projection_test.go` tests the projection layer:
+The store suite verifies persistence invariants that the daemon depends on across restarts:
 
-- **Normalization** — Converting source observations to agent records
-- **Lifecycle revisions** — Monotonic incrementing of revisions
-- **Batch application** — Upserts, removals, and authoritative snapshots
-- **Load vs. sync** — Serving stale state vs. syncing fresh data
+- **Migration idempotence and sequence continuity** — re-opening the same database file runs migrations safely, reports schema version 2, and the monotonically increasing `event_seq` continues from its pre-restart value instead of resetting.
+- **Forward-version refusal** — opening a database whose `PRAGMA user_version` is higher than the supported schema fails with a "newer than supported" error rather than corrupting it.
+- **Atomic projection batches** — when a batch contains an invalid update, the entire batch rolls back together: `CurrentEventSeq`, the source cursor, and agent rows all stay at their pre-batch values.
 
-Example:
+### Cross-platform store permission tests
 
-```go
-func TestProjectionSync(t *testing.T) {
-    source := herdrsource.NewFake("test", caps, snapshot)
-    projector := projection.New(database)
-    
-    state, err := projector.Sync(ctx, source)
-    
-    assert.NoError(t, err)
-    assert.Equal(t, 2, len(state.Agents))
-}
-```
+Owner-only database permissions are asserted per platform with build-tag-separated files:
 
-### Store Tests
+- `permissions_unix_test.go` (`//go:build unix`) asserts the database file mode is exactly `0600` via `os.Stat`. Mode bits are only meaningful on POSIX — Windows does not express access control that way.
+- `permissions_windows_test.go` (`//go:build windows`) instead validates the DACL: `prepareSecureDatabase` must produce a **protected** DACL (`SE_DACL_PROTECTED`, so inherited parent-directory ACEs do not apply) containing exactly one ACE that grants the current user, and the operation must be **idempotent** because the daemon calls it on every startup. The comments record a historical failure mode: passing a security descriptor with a stale SACL-present flag made file creation fail with `ERROR_PRIVILEGE_NOT_HELD` for every Windows user, so the test also guards that first creation succeeds.
 
-`/internal/store/store_test.go` tests SQLite persistence:
+The unix test is an external `store_test` package; the Windows test is internal (`package store`) because it exercises the unexported `prepareSecureDatabase` helper directly.
 
-- **Migration** — Schema versioning and upgrades
-- **ApplyProjectionBatch** — Atomic writes of agent updates/removals
-- **Permissions** — File permissions on Unix and Windows
+### Demo LAN auth tests (`/internal/demolan/auth_test.go`)
 
-Example:
+The `demolan` auth suite drives the real HTTP handler stack (`secureHandler(NewHandler(source), database, cert)`) through `httptest` against a real store database and a `lanauth` certificate — no mocking of the auth layer:
 
-```go
-func TestApplyProjectionBatch(t *testing.T) {
-    store := createStore(t)
-    batch := store.ProjectionBatch{
-        SourceName: "herdr",
-        Updates: []store.AgentUpdate{...},
-        ObservedSourceIDs: map[string]struct{}{"agent-1": {}},
-    }
-    
-    err := store.ApplyProjectionBatch(ctx, batch)
-    
-    assert.NoError(t, err)
-}
-```
+- Unauthenticated or wrong-token requests get a **structured 401**: an `unauthorized` error code, the `X-Herdr-Connect-Api-Version` header, and an `api_version` field in the body (liveness probes depend on both markers being present even on 401).
+- The pairing flow exchanges a one-time `lanauth.NewPairingSecret` for a token + device ID and returns the certificate fingerprint, and the token then authorizes protected endpoints.
+- **Pairing secret replay** — the same secret cannot be paired twice (`400 pairing_secret_invalid`).
+- **Expired secrets** — an expired pairing secret returns the same unified `pairing_secret_invalid` response.
+- **Revocation semantics** — a token revoked server-side via `lanauth.RevokeDevice` returns `401 revoked`, distinct from `unauthorized` for unknown tokens.
+- **Self-revocation** (`DELETE /v1/device`, issue #52) — an authenticated device revokes its own token; the device identity comes from the bearer token (no client parameter), the response is `204 No Content`, and the old token immediately returns `401 revoked` on all protected endpoints.
 
-### Source Adapter Tests
-
-`/internal/herdrsource/source_test.go` tests Herdr CLI integration:
-
-- **Fake source** — Synthetic agents for development
-- **Herdr CLI adapter** — Mocked Herdr output parsing
-- **Capability negotiation** — Correct capability reporting
-- **Interrupt** — `AgentInterrupter` interface implementation
-
-### LAN Auth Tests
-
-`/internal/lanauth/lanauth_test.go` tests the LAN authentication layer:
-
-- **Certificate generation** — Self-signed ECDSA P-256 cert creation, fingerprint computation
-- **Pairing secret lifecycle** — Issue, consume, expire, reject replay
-- **Device authentication** — Three-state auth (OK, missing, revoked)
-- **Device revocation** — Idempotent revoke, status detection
-
-### Demo LAN Auth & Rate Limit Tests
-
-`/internal/demolan/auth_test.go` and `/internal/demolan/rate_limit_test.go` test:
-
-- **Bearer token validation** — Auth middleware extracts and validates tokens
-- **Revoked vs. missing distinction** — Correct HTTP status mapping (`401 revoked` vs. `401 unauthorized`)
-- **Rate limiting** — Token bucket per-device (read/write) and per-IP limits, `429` responses
-- **Pairing endpoint** — `/v1/pair` secret consumption and token issuance
-
-### Pairing & Device CLI Tests
-
-`/internal/daemoncli/pair_test.go` and `/internal/daemoncli/devices_test.go` test:
-
-- **Pair command** — QR payload generation, secret creation, polling loop
-- **Devices command** — List and revoke subcommands, JSON output formatting
-- **Dependency injection** — `pairDeps` seams for testable CLI logic
-
-### Store Pairing Tests
-
-`/internal/store/pairing_test.go` and `/internal/store/migrate_internal_test.go` test:
-
-- **Schema v2 migration** — `paired_devices` and `pairing_secrets` table creation
-- **CompletePairing transaction** — Conditional secret consumption with WAL deadlock avoidance
-- **Device CRUD** — Insert, list, revoke, touch `last_seen_at_ms`
+Other `demolan` suites cover rate limiting, the SSE stream, and the base server handler; `daemoncli` has CLI/device/pair/preview tests and `daemonservice`, `herdrsource`, `lanauth`, and `projection` each have their own `_test.go` files.
 
 ## Protocol Conformance Tests
 
-`/test/conformance.test.mjs` tests the cryptographic protocol:
+### Go protocol tests (`/protocol/protocol_test.go`)
 
-### Envelope Encoding/Decoding
+These verify the cryptographic envelope invariants using in-memory fakes (`memoryReplayGuard`, `memoryPairingGuard`) injected through the protocol's guard interfaces:
 
-- Serializing headers to JSON
-- Base64url-encoding protected headers
-- Parsing envelopes from wire format
+- **Seal/Open round trip** — a signed and encrypted envelope opens back to the original plaintext with the logical event identity (`EventID`, `EventSeq`) preserved.
+- **Replay rejection** — the second `Open` of the same envelope fails with the stable error code `ErrorCodeReplay` via a `ReplayGuard` that tracks seen message IDs.
+- **TTL limits** — sealing a `MessageTypeRemoteCommand` with a 31-second validity window fails with `ErrorCodeTTLExceeded`; remote commands are capped at 30 seconds.
+- **Tamper resistance** — modified ciphertext fails without leaking an oracle.
 
-### HPKE Encryption/Decryption
+### TypeScript conformance
 
-- Generating ephemeral keypairs
-- Encap/decap with X25519
-- ChaCha20Poly1305 AEAD encryption
-- Handling empty plaintext
+`pnpm test:conformance` builds `@herdr-connect/protocol` and runs `test/conformance.test.mjs` under `node --test`, pinning cross-implementation compatibility between the Go and TypeScript envelope codecs. Run it whenever the wire format changes; both sides must stay byte-compatible.
 
-### Ed25519 Signatures
+## Mobile Unit Tests
 
-- Signing envelopes
-- Verifying signatures with public keys
-- Rejecting invalid signatures
+Mobile tests live next to their modules and follow a plan/reducer style: most tested modules export pure planning functions (e.g. `planSessionSet`, `planKeychainWrites`, `planForgetInstance`) so that orchestration logic is testable without the React Native runtime. Notable suites and what they lock down:
 
-### Replay Protection
+| Suite | Invariants |
+| --- | --- |
+| `pairing.test.ts` | `parsePairingQRPayload` accepts only a well-formed `{v, fp, hosts, port, secret}` object and throws `NetworkError` with code `pairing_qr_invalid` for every malformed shape (non-JSON, null, arrays, missing/mistyped fields, empty hosts/secret, non-integer or non-positive port). `pairingUrls` preserves daemon-given host order, brackets IPv6, and uses the payload's port. |
+| `agent-favorites.test.ts` | Favorites set toggling, pruning of dangling `source_id`s against a snapshot (empty snapshot does not clear — protects against disconnect wipes), and tolerant serialize/parse round-trips. |
+| `instance-alias.test.ts` | Alias normalization (trim, 64-char cap, blank → unnamed), `.local` suffix stripping for mDNS hostnames, and the `defaultInstanceAlias` preference chain: mDNS service name → mDNS hostname → first QR host → fingerprint tail. |
+| `instance-revocation.test.ts` | `classifyRevocationFailure` maps 401 → `already_invalid`, transport failures → `unreachable`, other errors → `failed`; `planForgetInstance` removes local credentials silently only when the server side is clean; `planReplacementRevocation` skips when tokens match or no previous credential exists. |
+| `instance-ui-state.test.ts` | Per-instance memory of page/selected-agent/filter: selection actions update the current instance without writing memory slots, switching instances remembers old and restores new focus, prune removes unbound instances' slots (returning the same state reference when nothing to prune). |
+| `session-registry.test.ts` | `planSessionSet` plans one session per paired instance, replaces sessions on credential or display-field changes, and is an idempotent no-op when nothing changed; `planForegroundTransition` resumes sessions only on return to `active` (brief `inactive` keeps streams alive); `planSessionRetry` retries only `not_found`/`failed` phases. |
+| `keychain-write-plan.test.ts` | Keychain write ordering: index before instance keys on add, delete keys before rewriting the index on remove, active-instance pointer always written last, idempotent full replay when model and index agree. |
+| `host-fallback.test.ts` | Connection fallback across QR host candidates: transport failures and fingerprint mismatches fall through to the next candidate, application-level `NetworkError`s (business responses) do not, and exhaustion maps the last error via `classify`. |
+| `discovery-match.test.ts` | `selectCandidates` prioritizes the service verified for the active instance and excludes services verified as another instance's daemon; `classifyProbeFailure` maps fingerprint mismatch → `wrong_daemon`, transport → `unreachable`, auth (TLS pin passed) → terminal. |
+| `screenshot-fixtures.test.ts` | Screenshot launch options accept all deterministic App Store scenes. |
 
-- Rejecting duplicate `eventSeq`
-- Rejecting messages with `eventSeq` <= `throughEventSeq`
-- Tracking per-sender state
+Beyond these, `agent-filter.test.ts` is the largest suite (status-group/workspace/favorites three-dimensional AND filtering and enumeration), and `agent-contract`, `paired-instances`, `history-markdown`, `history-scroll`, i18n (locale/messages — every locale must expose exactly the same UI keys and error-code coverage), notifications (completion chime detection), and theme appearance round out the suite list.
 
-### TTL Enforcement
+## Related Pages
 
-- Rejecting messages with `expiresAt` in the past
-- Rejecting messages with `createdAt` in the future
-- Accepting messages within TTL window
-
-### Error Handling
-
-- All protocol error codes are testable
-- Error messages include code and human-readable description
-- `ProtocolError` type is used consistently
-
-Example test:
-
-```javascript
-test("rejects replay messages", async () => {
-  const envelope = await encodeEnvelope(...);
-  const result = await decodeEnvelope(envelope, state);
-  
-  // First acceptance
-  assert.equal(result.error, undefined);
-  
-  // Second rejection (replay)
-  const result2 = await decodeEnvelope(envelope, state);
-  assert.equal(result2.error.code, "replay");
-});
-```
-
-## Mobile App Tests
-
-### Component Tests
-
-`/apps/mobile/src/*.test.ts` tests React Native components:
-
-- **AgentBrandIcon** — Icon detection and color extraction
-- **Agent status formatting** — State to human-readable text
-- **History scroll logic** — Scroll position preservation
-- **Pairing** — QR payload parsing, URL construction (`pairing.test.ts`)
-- **Discovery lifecycle** — Bonjour discovery start/stop/cleanup (`discovery-lifecycle.test.ts`)
-
-### Theme Tests
-
-`/apps/mobile/src/theme/*.test.ts` tests theming:
-
-- **Color derivation** — Extracting accent colors from brand icons
-- **Theme application** — Light vs. dark mode colors
-
-### Localization Tests
-
-`/apps/mobile/src/i18n/*.test.ts` tests translations:
-
-- **English translations** — All required keys exist
-- **Chinese translations** — All required keys exist
-- **Missing keys** — Fail if translation incomplete
-
-Example:
-
-```typescript
-describe("AgentBrandIcon", () => {
-  test("detects Claude icon", () => {
-    const icon = getAgentIcon("claude-3.5-sonnet");
-    expect(icon).toBe("claude");
-  });
-  
-  test("extracts accent color", () => {
-    const color = extractAccentColor("claude");
-    expect(color).toMatch(/^#[0-9a-f]{6}$/i);
-  });
-});
-```
-
-## Integration Tests
-
-### Installation Script Tests
-
-`/test/install-script.test.mjs` tests the installer:
-
-- **Script download** — Fetches install.sh from GitHub
-- **Platform detection** — Detects macOS, Linux, Windows correctly
-- **Binary installation** — Installs to correct directory
-- **PATH configuration** — Adds to PATH on supported platforms
-
-### Demo Server Tests
-
-`/internal/demolan/server_test.go` tests the LAN HTTPS server:
-
-- **Agent list endpoint** — Returns valid JSON
-- **History endpoint** — Truncates to 120 lines
-- **Focus endpoint** — Calls source adapter
-- **Message endpoint** — Validates message size
-- **Interrupt endpoint** — Capability assertion, source interrupt call
-- **Snapshot caching** — TTL cache and singleflight coalescing behavior
-- **Error handling** — Returns correct error codes
-
-## Test Practices
-
-### Unit Test Style
-
-- **Table-driven tests** — Use Go test tables for multiple cases
-- **Golden files** — For complex JSON output (rarely used, prefer assertions)
-- **Mocks** — Use fake sources and in-memory databases
-
-### Integration Test Style
-
-- **Deterministic** — Tests should not depend on external state
-- **Isolated** — Each test uses a fresh database or source
-- **Fast** — Prefer unit tests over slow integration tests
-
-### Protocol Test Style
-
-- **Property-based** — Test invariants (e.g., encrypt/decrypt roundtrip)
-- **Error paths** — Test all error codes are reachable
-- **Spec compliance** — Tests mirror `/docs/protocol/v1.md` sections
-
-## Continuous Integration
-
-Tests run on GitHub Actions for:
-
-- Pull requests
-- Main branch pushes
-- Release tags
-
-The CI runs all test suites and fails if any test fails.
-
-### Coverage
-
-Go code coverage is collected but not enforced:
-
-```sh
-go test -cover ./...
-```
-
-Target coverage is **not yet defined**. Focus on critical paths first:
-
-- Projection normalization and lifecycle revisions
-- Store migrations and persistence
-- Source adapter parsing
-- Protocol envelope encoding/decoding
-
-## Debugging Tests
-
-### Go Tests
-
-Run a single test:
-
-```sh
-go test -v -run TestProjectionSync ./internal/projection
-```
-
-Run with race detection:
-
-```sh
-go test -race ./...
-```
-
-### Protocol Tests
-
-Run a single test file:
-
-```sh
-node --test test/conformance.test.mjs
-```
-
-### Mobile Tests
-
-Run with watch mode:
-
-```sh
-pnpm --filter @herdr-connect/mobile test --watch
-```
-
-## Writing New Tests
-
-### Go Tests
-
-Add tests next to the code under test:
-
-```
-internal/projection/projection.go
-internal/projection/projection_test.go
-```
-
-Use `testing.T` and standard Go assertions. Example:
-
-```go
-func TestNormalizeObservation(t *testing.T) {
-  caps := herdrsource.Capabilities{TrustedInteractionState: true}
-  obs := herdrsource.AgentObservation{
-    SourceID: "agent-1",
-    Revision: 1,
-    InteractionState: herdrsource.InteractionWorking,
-  }
-  
-  update, err := normalizeObservation(caps, obs)
-  
-  assert.NoError(t, err)
-  assert.NotEmpty(t, update.Record.AgentID)
-}
-```
-
-### Protocol Tests
-
-Add to `/test/conformance.test.mjs`. Use the `test` function from Node.js test runner:
-
-```javascript
-test("encrypts and decrypts message", async () => {
-  const plaintext = new TextEncoder().encode("hello");
-  const envelope = await encrypt(plaintext);
-  const decrypted = await decrypt(envelope);
-  
-  assert.deepEqual(decrypted, plaintext);
-});
-```
-
-### Mobile Tests
-
-Add next to the code under test:
-
-```
-apps/mobile/src/AgentDetail.tsx
-apps/mobile/src/AgentDetail.test.tsx
-```
-
-Use React Native Testing Library patterns (not yet adopted — tests currently use plain assertions).
-
-## Known Test Gaps
-
-Areas with minimal or no test coverage:
-
-- **Service installation** — launchd/systemd integration is untested
-- **Bonjour discovery** — Mobile discovery flow is untested (requires physical device)
-- **HTTP client** — Mobile network layer is untested
-- **Concurrent sync** — Projection layer concurrent access is lightly tested
-- **Error recovery** — Source reconnection after failures is untested
-
-These gaps are acknowledged but not blocking for the LAN preview milestone. Future work should prioritize:
-
-1. Service installation tests on real macOS/Linux systems
-2. Fake Bonjour server for mobile discovery tests
-3. HTTP mocking for mobile client tests
-
-## Test Metrics
-
-As of the current version:
-
-- **Go tests** — ~15 tests, pass in <1 second
-- **Protocol tests** — ~20 tests, pass in <1 second
-- **Mobile tests** — ~10 tests, pass in <1 second
-- **Integration tests** — ~5 tests, pass in <5 seconds
-
-Total runtime is under 10 seconds on CI.
-
-## Next Steps
-
-- **Add missing tests** — Focus on service installation and discovery
-- **Increase coverage** — Target 80% coverage for Go packages
-- **Property-based tests** — Add property tests for protocol invariants
-- **E2E tests** — Add tests for full user workflows (install → discover → interact)
+- [/openwiki/development/setup.md](/openwiki/development/setup.md) — environment setup before running tests.
+- [/openwiki/mobile/ios-client.md](/openwiki/mobile/ios-client.md) — the iOS client whose logic modules these tests cover.

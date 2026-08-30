@@ -4,6 +4,25 @@ title: Secure Pairing & TLS Protocol
 description: Implemented LAN pairing flow with TLS fingerprint pinning and bearer-token auth, plus future HPKE-based end-to-end encryption design for relay connections
 tags: [protocol, tls, pairing, authentication, cryptography, hpke, encryption]
 resource: /docs/security/lan-tls-pairing.md
+verified:
+  - by: openwiki/0.4.3
+    at: 2026-08-30T21:43:29.677Z
+sources:
+  - id: openwiki-source-889b5718c4709f8aa5a81e18
+    resource: repo://apps/mobile/src/agent-contract.ts
+  - id: openwiki-source-4d337f0c7fd897a8626e5c73
+    resource: repo://docs/security/lan-tls-pairing.md
+  - id: openwiki-source-7bd743295a65ffe5a73f2ed4
+    resource: repo://internal/demolan/auth.go
+  - id: openwiki-source-07d77e7f317cf6efc47a9b12
+    resource: repo://internal/demolan/rate_limit.go
+  - id: openwiki-source-799493e58df545a814263bad
+    resource: repo://internal/lanauth/lanauth.go
+  - id: openwiki-source-f23eabe46882e86f99810343
+    resource: repo://internal/store/pairing.go
+  - id: openwiki-source-64700ed4d455b9f464c4ccf2
+    resource: repo://protocol/protocol.go
+generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 ---
 
 # Secure Pairing & TLS Protocol
@@ -41,6 +60,23 @@ Pairing uses a QR code containing a one-time secret:
 5. **Token returned once** — The plaintext bearer token is returned exactly once in the pairing response, stored by the mobile client in iOS Keychain, and never persisted or logged in cleartext
 
 Pairing is auto-approved (scanning a QR visible only on the host's physical screen is the out-of-band confirmation). The single-transaction `CompletePairing` is the seam where a future explicit confirm step would go.
+
+```mermaid
+sequenceDiagram
+    participant Owner as Owner CLI (herdr-connect pair)
+    participant Store as SQLite Store
+    participant Mobile as Mobile device
+    participant Daemon as Daemon /v1/pair
+    Owner->>Store: NewPairingSecret (SHA-256 hash, 5-min TTL)
+    Owner->>Mobile: QR code {v, fp, hosts, port, secret}
+    Mobile->>Daemon: POST /v1/pair {device_name, secret} over pinned TLS
+    Daemon->>Store: CompletePairing (single tx: consume secret, insert device, link)
+    Daemon-->>Mobile: 200 {device_id, token, fingerprint}
+    Mobile->>Mobile: store token in Keychain
+    Store-->>Owner: secret consumed, device_id
+```
+
+The QR-to-token handshake; only hashes of the secret and token ever touch SQLite.
 
 ### Bearer-Token Authentication
 
@@ -82,6 +118,8 @@ Paired devices are managed via the `herdr-connect devices` CLI (see [CLI Command
 
 - **List** — Shows all paired devices with status (active/revoked), paired/last-seen timestamps
 - **Revoke** — Sets `revoked_at_ms`; subsequent requests with that token get `401 revoked`. Idempotent: revoking an already-revoked device returns an error.
+
+Revocation is also possible **from the device itself**: `DELETE /v1/device` (`/internal/demolan/auth.go` — `handleSelfRevoke`, issue #52) lets an authenticated device revoke itself. The `deviceID` is derived from the bearer token by the auth middleware — the client passes no identifier, so a device can only revoke itself, never another device. It reuses the same `lanauth.RevokeDevice` storage path as the CLI, so semantics are identical: the very next request with that token receives `401 revoked`.
 
 Revocation is host-side only. The mobile client detects the `401 revoked` status, clears local credentials, and surfaces a "revoked" UI state prompting re-pairing.
 

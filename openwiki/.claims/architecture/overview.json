@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0223d7c1b07dc21bca840c5c79007ddafc6abc77e61dce491d69a115a1f71d78",
+  "claims": [
+    {
+      "id": "claim_cb1d1d5fbda14d02ab434584f475f219",
+      "statement": "Herdr Connect follows a three-tier architecture: the Herdr CLI provides raw data, a Go daemon projects it to SQLite and serves it over an HTTPS LAN API on port 9808, and a React Native iOS client discovers, pairs with, and consumes the API; a separate protocol package defines HPKE/Ed25519 primitives for future relay E2EE that are not yet integrated into the LAN transport.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/herdr-connect/main.go",
+          "version": "repo-file-v1:sha256:f420e3569abde44756f17814ccca255d6a493bac4a050d88e20f8c94acfa9f77"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L20-L31",
+          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_439b3b62f4524dada08cd369d537a8d9",
+      "statement": "cmd/herdr-connect/main.go is a thin entrypoint: it wires a signal-aware context into daemoncli.ExecuteVersion and provides a source factory selecting the real herdr CLI adapter (binary from HERDR_CONNECT_HERDR_PATH, default 'herdr') or an in-process fake source with full capabilities.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/herdr-connect/main.go#L15-L53",
+          "version": "repo-lines-v1:sha256:00b6e6e23b036b31fa1408fe9ced424a84eafbe198d6c3f73c6deda6e72bd3fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNWQ2NGY5NzFiMjRmNzAxZDM0Yzc3ZjEyNWFkOTNkNzBiN2I0MGEwMmMwMjM2YjA0NTM5M2UyNGJmNmI1ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MjU3MTE2NDJkNmYxMjRiODMwZjc4NWU0Y2RlMGQ3Nzk4M2E4ZGQyNTkzMGVhYWI0YTZhMGQyNGNmOGIzYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab48a0341baa4744a9797677275c3c67",
+      "statement": "The daemon advertises a _herdr-connect._tcp Bonjour service including an fp TXT record with the TLS certificate fingerprint, which the mobile client uses for pairing verification and certificate pinning.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/advertiser_darwin.go",
+          "version": "repo-file-v1:sha256:d99ae1dc3a627339478ff64d9ecc092734fd433a2e4dc442419e06698035cd84"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L20-L31",
+          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76d74a8e0fd841f3b5fbe1a1ba6d7b74",
+      "statement": "The REST handler and the SSE broadcaster share the same cached snapshot function, so enabling SSE does not increase the net Herdr CLI call rate; snapshots use a 1-second TTL cache with singleflight coalescing.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L93-L107",
+          "version": "repo-lines-v1:sha256:ea4026ae3caf3783fc8b951196d8bb819c2bded91e29242e0072e231fa756124:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ZjAzNmU4NjBjYTE1YTgxNjhlOWM4ZTAyZTIzYTQyMTI4NTYzZWUwZWE3MDZlMmE2Y2YxY2Q4NWM5NjUzMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMGI3NjIzYWE0YWUzNWM2MzI5ODdkYjEzMDliYzNiMTE5NDYyNmE1YmE4MDk3NDQ2OThiNDYwYWI3ZDQ4N2EifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/snapshot_cache.go",
+          "version": "repo-file-v1:sha256:afb3bbd1a252701be4c541f4759031e0d2f026eb80f8d5c2e5f2714085d9977c"
+        }
+      ]
+    },
+    {
+      "id": "claim_37b9c7327f5f40e792058f4df25d902c",
+      "statement": "The LAN server enforces token-bucket rate limits: per-device reads 5/s burst 10, per-device writes 1/s burst 3, and per-IP 1/s burst 20 for pairing and unauthenticated requests; exceeding limits yields 429 with rate_limited and Retry-After 1.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/rate_limit.go#L34-L44",
+          "version": "repo-lines-v1:sha256:44c16ba015d96d8f072d548121c1dbc077c87b4d5dda730fbbf658612cf754ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmODBiZDJiYTgwYjQ0NGMzNzI5Yzk5NWVjY2VmMzQ4MTM0YTkzMTlmM2U0YmZhZjYzNDdmYWIxNWM5ZmIzN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhM2M2ZjhhZDQ4OGFhOTZlZjg0NzRiOWI0Y2VkYTU3ODUzZDZjODNlMDYwZjUwYTU2MjdhNjViZDI2Y2FhOWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c8f08cf10b24b65bb840acdbd0c7c66",
+      "statement": "SSE broadcasting is subscriber-count driven (polls only while subscribers exist) and a per-device stream connection limiter bounds concurrent SSE streams per device.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L75-L90",
+          "version": "repo-lines-v1:sha256:54018a707065071c3977bdb84ff3073b9d05f8e247efba121f662eac08c941b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmODkyNzllMzBkMjA5YzNiZTZlZjgwNWY0N2I0NDU2ZDc5N2E2ZDFlM2EzOWZjYjA4Y2ZkNmIyNDgwMjJjMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MDJiMmMyNWRkMTA3N2FiNjRmMjIyNjcyYzE3ZWU2MTU0ZmUwNjQ0MTEyMmU4ZmU3ODAwM2VlNzZlYWRmYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmYWM0N2ExYTgwZTc4M2FlZTQzNDRmYzgzMmFjMzg5ZjhjZGZkMzYyMzExMzExMTk3MTRhYzRlNDM0N2M4NDEifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/sse.go",
+          "version": "repo-file-v1:sha256:14e02804a56916634bc785dff041aed6149b7e573fc834a7278e0071520d0d11"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf0ed4f9f992491faccc5b310f21d820",
+      "statement": "The daemon serves /v1/agents plus /history, /focus, /messages, and /interrupt agent action suffixes with bearer-token auth; history reads the last 120 lines and messages are capped at MaxMessageSize 4000 with truncation flagged.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L20-L31",
+          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5a5b74e64344a66a4e8fcce24d1cc55",
+      "statement": "Every response, including 401 auth failures, sets the X-Herdr-Connect-Api-Version header, which daemoncli's liveness probe relies on to detect a running service.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L109-L115",
+          "version": "repo-lines-v1:sha256:801d24df39a651326e58fc72dda800ae29083fa9b27874ef5909e9d7b8f1a9f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBjNWMxNzc4OTZiYWE4MDU2MmFkNzhmMjNiM2IxNTEzMjUzODQ2MGQxZWUwMDBiYjQwMjU5OGEzZDdkZTA0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjI5NjQwNzljM2M1YzgxNTIwZWYzM2EyYjlkMmUxNWExYjg0ZDcyODBkYjg1OTBkY2Q2NTc0N2UzZTAxMmE0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjlmZWU4YjViNTFhMGUwZmFiMjhkNjg0NTIzYmUzNzM0MDgwMWQ5YWViZGYxZWEwMDFiYTdmMjg1YTdlNTg4NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7800360f623b499b9c640cc4443dffd8",
+      "statement": "internal/daemonservice defines a Manager interface (Install, Status, Logs, Restart, Uninstall) implemented for macOS launchd and Linux systemd user services; other OSes including Windows return an error, so Windows runs foreground only.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemonservice/service.go#L42-L106",
+          "version": "repo-lines-v1:sha256:0050e3674a57f9ff13302fe7f1923d36911b9d2bce61a5f7ac1e09a1a12fa4de:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NGVkZDhmNTc2MDZlNWI5MDEwNDM4MDZhZjE3YmVkZTU5ZDJjNzIyMDkyZWU2MWQ3NzJjM2VjNDI3ODdhNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmOWU5MzBlNDA5NzUxM2FmMTc4YTM3MGJhMjFkOWJhMmExZTU1OGRjNDQwZjNhZGQyY2ViYjM0ZjhhNGM1NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNzVkNGY1MjM0YTM1MDdhOTI1ODUxOTU2OWYwYzJmNWJkZTk0NzE2NjI5ZDJmNjUxMzdlODYwZDdlNmYxODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d0b7dbcaadb4fe4959f9d5651df98f3",
+      "statement": "Service installation requires absolute paths for the daemon and Herdr binaries, refuses to overwrite a config lacking the 'Managed by Herdr Connect CLI' marker, and rolls back the previous config if reload or start fails; macOS log files are created with 0700/0600 permissions.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemonservice/service.go#L108-L150",
+          "version": "repo-lines-v1:sha256:883e06dac69b4b185b65df1ad7bc306edd7b27ff449c886b787316510aaebe00:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMTVjOGFmYzZiZmM0MjgzYzU0ZWQwNWM2NjYyODZkMDEwOGRiZmFiNWI5ODVlOTJjMTllZjA0MTkxOWRmYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1NWJhODE4NWRjZWJmMzg1YjYzNzNkNzJhYTg1YWQwODgzNjc5ODhiZWZiMDU5ZTRjNGRkMzE3N2FmZTU1Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmOGMxZDViZjYwYjU2YzE1NjdjOTlkN2YxMTlkM2Q5OWU0MjM1YzU1ZGVjZmE4MTRlZGMwNjc3MDM1ZTRmZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlYjQ1NmNlMzY5NDBmYmFkMmZlMWQzM2I4NzNlZjhlNzdhNWFlZmMzZWIyZDNhZTY5ZjZlYjdiNWUxMjcwZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1569d03425484a0cb842fbb93426f8f1",
+      "statement": "The service config lives at ~/Library/LaunchAgents/com.tomyail.herdr-connect.plist on macOS (logs under ~/Library/Logs/Herdr Connect/) and ~/.config/systemd/user/herdr-connect.service on Linux.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemonservice/service.go#L19-L23",
+          "version": "repo-lines-v1:sha256:6b91a17cc9b4da0737bfacce893f79bfc6046fdb62cb158297ffe7850f032032:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDBkOTg2YjBkZjdlOWM0N2FhNzgyYjA2NjA5NDY5YmM4ZWVjYTQ3NjEyYjgzOGNmODI5ZGRhNGJjZGRkMzMyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQ1ZGU2NzM5MGNlMzJiZmZlZjBkZTk2NGMxYzcyMDA5OTVkNjhjYTNlZWNhZGViM2RkMDliODcyYTU0ZWI3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZThhYTMxODVlODQ4MTZmYzczNTc5ZmI5YTk5NDJlZWY2ZTM2NGE3MzNlM2FjYzI4YmRiMGYzZGY2Y2U1ODNkMyJ9"
+        },
+        {
+          "resource": "repo://internal/daemonservice/service.go#L97-L101",
+          "version": "repo-lines-v1:sha256:27c482424ac5c266bdef7b21bc05f649c607a07c83309f7773ac03b9f5adc6d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGEwMDAzYzgzNWU1OTQyZWM0MWRhZTc1MWMzMjQ5MzVlYzNkMThmYjc2NDk5OTc3YmY1MTE0YmM2YTFiNzU3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ0OTE5YTg0Yzc2OTkyZGU0MjIwYjViZDEzNWMwZDliNGZmNDgwYjliOTFjYjVkNTQyNjM2NTQ4ZGI2MzBiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzI4M2IyMDQ5YWQ2NjEwYzc4ZDY3ZjlmMGNmNDcxMjMwZTZkNTc5M2I0ODlkNWRiZDYxMGVkNTUxOGY4MTM2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzAzMzU1OWE2NmE5ZjU0ZWIwZDJhNzU2ZjQyZWZmNTg3YTMxYmFlOTUyNTQ4ZGYzNTcyMWEwM2MwMWUzNDMzZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4139884778b4be68b0f29ab6dfdd8dd",
+      "statement": "The screenshot-launch-options Expo module is an iOS-only native module exposing simulator launch arguments (-appStoreScreenshotScene, -appStoreScreenshotLocale) to the App Store screenshot harness; its JS wrapper keeps the native lookup optional so Expo Go and Android still load, App.tsx guards the route with __DEV__, and it needs no plugin entry in app.config.ts because it is resolved via autolinking.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/modules/screenshot-launch-options/index.ts",
+          "version": "repo-file-v1:sha256:9452344ecbf8580b4fdaa7fe4217b7d754089077377f7d8c0ef7bfc1fd0e128a"
+        },
+        {
+          "resource": "repo://apps/mobile/modules/screenshot-launch-options/ios/ScreenshotLaunchOptionsModule.swift",
+          "version": "repo-file-v1:sha256:80b52c44ea24623bd5a660c66004137daa73499501b99f3626af9098ac532aad"
+        },
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L40-L45",
+          "version": "repo-lines-v1:sha256:ed6efd4e73f332285322559580c855b35077d30c5a82d78f27ca3e6e5a5de695:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJhYjc4NjVkYzQ4MGE1NTRmNTNkYTJhMWE5OTc3OTcwNzljYTUxZTgyZjY5ZjY0ZjcwMDFmYjI2MDk1NTAwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmZjNDkzYjk5MzI1ZTg1MjhkMDZjOWQ0ODgwNDQ2NTNlYTMzZjFhMGZjZTljOGUyOWFjNTE4NTIxMTk5MGE4NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg3NWI5NTRhYjZmOGQ2MmMxZjE5MzE5MDFmOTQyMjk0Y2Q0ZGVkNDE3NzlmMTdjZTZkNzUzYjRlZGEwMjgxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmJjMTE1YzYxMTkxMmJiYTM0MDdlODc0NzFjODhhNWQ5MTc4N2JmZWFhYzQ1ZmU4OThhMWFhMmFkYjg5ODBiZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d01bed9687984c7d8cb7e7d37319ac9c",
+      "statement": "The iOS client pairs via QR (POST /v1/pair through pinned-fetch), stores fingerprint, token, and device ID in the iOS Keychain, discovers the daemon via Bonjour browsing of _herdr-connect._tcp, and consumes /v1/agents plus SSE via TLS-fingerprint-pinned native modules; it requires an Expo development build.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/PairingScreen.tsx",
+          "version": "repo-file-v1:sha256:67627ebab001e206b622b4d7f837bf1f4e077aa4bd661aae959514e441c68137"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L20-L31",
+          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9bc1f1c8f0048b49cd49ac4bbd290ba",
+      "statement": "When the Herdr source is offline the server still serves the last known projected state from SQLite with source_online false in the response.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/server.go#L44-L50",
+          "version": "repo-lines-v1:sha256:cd7f598961089d4fe70c190775600f7cd2f1a0345d512f99479891fe8dd4dbc7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JiYmM1NjFkODVjYWQ4MjM0ODNjNTMwYWIzM2ZmMzVhMDU2MGMyNzQxMmQzMDJkY2I0NTY0NzZjN2VhNTZjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRiNmJlYTA2MGMzODg2YzlkMzE5OWQ4YzllNWFmODU0YjQ3Y2U0NGU2YTJlODQ5ZDRmYmQ1NTlhOTcyNDBiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY5ODRhYTEzYWEyMzExOGQwMTgyODIyODY1ZTg5MmEwOGQwYmVkMjUyYjIzZDZhMTZlNTgxMDQ2MzNjMTc4YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4508b6d89bf44dd3916d94230c0ce914",
+      "statement": "LAN security uses TLS with a self-signed ECDSA P-256 certificate whose SHA-256 fingerprint mobile clients pin; per-device bearer tokens from QR pairing are stored only as SHA-256 hashes daemon-side, and there is no E2EE layer yet — TLS terminates at the daemon.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go",
+          "version": "repo-file-v1:sha256:dc486bd14a3a10f03bbd748ab38890972b85e5a3c68653cd7d03ddc9ed18acc6"
+        },
+        {
+          "resource": "repo://internal/lanauth/lanauth.go",
+          "version": "repo-file-v1:sha256:3af2503d9932890534918afdf13496a8948e108eee0363257d234a8989e6f1dd"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

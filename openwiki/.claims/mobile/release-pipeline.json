@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:12a24ee4801f9e7c1ad5444237d1f0fd4e9a87effcbff73a69c83dfc9f951557",
+  "claims": [
+    {
+      "id": "claim_ef447e04441c4705a9e195e4051e6d67",
+      "statement": "iOS releases do not use Fastlane, Ruby, or EAS cloud builds; no fastlane Fastfile/Appfile exists in the repository, and releases are driven by Xcode plus the App Store Connect CLI (asc) through apps/mobile/scripts/ios-release.mjs.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L1-L15",
+          "version": "repo-lines-v1:sha256:63ffc1473c766add405f021ff9d5735e3706cbc69de55fa9c6bce120a7af73f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlNzJiZjI2YTc3ZTQwMDdiOGZlZDJlNGQxZjYzNzkzNWU3OGY4YTIwMTA3ZjAxNDg3N2I3M2ZjNzAwOGQ4YzAifQ"
+        },
+        {
+          "resource": "repo://docs/maintainers/releasing.md#L29-L41",
+          "version": "repo-lines-v1:sha256:680bf0818543c3cf5f7f842ff12ddfd3f60c93707b9264a43e97bb24f134f870:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMTAwMWQzNjZhZmFmYmZlZGI3YWNjZGFhNTAzOWYwYzg0YzQwMTRjOWM3YTViNGI3NGZhZmVjMjFkMzU1OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZDcwYzQ3ODViYzZjNTRjOTQ3NTgyOGU2ZjVlMDE3N2MyZDI1YmVkNTY0MTAzNWZkZmYzMjRiODNhNWRlYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZDVjYjJiNWFkOGFiN2Y4ZTBhMWI0YWY3MGFlODQ0NGJkMzEzMmRiNjE1N2M5NjQ5N2ViOGE2Mzk4MzViNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4ZGFlOWI0M2MyMDkzYjg3MzQ1NTExMTJmMTljNDA3ZjIyNDNlOGJjODdiNmM3NWJmNDMyNTMzNGQ3YjJiM2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c48bf5cb81641d2bee896dbdeb73a46",
+      "statement": "Every ios-release.mjs subcommand first validates the Expo config, enforcing bundleIdentifier com.tomyail.herdrconnect, a numeric ios.buildNumber, ITSAppUsesNonExemptEncryption explicitly false, and a non-empty NSPhotoLibraryUsageDescription.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L47-L71",
+          "version": "repo-lines-v1:sha256:b5e6fc4d3231a8523d1059f888e53e9e54050e7a1e529b0aa4f9e49b41e11b3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiM2ZkYzAxNTI1NTUyYjk0Y2UyNzg4YzA2YjhhYTgwYzc1ODI4MjgwNWQ2ZWUyZTMxYzYyNWRkY2YyYjdiNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViN2UwMTAwYWNkN2ZhNDkyYWRmNzc2YjYyMjg4NGFmYjBlMWM5NGYyOTk0YjgxODQ2N2ZhZTZmMTQ5OWM3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjNTQ5ZTk1ZGZjMDI0ZWYwMmYzNmU1NTAzYzc1YmU1ZDRmYjk0Y2E1OTcxYTdjNjI4NWIyNzJjM2Y1ZTJkNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82ba0e25fbeb441ab059c10474a857d6",
+      "statement": "ios-release.mjs provides prepare (expo prebuild + pod install), build (asc xcode archive/export to an App Store Connect IPA, requiring APPLE_DEVELOPMENT_TEAM), upload (asc builds upload --wait), and distribute (TestFlight publish requiring TESTFLIGHT_CHANGELOG and TESTFLIGHT_GROUPS, with optional --notify/--submit flags).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L204",
+          "version": "repo-lines-v1:sha256:e4467cd4d168d0c4e0f9869e41caee979f00fc2edb8ee121f7041c7adf8df1f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzOTdlYzQ2YjM4MTc5MTg0ZWIwZDM2ZTY4MmIwYzY5YWU4ZTExNTEzM2Q2MzBlYjliYTJjNTQ5ZTJhMjRhMmQ1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1YjgwYzBhNGRkOGI1YjY4NjE5NjgzYzMzMGQ4YWE5YTQ5ZTNiODU1M2MwNGY1MjRhZTg4MDNlNGU5ZDRiNThhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNzc5YWI5OWE3NTQ0NjNkNjFmMmE2N2IyM2EzYjdmYjI2MmFmY2E5NWQzYjI2NzllNGI5NjU0MTRjODQxODdmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOTI0NTg1NDAyYWM4Nzg5MjQ3MTM5ZTIwNThmNGRiODNlODhhNDU2ZTAzNmIwMzk4ZGIwZGVmYzdjM2Q3NTIzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_263f5f2c37fe489282ffafd4e28831fc",
+      "statement": "App Store screenshots are generated from fixed fixture data, not a live daemon: screenshot-fixtures.ts supplies a fake DiscoveredService, agents, agents response, paired instances, and localized history, and createScreenshotConnection returns a connected ConnectionValue whose callbacks are deliberate no-ops so screenshot scenes never mutate real credentials.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/screenshot-fixtures.ts#L13-L156",
+          "version": "repo-lines-v1:sha256:92ac88ba128d2de950920d8b7988f9de28263b91d58ed5359c40849790a61842:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkZjEwZDhjYmVkYWU2MGU4YmRjZTFiMGRkZmY2ZDczZTdkODcyNmNlZGZkNzI2Y2MyMzFmZDQyZjUzNWEwNjliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmODdjOTUyZTdiNGJhYmQyZDYyZDI5ZWEzMWFmNWFjYmQwODcyNjMwNzMzMjM1NjcyNmYyYmMxNzEyNWExMjcyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxYWQ1YzVlNmU1NjViZTNjNmE5ZWEwOGFhMDQ2ODA4MGUxODA0MGM0ZTI3ZWM4MmM2ZWVhZDg2MGUzZmNiODJiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bdb880346914435b9ab0a6139c379a8",
+      "statement": "The screenshot scene route is Debug-only: App.tsx reads launch options only when __DEV__ is true, and when a scene is active it pins light theme, the launch-arg locale, and a fixed 9:41 time label.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L395-L415",
+          "version": "repo-lines-v1:sha256:09b3c68f4d3cd9e7c2bfe38fdf7a8c046bb7cac3c411650ef1232ce0b1299e74:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmODFmMzdmOGE1ZDRjMWRmNjRhZThmNjg1MzA0ZDVhODllMGY4N2U3MTljOTM4MWRmNzc5YmQ3MmFhYTg3ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlODRhZGQ1Y2U5YjQ0MzNmN2U3OWQzNDE1Yzk0NjUxYWIyNTFkN2NhNjAyYjdkMjI5MTBhNDJiOTdkYTI0OWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMjViNGY0OWM3N2Q2MjZhYzJhMzdlODJhOWNkZmZjNmQ0NWQ0NDYzZWVlMjdiNGE2NGNiODRkOTJhZjM2YTMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L44-L46",
+          "version": "repo-lines-v1:sha256:986b8009ea252db5b9035b989ef01cf5f46eb80df3eb0daefd244b8a29747cee:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE1ZTlmNmYyNWRlMThlZDg2ZjQyNDA4MmM5ZjZmOGM0NDIwZGM2MGI5ZmE0NTNhNmMzZGE4ZTk2ZGMyNjk5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkzNTIxYjBmMjc3MWFmMjYxNTNlYzMxYzc3MzhiODBjNjUzMWFhYWNmN2EwZmZiNmNjMzQzM2M3ZGFhMDhjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGIwNjc5MzVhMjEzMjliMTNlOTUyNjIxNTEyMWU3NjJiMDIwYjBhZWNlMjE2MTFmZDMwMGRmZjFlNjA4MWFmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWRjY2VlNDZiOWUwNTI2Yzg1NTQxYjBjNWYzOTIwYzQ5ODg0YWYzNTk3MGVlNmU1YjVlZTgwNTM3YWZmZWZlYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed1c7f9286604c9783dfb719d802a2fe",
+      "statement": "AppStoreScreenshotScene renders production components (AgentsScreenContent, AgentDetailBody, SettingsScreen, SplitLayout) inside a ConnectionFixtureProvider seeded with the fixture connection, and its root view carries accessibilityLabel \"app-store-screenshot-ready\" used as the capture readiness signal.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/AppStoreScreenshotScene.tsx#L39-L62",
+          "version": "repo-lines-v1:sha256:52ba5c0e4b35a36d4b093231be960bc6c955818976067abe004846f1e7986e2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NWEwZDFhY2MyOTc1ZjZjYTY2ZGE1OGFmYTBhZWZhMzc5YTczNjUxZmJlMDViODAzNDNlOTU1ZTRhNzE0YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkY2Y1ZjY0YzhjOGRjMjJiNGYyZTk5NjY3YjdhNTEzOTM4ZTcyODJmNjI5NmUzM2RkNmFkZGIwYWExZTYwYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViNjcxNzgxZDNkZGQ2ZDE0NzE5NzhhNjU1MDVkYmQ3ZWE4Y2ZhYzA5NTk1MWUwYzljMDBmZTEzMDIwYTc4MDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c81feae42e0240249255e0939d807af6",
+      "statement": "The screenshot-launch-options Expo native module exposes iOS simulator launch arguments -appStoreScreenshotScene and -appStoreScreenshotLocale to JavaScript via ProcessInfo, letting simctl launch select a scene without rebuilding the JS bundle; the JS wrapper only resolves it on iOS and tolerates absence so Expo Go, Android, and production builds work.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/modules/screenshot-launch-options/index.ts#L14-L45",
+          "version": "repo-lines-v1:sha256:9dd64da96c341c031d932afc6c89efa46ec77df528dc6da75dfb030b42edeb4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwZWZmNDA4OTM0ZDJlOWM5NzllNTBhZTQwMGMzYzAzYThmNTk1OGM2MWU2M2YyYTcwMjVjOWE1OGRkNzE3NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMmI1MDVmOTdhMmI3YTE4MTEzODFmYWY5NzIzZWJiNWY2N2JlZTBjMGQ0NjBhYTcyYTMxNDgzZjdhMTE2YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/modules/screenshot-launch-options/ios/ScreenshotLaunchOptionsModule.swift#L10-L33",
+          "version": "repo-lines-v1:sha256:120c4aa6d80e46e3036a4d27d2119b2fb90603ad80f158993c78588baecaae75:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYTU4MDFmZjc3YTA2YmNmNzk2MmExNGI3OWQ3OGQ3Y2IyMDczMDFmNWI5MzRkZjQ1OWNkZmVmZmMyMjM3YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YjlhN2ZkNWE2YWM0OTY2ZjAwYjNhNWI5ZTA1MjM5NTFjNTVmOTdiMzhmNGFhNGM3YWVmZjVlNTI0MTA0YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_600eab97f26d4a1c926a00fd0dfab708",
+      "statement": "ios-screenshots.mjs ensures Metro is running, boots iPhone 13 Pro Max and iPad Pro 13-inch (M5) simulators, builds an unsigned Debug app, pins the status bar (9:41, full battery) and locale (with reboot), launches the app with scene/locale args via simctl, waits for the app-store-screenshot-ready accessibility label via AXe, and captures through an asc screenshots run plan containing only wait+screenshot steps so the asc tool does not relaunch the app without the scene arguments.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L189-L366",
+          "version": "repo-lines-v1:sha256:77fb6cc3fa4d7e0cce3d64a6f4a64e8e6becd5c790a9bd12b19e650c2a641076:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YTdmYjc2NTEyMzQxMTBiY2NkMDkzOTg2ZWMxNGVlNThlYTk0N2E0MzJlNWVmZTRhZWFjYjAwMDM3ZmRlM2JhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZGY4NTRlZWI4NTM4ZmYyYWQ1YTM5ZGVhMDI0OWJhYmM4ODE3YTlhM2FiNjc5ZGE1NmNiYzA5ZTM5N2M2ZmY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NTljZjI3MDU2YWE1ZTFhOGExMTY0OGE1NjQwNjEwOGFkNDZiNmY2NGZmZjc3MTlkZTQ5MWJkMDUzMDRjMDQxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a57969faeb9d4c8da030a834779d7280",
+      "statement": "The default screenshot run produces 2 devices × 2 locales (en-US, zh-Hans) × 3 scenes (agents, detail, settings) = 12 PNGs into build/screenshots/raw, with marketing images in build/screenshots/marketing; --device/--scene/--locale/--skip-build/--raw-only/--compose-only narrow the run.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L398-L437",
+          "version": "repo-lines-v1:sha256:a5340b3f3f9a6fa6e05c4ae5db43f37485c2720b24b67f57fe2463144d46d723:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlODIwMGViZDE3MDliNmE2NzViZWNiM2JlOWYzOWU1M2JiYWMwMmNjOTI3MjM0NjJjMDU0NjhlYjBkYTZhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMmQzYTBiMzYwZGVjMDE3NTQ0NzY2NWFjZGE2NTBiMzU2MWVhNzMwZjUwZTcxMjg2NjdjZTZiNDAwYTE2MmEifQ"
+        },
+        {
+          "resource": "repo://docs/maintainers/releasing.md#L39-L53",
+          "version": "repo-lines-v1:sha256:ed5e3eed321c4ca2535bc6c595d66cb56220d83cd98e8f0396b919bb38c81793:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNDM0Y2RjOTVkODhiOTc0OWM2NjA1YWNhNGM1OWM2OGQ3NDJhYzljOTNhN2M1YTEyMGY0NWUyYTQyMzc0MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNDBjOGJiZGFkNTc3ODU4Y2IwMjMxZTM4MWRlMjYzN2VmNjMzNGI2MjhiMDJhOGFlYjE0MTM2MWIzOGIzNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1YTE0MGNlYzFlODM0NjFiZjJkN2ZjMjQ4N2IwNjQ1NDVlMDc2MmYxODVjNjhmNjcyMTc4OGU5ZTExYWQ0M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1N2JhMjA2YzBlYjFkMTM5YmQxNzI2MjhmZmU5NjczNzgyM2EyYjVkNWYwOGJiYzQxY2RhOWYyNDhhNTY5NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1447ad30cc30432597763a1b3e653544",
+      "statement": "iPhone 13 Pro Max is chosen because its 1284×2778 output fits the APP_IPHONE_65 App Store slot (newer Pro Max simulators produce the separate 6.9-inch slot), and iPad targets APP_IPAD_PRO_3GEN_129.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L21-L32",
+          "version": "repo-lines-v1:sha256:810c9009d0fa0e4ede25b3211727ddc923ee2c1885a614720ed41f0818896cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWRiMjNhNDI4MzE0YWI1ZjI3NDBhNTVmM2UzMTFlOGU3YWNiYzliODAxOTBiZGMxODRhNmM2MDc5OThjYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MGIzZTE0NzgzNzFmNzExNWY4Mzc0ZWY3MzVkMWQwZTRjYjVhNTRlNGM1NWVmMjY0NjVhNmFlMGZjZjdlMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZjkzNjg5YzVhZjM1MDM0MTZkZTZkMWNhMGVkMjFiOGNkZmRjMGNjNzU0MDhkNTQyNzZlOGQzZTg2YjRiMTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c33fb11b7934a73b8c2d6b2a43f0c7d",
+      "statement": "compose_app_store_screenshots.swift is compiled ad hoc with xcrun swiftc and invoked as RAW_DIR OUTPUT_DIR LOCALE DEVICE; it wraps each raw PNG in a device-specific mockup and localized marketing header via SwiftUI ImageRenderer at scale 1, tolerates intentionally missing scenes, and the pipeline then validates output with asc screenshots validate per display type.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/compose_app_store_screenshots.swift#L440-L488",
+          "version": "repo-lines-v1:sha256:0aa828d959e6a6f2986899613cd2a7e260e3e16f620260332a9b2760e2126c35:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTkzZTU1Mjk5ZDAwYjZmMDk5ODQ1OWQ3YWNlMmU4MjIwMGUzNmU5OTYwMzdjNTAyYWVhN2RlMjMwZGU3YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhZDYwZmNhZmU5YTU4MDc4YzM3YWEzZGZlNTA0YWM3MWVkMGNhMjc3NzJhM2Q0MDVkMTliNDkxZWM4MmM4NzMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L368-L396",
+          "version": "repo-lines-v1:sha256:ee7094ffde072f975bf9ff8a282074963c893a23d3231428345f5c103321d875:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YTViYWJiOGEzMmI2NjE3MDRhZjE4YWRlY2ZmZGJjMWI0MmI3ZDhlNmY4ZmZlOWYwMWYyYzcyNDlkNzhmZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzZjY5Yjc2M2E1YzgzM2RmZjg1YjE3MWYzM2U2ZjIzZmUyMzZmMjY1YzRkYjQwMjIwMWM0M2I5OGQ0OGZkZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZjQ1MDU2YjkzNGE0YTRkNzAyMjVkMTMxMGJhMjkyNjljMTcwMTU3MjE1NjdjYzMwNjI5NTE2NDIzY2Q0NDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8595f7f29cff4175b2d63bb16c0e9bf6",
+      "statement": "The Android release workflow is manual-dispatch-only because the five release keystore GitHub secrets (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD, ANDROID_SIGNING_CERT_SHA256) are not yet configured; tag auto-triggering is deliberately disabled and the workflow fails fast if any secret is missing.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/android-release.yml#L106-L132",
+          "version": "repo-lines-v1:sha256:637f2cad283f413fdf11e0c9e8c5a93307d4a47a9e2cc8ca3788337d32c0d9ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2M2VjM2I4MGRiMjc0MDMzNzkzMDQ4YjYxMWUyNDg3OTFiY2I0MTZhYTRkNGZmZTMzNGNlZjhlYWE0ZGNjNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMDgwNDEyYjlhNmJhYTQ4OGE4YWIxOTZhZGE1NTEyNWI0YWRjZDg1MWE2OTdhM2MwYjI5OGFjZWJhM2FjOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlNTc4YTk1MjY5MzZiNzIxNThiN2RmNjZmZGYwNjcyODM5MGVkM2Y3MjZiMDQ3ZTI5MTNlNTU0ZDgxNjA2NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjMDcyNjBlZjMwZGNiNTYyMDdlNDJlY2QzNzk5MDAwNTgyNzFkNGRiZjQ0YWI5ODkxYTA3MjdiN2JmMTBhNjUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/android-release.yml#L3-L7",
+          "version": "repo-lines-v1:sha256:911dc1328f1e5c822340926361546301440f7451dfde10c78dff1c978b2c44c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2ZGM0ODE0OWY1YTgzZDFlZDZkYmIzOWJiYzdlMmI5MDJhYTNkMzRkNmJkNWFlNGIyOTFiNjhkZjBjYTc5YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YyZmE3M2YwNzA0ODlkOTcyNGEwMjlkZmI1MDJhYTA4ODUwN2QwODU3OWJiYmNjOTRlZDkzNWMxYTA1MzMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjIsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTJlMWUyNzc2ODFlNGM2NDU1YzBlODcwMmUxMzcwN2Q5OTNiNzMzMGY5NGJhMDQ2MGM2YTQ2NjBhYWY5ZTZkOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYzOTIwYThjZjk4ZDQ4ZGUzOWQxZDIwZmRmMjgwNGU3M2E4M2FlZjAyYjcyYmE1YjgzM2IzOWU5Y2JhZjQxYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e1f6fc8657014960909213f5edc01661",
+      "statement": "The Android workflow validates the tag against ^v[0-9A-Za-z._-]+$, skips the build when all three named assets (herdr-connect-<tag>-android.apk/.aab/-SHA256SUMS) already exist on the release, builds via apps/mobile/scripts/android-release.sh, renames the checksum manifest to avoid clobbering the daemon SHA256SUMS, waits up to 5 minutes for the daemon workflow to create the GitHub Release, then uploads with gh release upload --clobber and always removes the decoded keystore.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/android-release.yml#L145-L193",
+          "version": "repo-lines-v1:sha256:f5aa5ede169aa719135a021e6a256ddee97f5ff6272c27be384afcde7e382bd2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZjQyMzUxYjljZTI3NjE4MWRlYTM1ZGUyY2Y2OTRkNGFiZDQxNDdlNjEzMGY1Yzg0NjIyYjkxODI4OWUyYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNDYzYjQ3MTg0NGI2YjA4NzlkNjFjZmI4YTFkZTk2NWFiODEwM2Q2NTQ0NTQyZjQxOTI3MjAyODQzNzMxODYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZmU2ODA1ZmM1ZGRkZjhhMmVmMWM3YWIzMGY4OGNmOTE4ZjNmNmUzNDI0NTI3OTYzNWIyNGNkOTU1Nzg1ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/android-release.yml#L27-L49",
+          "version": "repo-lines-v1:sha256:b053af4a0d1c7ba93c280a6e3d00225288426c5978ae11837d19dfc56107a015:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MTljYzY2YmM1NDZhMzQzN2NmMmZmZWQxMThlYTVkYjk3NzQ5ZDZjNWNiZTVjZjM1OTM2ZDE5NTdmYzhjNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMDc4NDhhNDM2NjY1NmIyYmE2MTk3YmUwMmI5MjA4MTQ1NDZmOWQ5YWQwYjUzMzllNGMyNmEyYzk0NjUxMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyYTI1MDc5ZjEyYmNmOGMwNTc0YzI5NzRiYjE2Y2UyNjU2MGJjODgyN2VhMzU3N2Q4ZjZkNjUyOTBlZDVhZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMzY0YjM0Yjk4ZDUxNTEzZmFkNWYxMjMxYzQxNDk0YWVjYmQ0MGFlOTg1NTk0ZDI3OTZkNWQyMWY3OGQxYTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d787fee014e74865b1a36433978f85ff",
+      "statement": "The Android APK is not publicly released; docs/maintainers/releasing.md forbids claiming a downloadable APK in README or install docs until a real signed artifact is attached to a GitHub Release and verified.",
+      "evidence": [
+        {
+          "resource": "repo://docs/maintainers/releasing.md#L59-L61",
+          "version": "repo-lines-v1:sha256:74048b13de3461e6d3774670fdc17308f9a2c2e2d0f5673ac1c3f5c642d65e4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY1NTYwZWQ3YzliY2EzYTA0OGRmZmMxNDA5ZjhmNGI1Mzk0NzU3ZTg5OTQzZjc0OTFiMTBkNzY0NjkwNzkxYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY0MjhlM2JlNzM5NGIzZTYwNDhiMmJhMmVmZGM3MDg2M2M1MzY3MWE2MzA2NjQ1ZTE0MjI4N2E1Mzc0MDJjNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjU1NTExMmMwOGExYjY3YmM4MTc2NTA0NGY1MzY1Zjk0YzdkNDhkN2Q4MDkzODg2ODNjZDczOGVkMjc5MGMxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_259706c9adec4b44a4842e35348613a4",
+      "statement": "TestFlight distribution reaches a public external test group (invite link https://testflight.apple.com/join/ZkRzJ6rm) that has passed Beta App Review; after each upload Apple must process the build and Beta App Review may need resubmission, so user docs must not describe a just-uploaded build as released.",
+      "evidence": [
+        {
+          "resource": "repo://docs/maintainers/releasing.md#L55-L57",
+          "version": "repo-lines-v1:sha256:ffb2d6c3671f307dd2c3bf71362c71902802fb92f9f50d2a58364314fd13f86f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJhNGVlZWI5ZTYxNDM3MzRiMzM4NDQxYmUwODZlMTY5OTc3YWYyNWQ4NjI0Y2Y0ZmM5Yzc2ZWFiYzkxMTVlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFiMzVkMDdhMzgxZjZiODdhODgwNTM4Y2Y0ZTAwNTA5YTY5MzAxYWM0YTFiM2JjOWFkYjU5YmJlMzU5ZDcyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE0Njc2M2VhZGUwMjliYjI4YTY5ODFmYzEzMjhlZjRlNDMwNjZiYjRlN2M2YzE1Y2ZkYzc3MDU5YTc3NzMyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFkMjNlYmI3NWI4M2QyNWQzN2Y3MDdjZDk5NWQyODIyNzA1MTRjYjc3MWNjMzBiYzliN2Q5NTNjYTYzMmI0ZCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}

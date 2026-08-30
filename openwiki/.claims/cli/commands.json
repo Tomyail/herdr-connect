@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d7682ad86d95a90672594227e3cb0580fe7f6e1a5af7db7c89370e946b61cef7",
+  "claims": [
+    {
+      "id": "claim_c67ae724294b4c849018eebd9f805e39",
+      "statement": "The herdr-connect CLI (cmd/herdr-connect/main.go → daemoncli.Execute) parses global options before the command, early-exits for help/version, and dispatches the commands status, agents, capabilities, diagnostics, doctor, service, migrations, trace, daemon, demo-lan, pair, and devices; usage errors exit 2 with an edit-distance 'Did you mean' suggestion.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L164-L274",
+          "version": "repo-lines-v1:sha256:f06bb3818b78f1f069788b309f4f812f4c793eaf689d9d6662fcbb68a2b2ce97:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZjViMGU3MzI2ZDRmNzAxZWM4ZjEwZDZkODExMmQxNWUxMjlkY2YyMDg5MzMxMjk5Y2Y2MmY3NmI0MzdmZDJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMjk2NDA3OWMzYzVjODE1MjBlZjMzYTJiOWQyZTE1YTFiODRkNzI4MGRiODU5MGRjZDY1NzQ3ZTNlMDEyYTQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2OWZlNmJhNDhiZWU2NDQ5NjYxOWQxNGUxNzY1ZTAyZWE1MGY1NTA1MWFhNjljN2JjMmIwZTZiYjQ2ZmJlMTcyIn0"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L52-L74",
+          "version": "repo-lines-v1:sha256:db44f131d57d24562cb5d12b9c6b854e621b611a73fd3ba5fafdf816c45cb202:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYjA2NWRiOWQzODBmOTI0ZTM3ZTQxYThmZTJiZWVmODhiZWRkOTdmODBkMTc4ZGU3OGM1MzRmN2FjZTM4YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MTdkMzZlNGY2NGNiZWNjYmRhNjQyYWE0ODNiYzUzNDAwNjQyMWQwNmQ1Njc0ODE0OTgyMTAwZTY3NDc4NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1NzZiMTFiOWYwNDkwZmIxZWIwOTBmMjUwMTgzMWVlZjE5YzQwNGMxZDlmY2EzZmUwYTFmYzdjYmQ2ZWVkNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzY2RhYzhhMTU1YTYyZGY2Nzk5YTMzZGY0ODM4NTA3MWUyOTFjM2JjYmViNjM0ZGM0ZWY5NjQ2MTNlMDY0MWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a348c6fb51744cdafea7de8dcf2ec8b",
+      "statement": "prepareCommand skips the source adapter for migrations, pair, and devices (database only), skips the database for capabilities, and otherwise opens both; the source flag accepts only herdr or fake.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L361-L382",
+          "version": "repo-lines-v1:sha256:41e09154ab4d93107450c2137ad14255a1609a1840a87f3d71d71732ab28c560:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNGM0ZWE5ODhmMmMwN2JmYjZlMTk4NmIyYTQ5ZTQ3MmFhNjdjMDc3MWU1YjJkZTE4Yjk0ZGU3MWRiMzI0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjNjM4YWM5YjliYzg3ZmM4ZmQ2NDFiN2MxMDI2MjI0NDFmMWU5YzY1YmMxNjYyZmQyMTFiMzY5ZGU2MDdlZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3MTNjNjFkOGQ4ZTE2MjliNmFhZjkzZjhiMzBkZDRlN2IyMTZjZjk1NjFhZmI4YTRmMzdlOGNlNGFmNmVkZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_faf4b35655f046b3b7864faf36597a50",
+      "statement": "doctor checks database, source online, agent count, and the TCP 9808 preview port, emits OK/WARN/FAIL text or --json report with a next_step, and exits 1 when the source is offline, agents are absent, or the port is occupied.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L550-L608",
+          "version": "repo-lines-v1:sha256:b488e92ea28e35ce83bf13c55ca6e8259a28cdc89285bf4dee0119cc0567bb9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YWQxMTRjYWVmNzNkZDdhY2JlOGNiNmZhNjQzNDM0ZGQxYWI5NWMxNmU1N2ZkMzE1NmI1YWFkNTg3YzZjNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyNzU4NGZmMTk5Njk4M2JmMTBiZGJjM2EzY2Y1ZGE0MjU2MGJkNjEyMTU1NWJiNGY2OGUxYzVkOTdhZDYxMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzZjk2NzY1YWNkOTkyZmE2MDdlZWQ0MzA4ZGRlMzA1NmQxMWY2NjVhNWVlNTYxMzkwMGYzZDExNjlmYzc4OTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96a885ec6db14a83aedcb38e813bc6fe",
+      "statement": "checkPreviewAt probes loopback HTTPS endpoints on 9808 with a 500 ms timeout, recognizes a live daemon via the X-Herdr-Connect-Api-Version header or api_version JSON marker without sending credentials, pins the server certificate to the local installation fingerprint when a local certificate exists, and falls back to a bind test to distinguish available from occupied.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L610-L687",
+          "version": "repo-lines-v1:sha256:f0fca568522761e7460256ff189c37219f84e8134847683e1c5bc34f662de991:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNjEwY2I4MmE0NWE1YzllMTA4MjYxMDUzYzNmYjdmYzAzODQ5Y2IwMzc5NTdhMmE0NWM5NGFjODVhYWY4NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3MDI4N2Y2YmIyZDY3YThhZGM2ZmE3MmUzNDY1MTU3YTQ0MjBjMzE5OWE0MDk1YjIzMzg1YmM2NGY4ZDJkZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMzEwOTYwMDQ0ZWY4ZWI1NTY2NzMxNzg0NzAwYTRjMzY3NjQ2MTNlOWY3Y2U5MTQ4NmFjYjE3ZGQ5ZGE4NmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99ac2ed515a847babeb94d446c5e6315",
+      "statement": "The service subcommand (install/status/logs/restart/uninstall) delegates to daemonservice; status computes healthy = running && preview running && source online with exit codes 0/1/3, and other lifecycle actions exit 3 with ErrNotInstalled.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L384-L537",
+          "version": "repo-lines-v1:sha256:d0608d37e6c200d1d8e25bd965c79b656740cefe0628ba5c80088f1289ed9294:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZjQ3OWJiMWY5ODFmYTM5MWU0ZjgyZGYxZDcxZDIzMzYwYzRjNzg3ZTdmNjcwMzEwNjYyOGU4ZjllOWNjM2YyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmNzA1ZmQxODg1MmU4ODI3YzA3ZjY1NTZkYmQ4YTY2NzM3Nzg4ZTRhZTg5ZDc5MDA1NDA2YzMwZmE4MTJiNDE0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhOWMxNzI0ZThmYTY2NmY2YTFkMzQ4ZTdjMzA5NDYyOGM0MDNkNDNmZWZkZGJmNTIzM2Y1NDE0OGFmMmU4MzVmIn0"
+        },
+        {
+          "resource": "repo://internal/daemonservice/service.go",
+          "version": "repo-file-v1:sha256:7e2d3b91117b75fd99fba5ddc1a65a1004e1c1c127ff2acb7f8f4d84d5a737cb"
+        }
+      ]
+    },
+    {
+      "id": "claim_553420a4fb7941ff9029a37a83bc8b80",
+      "statement": "service install resolves and validates absolute executable paths for both binaries (via --herdr ABSOLUTE_PATH or PATH lookup), refuses go-build/.test binaries, aborts when TCP 9808 is occupied and the service is not already installed, and verifies the LAN preview becomes ready via waitForPreview (20 × 250 ms) before reporting success.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L391-L432",
+          "version": "repo-lines-v1:sha256:075e2aa1f1886a01cad847c89ca0f74d941a3815eb82f6b451de832236f3a10d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMjA3MWQ0N2Q2ZWJlZjBmODlmZTIzMjI4ZjIxZjk2NTE5ZDQwZjliYTM4YzEwZTEwMjFiZjhiMmZkNWJmMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDBjNzdiY2JhODYwMTJjODkwNTI3Mzg4NmM1ZTE5MDkyYmI0NWQ1OGM1MzA2OGMzZDY2ZjI1NTZkYWYxM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxNjEwZDUxY2M0ZDViMjUxZjUwMjYyMWRjMmE2MTBhNzQ0NzZkZWU3OGIwZjJlOTAzMmRiNjNhZGYyOTM0MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NzRjMjA0NGMyYWY2OGVhOGMxMjc0ZDhjYWQ2MzAyNTVkZjU3MDZjZjMzMmM4ODEwYzYwM2E0M2Q4YzZiZTQifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L506-L518",
+          "version": "repo-lines-v1:sha256:23cf7c75340c7e9e5c796c5e0a01c6271091b340f09aba7858824e91f3ec5c40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMWYwNmQwMDkzMTY2ZGI1N2VlY2QzNjcxYTRiMDYwNGIzZmY1ZDI2MDE5YjRmOGU3OGY4NWU1MzkxYjliYzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0OTQwZjIwZDY2MTBhYmNkOWMyZGU0MjQxZmRmNjQwYmMyZjRmOThiM2RiNjdmNjI4YTc3ZjU3ZjM4MjdlYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0MTU2YmM3Y2QyNjI0ZTQ4NDRlZWFhYTNiMDZhMmFhMjk2Mzk2NzM2Mjg3N2EwN2E4ZGYyYjlmMWY0M2FmMzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3272e81fc2794de1a475b75a006311ef",
+      "statement": "The installed background service runs `herdr-connect --source herdr demo-lan` (launchd LaunchAgent on macOS, systemd user service on Linux); Windows and other platforms are unsupported by daemonservice.New.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemonservice/service.go#L251-L266",
+          "version": "repo-lines-v1:sha256:77f9a6a6d6074db8661f77e4219be7a65e9c6496573140efcac464b561855b54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMTI1MjJiMTgzMjE1NWJhMzMzMDQ5NGY0MDYxMThmZDc4MWNjZmU4ZWYxNTM0NzMyNTc4ZjgzYjQ1ZDg4OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZjQ2ZWUyNzExYTFiM2JiMTA5Njc3OTJmZjlmOTg2ZTc0MWIyMDZjNjI3NjQ1NTNlMjQ5MWVkMjBlYzk4YTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyZDQ0YzdiZmNhMzZjOTgwY2ZlZjllOGYwMTE1Zjg3NDQwZjBhZTk3NmY2MzMzMWI0NzkyZGNmNDdhMzQyMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkZjFjM2MzZWQ2Y2NjOTZiNWEzOTI0ZTQ5NzY5NWI2ZTcyNGRhYWQ3OWM5ZGRhODBiZTI1OTk0NjUxZjdhNDMifQ"
+        },
+        {
+          "resource": "repo://internal/daemonservice/service.go#L98-L103",
+          "version": "repo-lines-v1:sha256:0cfe886838f66c261eb111fc91937dbde148d65ecc10b4fdacd3c130ff678002:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFjOGIzZGY1MDcyNTQ4ZDE1OWQ3NzQyZDFhMGRiNmRkYzFiODA5Mjc4OTNmNWMzZjkyZjc3MzI2OWEyZDM0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY3MDJkYzBkMTM5MjFhZTg2YTFjNTg1Mjk4N2FiMGQxNTRlMDUxNzViNWU3Y2JjMWQ0MGY3ZjllNGY0NmE3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjRhYjhiOGQ0M2VmZTFiMTM5MmFlZGEzMzgwMjE1ZDI3Y2Y4OGZlOWZhOGRhMWQyNDFiNDI0NjQ5NTJkODMzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjExYzliNzUyMTIwYWNlZDg4M2YzOWE1ZmVhZWU5ZjMxN2FiNTM0NzQwODdiMGI1ZWMxMWY2YjYwY2QzOGVlYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a5ab2ced74d424eb3835bf964a36927",
+      "statement": "demo-lan prints a stderr safety notice before initialization and exits 0 if the context is already cancelled; it then runs demolan.Serve on the default address with TLS.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L80-L118",
+          "version": "repo-lines-v1:sha256:e2971f5e37ce2d490bea3464e6b5a876bb4b166fe906522563843a50cf4dba89:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyYzQyMTMxOTk0ZmNlMTRiYmNjYjI3ZjFmYmU4NGFkN2VlMTIzZDA5MzFjODk5NjdlNjY0Nzg1OTIwZmNjYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDBjNzdiY2JhODYwMTJjODkwNTI3Mzg4NmM1ZTE5MDkyYmI0NWQ1OGM1MzA2OGMzZDY2ZjI1NTZkYWYxM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhNjc2Y2QwZTNmMGVjMjAyZTBmYTk0YjI0MTM3ODRhOGNjMGIzYWM5YmM4YWEzZjA0ZWZmYzgzMGUxYWNiMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2ZTM5OTg2YjFiYzkzN2Y5MzBhNmJiMmUzNTc0MGE2NGIzOGQzYjZhMzJmZjI0NGY1NmUwZjUyZTdkMjEyMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_abb2377cfc2645c390cb297efb8a46c6",
+      "statement": "The pair command first probes the preview port and exits 1 without opening the database if the daemon is not running, then loads the TLS certificate fingerprint, creates a one-time secret (lanauth.NewPairingSecret, SHA-256 stored, 5-minute TTL), renders a QR containing {v:1, fp, hosts[], port:9808, secret}, and polls the DB every second until the secret is consumed or TTL+10s expires.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L88-L95",
+          "version": "repo-lines-v1:sha256:eb8753376eff01e00afeecec8d426cd6a929e29d559705133ee35e93d9ee6fba:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhODI3NzFmZDNjNzYwZmEwNTM5MGRkZjJjYWQ1NGQ2ZjQyNTk2Nzk5NDFhYjYzNjZmYWU0MGE1ZDJiMjZlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjZGE4MmRhNjA2MjM4ZTA1ZTYyMzk5NTY5YzVlZTAzOTkzNDE5NjQ4YWU1ZDQzYTJiZjhjZDYzNDdmODI2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjJmMmZmNWZlZWM2MGY1ODdjOGZhZTRlODdmODA5YTY2MWNmZmVkNmI0N2FhZTVmNmQ2YTI2NTNhYTg5NTJlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQ4ZmEyNTZlNmIzNGFhOGM5YjI5NmUxM2M0ZGE1Njg4ODBiMTg2ZjJhOTRiOWMwZjg4NjA5MDQ5YTkxMTFlOCJ9"
+        },
+        {
+          "resource": "repo://internal/daemoncli/pair.go#L19-L100",
+          "version": "repo-lines-v1:sha256:1bb66c9f1b0dd1f047749a44ba3265e5ce490d3a17922186deae51cea4516d8b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MDI3Y2Y1YjFmMjVmZDA0MzY4NzM5OGM0Y2Q4OTVlNzYwMzQ3MDcyNWUxOTNkZGRkYTBlOTMzNDYzMDU3YzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwMDk0YzJhNzg0MTM0YTczOWZhMTczMzI5MGYyZDQ4YTg4ZDkxNjE2MDk3MGY2MjY5YWU2Y2VhYjAwMjc3MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYjBhYjU5ZGY2MDQ2MGEzZjJlZTFjN2FlYzQwZDg5ZWQxY2IzMzAyMmM0ZTBkNjhjYjkyYmEzYTM1OTI1NzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e24622531e149168155d20a44a3da33",
+      "statement": "pair --host accepts only --host IP or --host=IP that parses via net.ParseIP and must match an active local interface compared canonically (IPv6 spellings equivalent); otherwise it errors.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L308-L325",
+          "version": "repo-lines-v1:sha256:7c60c8708df6d21e5d11c684dbb1f3c90e21bbacf6f116ad55f775ac84f9b828:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4YmI4Y2MzZTJjMjU4YWRkYjJiZGE3YzQxYzNmMTUwM2I3MjU1ZjQ4MzA1NjMzZjdiNTBlYWU4OGY4ZWIyZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyNTk3MWU3YjQ5MjlkNDc2OTE2OWFkMGQzOTQ1ZTk1NTc2ZjU2YTQxNWIzYjIxMTVmZGRlMTE0Yzk5YjExY2EifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/pair_test.go",
+          "version": "repo-file-v1:sha256:cb9ff4defa37eab8ebc4945db28cee53f2ff07987c70a0279b144fcfa1c0c963"
+        }
+      ]
+    },
+    {
+      "id": "claim_663426b5df074886a84b98ebbf5ad1e1",
+      "statement": "devices list emits a JSON array (empty array, never null) of paired devices with RFC 3339 UTC timestamps and status active/revoked; devices revoke <device_id> revokes via lanauth.RevokeDevice, erroring on unknown or already-revoked devices, after which the device's token is rejected with 401 revoked.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/devices.go#L22-L93",
+          "version": "repo-lines-v1:sha256:5174a44800b993190999967254d190ee896a7137beb34c4e28d500c5da43d974:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjQyZmQxNGQ0MWQ1ZDljOTc4Y2Q4MWEyMmMwMjJhOGNmNzA1ZmQxZmEyMmJmNTY4M2JhYTcyODkyODBlOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhOWUxOGUzMjYxYTczMTFjZWFkZmIyOWI0NzM0NDU1ODlkZDJhNDMxNWI1M2ZhNzRhODAxYTY0OTU5MTE4MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ODIwNzUzZjkzNTBmZTYzNTA2Y2RiZGNiNTk2OTllMmE0OTc1N2Y3ZjUzMWY5ZjM0ZGE4NTJhZTJkNTNjMTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d9a98dd50ea4a9babfb18b57d0fd62f",
+      "statement": "agents prints the JSON agent array and exits with an error pointing to doctor when the source is unavailable, while status falls back to the last persisted projection state loaded from the database; diagnostics prints a flat --json report including source_error=source_unavailable on sync failure.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L130-L162",
+          "version": "repo-lines-v1:sha256:590fe23b9de08d9c9123fd2b44e05a07c1ee3e0eee52c8739fb0562d5099b374:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxZWJjYjRkOGQ5OGQ3NTZiYzk0YTQ0NmRmMTk0YmI5NmU3ZGJhMWEwNjk0NDg5Yjg0MmEzMWZiZGI4NDA1N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzZjEwOGM4YTZkYTQ1ZWMwNzcwYmFiNTk0NzlmMDJhYzA5MGJhZmVhM2FiZTUxM2M1NTI2NmJkNjZlZWI0ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiZTRiMGFmMzRiMjQ0ODY4Yzc3ZWUyMTRiYjJjZDU2Y2NhMDZjYWYwNmVjNjMwODBkNjBlZjliMTUwMmE2MjIifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L539-L548",
+          "version": "repo-lines-v1:sha256:b744e70dc5474783994703fbad48694478c61e9a3ed630aa18e7d7f0801896bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjN2JhZjQ5ZmY3OTE2ZTA1ODYwM2ViMDVkMjVlMjVjNGNkNjc3NWZjNjUxNzA5NWE1Mzc5Mjc4M2ViZjYwYjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWI1YTUwZTUzYjM3MTE0NTA2MWE3YzU1YzViYmIwYzJlMzM0MjgwNDJlYjBmZmJmMTE4NWNlNTdjMTlmMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYTM3MDkxYjM0N2M5YmYzZDg4ODFhNTY2YTMwODcwNzY2NmViYzVjYjM0NzM3MmMxNTk5OWM5ZWM2MzQ1MTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cad49638fa7495ea0acfbbd08211bf3",
+      "statement": "demolan's enforceClientVersion runs before all other handling on every path including /v1/pair: requests declaring X-Herdr-Connect-Client-Version below MinSupportedClientVersion (1) receive 426 client_outdated, while requests without the header are allowed (curl probes, doctor liveness checks).",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L33-L66",
+          "version": "repo-lines-v1:sha256:5ac0f7843ea09a4c8a36cc1aa2477f8c9812188cb64bd9358e440ef445f14ea1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5MTczMTQwNWMyNWE4MzgxYTE2N2YxZTNiNTJjNDczOTFhMzBkOTA3MGVhNDg0MjJjYjczZmFiNWQ1ZWM4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMjVmYWFiMmFmZjIzMjIzY2IzZWFkYTBjZjkxZTg1NGJiZjgzOTFmZDJmMGE1NTBjODA0YTBhMTM5NDU3ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmOTE4YWI0ZGRiOGNlMzA1YjljN2VkZTZlZmMyYzVkZDVlODAxMTM4MjA3MDEzZWU0ODc0NmE0MTg1M2IwYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e662d27e4e8b42d594003a8e286cb70e",
+      "statement": "demolan's secureHandler (behind TLS) exempts only /v1/pair from bearer auth (one-time secret exchange capped at 4096-byte bodies and 100-byte device names), authenticates every other endpoint with a per-device bearer token, and handles /v1/device self-revocation in the same layer.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L74-L100",
+          "version": "repo-lines-v1:sha256:b77a541aaad27a90aaff7beb408287f0e645df8d9f94edca7100c455dda0dfd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzgzZTY3OGY3NjI2OGExZWZmYWY3NDRlYmI2Mjk0ODY3NTA3MmY2ZmUwOTE1NGNlZGU2NjViZGZmODg2NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyMThmYjc1ZDE3ZmI2MDg4NTcxMzRjNTgwMWI4NWZkMTljOWJhMWFkNzFmZDBhNDM5Yjc3MWYwZWJhZDMwOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3ZmJmNjk4Yzk5OWQ4MDZlZTljMWE0NDllNDA4OWU1ZTA0NmQxZmNlYTIxNGNiZWZmNWU4YzYwMDIyOGM5OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1MWQ3MTc1OTgwNTVlMmVkODA1MTJjZTAyNDQwOTM2NGJkZDdmMGIxNTQ2MmNhOGZiMTRhY2M5NjJkMTQ2MWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d8200ab5c7e04a43b526278546f35787",
+      "statement": "demolan enforces in-memory token buckets: per device 5 req/s burst 10 for reads and 1 req/s burst 3 for writes, and per IP 1 req/s burst 20 for /v1/pair and unauthenticated requests, returning 429 rate_limited with Retry-After: 1; the limiter has no eviction and is sized for LAN scale.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/rate_limit.go#L34-L100",
+          "version": "repo-lines-v1:sha256:5064f1d2a5e3afe4d6b12fc379dd5b030c0b76023620db8cde8c094036fc430a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYzJjZGFjMGU5MTBhMzg1MDQ4OTdmMDJiZTgzZTUyYjFmZDFhOTVkNTc2NDhmMDZmNDQ3ZTAyOWVjM2FhYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmODBiZDJiYTgwYjQ0NGMzNzI5Yzk5NWVjY2VmMzQ4MTM0YTkzMTlmM2U0YmZhZjYzNDdmYWIxNWM5ZmIzN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlNDhjZDgxNGZhY2Q5MTZhOTZlOTRhNTA1NzYzOWFiZjhjYTI0YmRlZGEzYjI4ODRhZTdiOWExYTQ3NWNmOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb9f9232b66e443ea0012976661d0968",
+      "statement": "daemoncli exposes test seams: ExecuteWithPreviewChecker injects a deterministic preview-port probe, pairDeps injects secret/poll/address/QR/clock/sleep for pair, and demolan's secureHandlerWithLimiter injects or disables the rate limiter; covered by cli_test.go, pair_test.go, devices_test.go, auth_test.go, and rate_limit_test.go.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L57-L69",
+          "version": "repo-lines-v1:sha256:f231cdb116078cdc2a9d70159760557bc3529de9ec495307ded5414d142ba5ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMDYyNTJjMzQ5NzI4MTI3OTI3Zjc3ODE1YmFkMmQzYWRjZmQ4YjY0Y2I5ZGIwYjY3YzE0YWU0MzBiMjkxZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjNGM2NDdlNmU5MDc2MWNmYjcxNTIwMGRkMGVjODRlMmRlODE2ZDM0ODRkODNjZjNiZDQzMmNmZmNhYzdlZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZTY3NzFjYjU4OGJiNWUzZDY5ZGI4NDNhYzU4ZTdlZmY3NjFlNjM0MmQ3ZjY3NGU3ODE0YWJhOGVkM2ZmNGIifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/pair.go#L38-L70",
+          "version": "repo-lines-v1:sha256:0505d954cdeead23c3af01b113d404fb8a567a9b27f7e4323a79ad7b95f52521:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkM2NiMGZmYTcxZDlmODZhNmYyMzJiNDdmZDM1N2M2NjFiODQ5OWFmM2Q4YmRjZDMxOTkyZDAxYjllY2YxNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NjAyNWViMWE3ZGJhODExNzVmZTE0ZTdjOTEzOGNkYzMzZWI2YWViNzZlOWM1MWQ4ZDgyZTQ1YTYyZGViODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZmVhODU5MWZhNjNiYjdhNjQ2ZTZiNjkxNzkwZDZhYzJiYTk4MjRjYTcxZWI4NjFkNzhjYzY0Mzk4NTRjNWQifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/auth.go#L78-L80",
+          "version": "repo-lines-v1:sha256:39342bf0086800add5b6f1579fb8390dcd48ee39a3bbc0737d4cc6681dbfcf68:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWYxMjhlZDk4NDc1MTMzMGI1ODA2MDI0N2VmYWJmNjBhMzc2ZDJhNTdjYTNmOTkzYmJmZmNmNjllZTQxOWQwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY3ZWZiMDAwZGU4MjMyODdjOTRmNTA4NDQwNTI5ZmFjNmY5ZWVjMGJlY2MxNDM1ZjUxYjZhNDBmYzVlYzk4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQxMzhlMWVjNzgyNDI2OGFhOTBkMzE3ZDNhMTgzOGQyNjViZDZlZGEyMGI4ODA4OWY5ZTU3NzYzNTAyZDI1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY2YTNkNzAyYzZiODBjYzg4NzRhNjAxNGQ0ZTljMzJlMTRiYzUzNjRiOTkxZDhkYjczODVjZDQ4ODQyYjNhYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_54e76cf441964e158db0dd858b515863",
+      "statement": "CLI exit codes are 0 success, 1 runtime or health-check failure, 2 invalid usage, and 3 service-not-installed for service lifecycle commands; version prints development for builds without release metadata.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L262-L274",
+          "version": "repo-lines-v1:sha256:daeec18a52591944391ce826058090e60409b442fac042c18317f4b3bb46fb7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNmY1NjM2Njc2Mjc3YjVmNDQ4NjIxNjA2NDY0YWUwZjcyYTlhYjhiNTMwZDMxNWVhMGExOTA0NzhiNWZlZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxODE4NmEyMjEyMzM0ZjA5MWI1MDg3MjNlZDI0ZDNjM2NhOWJkZDVjOWJiNGJlOTE1NjM4MzM4NTFhMWY5YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5ZmU2YmE0OGJlZTY0NDk2NjE5ZDE0ZTE3NjVlMDJlYTUwZjU1MDUxYWE2OWM3YmMyYjBlNmJiNDZmYmUxNzIifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L433-L482",
+          "version": "repo-lines-v1:sha256:98cb7f79cfebb347bfa79a3724b84b3064c4e5aba16fc5fda25bf1f7d064bfda:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzODFkYWQ0YTA3YTE2MWFiZThiZmFkODZjYjMwZTI2MDBkYzNmODYxYmIwNmU4ZWEyNTM1MzJkYjY1OWE4Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDBjNzdiY2JhODYwMTJjODkwNTI3Mzg4NmM1ZTE5MDkyYmI0NWQ1OGM1MzA2OGMzZDY2ZjI1NTZkYWYxM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ODczOGMzNTRmNWUxMzEyYzYyMjg1NjViNWY4ZmRkMWE3NWFlNTkwY2VkZWI2MGMzYTI1OTEzMjBiMjExYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NmIzZGJhMGM2YmQwOTUyMmY3N2NmZWEwZGJiNGQ2MzYyMzI2MmNmZTE3MWY4NTJiNzAyM2I4NjMyOWE0NjgifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L755-L760",
+          "version": "repo-lines-v1:sha256:49e9bad1173066128a8394e7af78f309bcf5d666293212c6d6c0cc0e381c715a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc5ZDNiNzM2MzlhYTk0ZGRmNzE2Yzg4OTc1NGJiYjRjNjFmMTRkOTcyZjFmMzgzNjBmMzg2ZjQ4ZmFhMGFiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM4OTFkYjhlNWNlNGQ3ZTU3YjljZTlkNTJmMWM3MTc0NTg0N2M2MjI3N2Y4YjI2MDlhYWI4ODc1YTE2MTk5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNkYWNmMGE5MmEyYmQxOWVmNjk3N2FiZjEwZmY5OTZlODAyYWM2YmMwZmRmY2JhMmNiMjk2ZWNiNTZjMDQ5MCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.4.3",
+    "at": "2026-08-30T21:43:29.677Z"
+  }
+}
