@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -28,7 +28,6 @@ import {
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
 import { preferredAddress } from "./network";
-import { loadCredentials, type DeviceCredentials } from "./credentials";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { appearanceLabelKey } from "./AppearanceScreen";
@@ -249,29 +248,15 @@ export function useSettingsCategories(
 ): SettingsCategory[] {
   const { t, language } = useI18n();
   const { appearance } = useTheme();
-  const { unpair } = useConnection();
+  const { unpair, instances, activeFingerprint, switchInstance } = useConnection();
   const { choice: voiceChoice } = useVoiceLanguage();
 
   const connected = connectionState.phase === "connected" ? connectionState : undefined;
   const service: DiscoveredService | undefined = connected?.service;
   const data: AgentsResponse | undefined = connected?.data;
 
-  // Load credentials eagerly so Settings always shows current pairing state
-  // even when not connected (e.g. not_paired / fingerprint_mismatch). Single
-  // source of truth — both modes read the same `creds` value.
-  const [creds, setCreds] = useState<DeviceCredentials | null>(null);
-  const reloadCreds = useCallback(async () => {
-    const c = await loadCredentials();
-    setCreds(c);
-  }, []);
-  useEffect(() => {
-    void reloadCreds();
-  }, [reloadCreds]);
-
-  const handleUnpair = useCallback(async () => {
-    await unpair();
-    setCreds(null);
-  }, [unpair]);
+  // 实例列表来自 ConnectionProvider（配对/解绑/切换后自动同步）；这里不再
+  // 单独读凭据存储，单一数据源避免与连接层不一致。
 
   // Notifications switches — single MMKV subscription set shared by both modes.
   const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
@@ -315,16 +300,30 @@ export function useSettingsCategories(
   }
 
   // Pairing section — separate card so the connection card stays about the live
-  // daemon link while this one is about the persistent pairing identity.
+  // daemon link while this one is about the persistent pairing identity. 多实例
+  // 基础层：每行一个已配对实例（指纹尾 8 位识别），点选切换活动实例；单活
+  // 语义下切换会断开旧连接并连新实例。别名/忘记实例等管理属后续票。
+  const activeInstance = instances.find((instance) => instance.fingerprint === activeFingerprint);
   const pairingRows: SettingsRow[] = [];
-  if (creds) {
-    pairingRows.push(
-      { icon: "finger-print-outline", label: t("settings.row.fingerprint"), value: creds.fingerprint.slice(-8) },
-      { icon: "phone-portrait-outline", label: t("settings.row.deviceName"), value: creds.deviceName },
-    );
+  if (instances.length > 0) {
+    for (const instance of instances) {
+      const isActive = instance.fingerprint === activeFingerprint;
+      pairingRows.push({
+        icon: "desktop-outline",
+        label: `…${instance.fingerprint.slice(-8)}`,
+        value: isActive ? t("settings.value.active") : "",
+        onPress: isActive ? undefined : () => void switchInstance(instance.fingerprint),
+      });
+    }
+    if (activeInstance) {
+      pairingRows.push(
+        { icon: "phone-portrait-outline", label: t("settings.row.deviceName"), value: activeInstance.deviceName },
+      );
+    }
     pairingRows.push(
       { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: navigation.onRequestPairing },
-      { icon: "trash-outline", label: t("settings.row.unpairDevice"), value: "", onPress: () => void handleUnpair() },
+      // 解除的是当前活动实例；其他实例保留。
+      { icon: "trash-outline", label: t("settings.row.unpairDevice"), value: "", onPress: () => void unpair() },
     );
   } else {
     pairingRows.push(
