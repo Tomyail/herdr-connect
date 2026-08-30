@@ -30,7 +30,7 @@ import { SplitLayout } from "./SplitLayout";
 import { useIsWideLayout } from "./layout";
 import { initialInstanceUiState, instanceUiReducer } from "./instance-ui-state";
 import { AgentFilterProvider } from "./AgentFilterContext";
-import type { AgentStatusFilter } from "./agent-filter";
+import type { AgentListFilter } from "./agent-filter";
 import { Ionicons } from "./icons";
 import type { RootStackParamList, TabParamList, SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
@@ -238,10 +238,11 @@ function AppShell() {
   const handleSelectDestination = useCallback((destination: SidebarDestination) => {
     dispatch({ type: "destination", destination });
   }, []);
-  // Agents 列表状态过滤(issue #56):同样属于每实例记忆,经 context
-  // 暴露给列表页(宽窄两树共同挂载点),切换实例时随快照记忆/恢复。
-  const handleStatusFilter = useCallback((statusFilter: AgentStatusFilter) => {
-    dispatch({ type: "statusFilter", statusFilter });
+  // Agents 列表过滤(issue #56 状态维 / #57 workspace 维):同样属于每实例
+  // 记忆,经 context 暴露给列表页(宽窄两树共同挂载点),切换实例时随
+  // 快照记忆/恢复。
+  const handleAgentFilter = useCallback((agentFilter: AgentListFilter) => {
+    dispatch({ type: "agentFilter", agentFilter });
   }, []);
   const requestPairing = useCallback(() => setPairingRequested(true), []);
   const dismissPairing = useCallback(() => setPairingRequested(false), []);
@@ -251,7 +252,7 @@ function AppShell() {
   }, []);
 
   return (
-    <AgentFilterProvider statusFilter={ui.statusFilter} setStatusFilter={handleStatusFilter}>
+    <AgentFilterProvider agentFilter={ui.agentFilter} setAgentFilter={handleAgentFilter}>
       {isWide ? (
         <>
           <DoneSoundProvider
