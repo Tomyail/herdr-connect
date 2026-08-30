@@ -40,6 +40,7 @@ const en = {
   "agents.summary.sourceOnline": "source online",
   "agents.summary.sourceOffline": "source offline",
   "agents.summary.count": "{count}",
+  "agents.summary.filteredCount": "Showing {shown}/{total}",
   "agents.empty": "No agents",
   "agents.placeholder.title": "Waiting for local connection",
   "agents.placeholder.text":
@@ -50,6 +51,13 @@ const en = {
   "agents.focus.switching": "Switching\u2026",
   "agents.focus.switched": "Switched",
   "agents.focus.failed": "Switch failed",
+  "agents.filter.openA11y": "Filter agents by status",
+  "agents.filter.group.working": "Working",
+  "agents.filter.group.needsMe": "Needs me",
+  "agents.filter.group.completed": "Completed",
+  "agents.filter.group.failed": "Failed",
+  "agents.filter.noMatch": "No agents match the current filter",
+  "agents.filter.clear": "Clear filter",
 
   "interaction.working": "Working",
   "interaction.blocked": "Blocked",
@@ -228,6 +236,7 @@ const zhHans: Record<MessageKey, string> = {
   "agents.summary.sourceOnline": "\u6765\u6E90\u5728\u7EBF",
   "agents.summary.sourceOffline": "\u6765\u6E90\u79BB\u7EBF",
   "agents.summary.count": "{count} \u4E2A",
+  "agents.summary.filteredCount": "\u663E\u793A {shown}/{total}",
   "agents.empty": "\u5F53\u524D\u6CA1\u6709 Agent",
   "agents.placeholder.title": "\u7B49\u5F85\u672C\u5730\u8FDE\u63A5",
   "agents.placeholder.text":
@@ -238,6 +247,13 @@ const zhHans: Record<MessageKey, string> = {
   "agents.focus.switching": "\u5207\u6362\u4E2D\u2026",
   "agents.focus.switched": "\u5DF2\u5207\u6362",
   "agents.focus.failed": "\u5207\u6362\u5931\u8D25",
+  "agents.filter.openA11y": "\u6309\u72B6\u6001\u8FC7\u6EE4 Agent",
+  "agents.filter.group.working": "\u5DE5\u4F5C\u4E2D",
+  "agents.filter.group.needsMe": "\u9700\u8981\u6211",
+  "agents.filter.group.completed": "\u5DF2\u5B8C\u6210",
+  "agents.filter.group.failed": "\u5931\u8D25",
+  "agents.filter.noMatch": "\u6CA1\u6709\u5339\u914D\u5F53\u524D\u8FC7\u6EE4\u7684 Agent",
+  "agents.filter.clear": "\u6E05\u9664\u8FC7\u6EE4",
 
   "interaction.working": "\u5DE5\u4F5C\u4E2D",
   "interaction.blocked": "\u5DF2\u963B\u585E",

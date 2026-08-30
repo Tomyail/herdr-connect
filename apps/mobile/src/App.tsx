@@ -29,6 +29,8 @@ import { VoiceLanguageProvider } from "./voice/VoiceLanguageContext";
 import { SplitLayout } from "./SplitLayout";
 import { useIsWideLayout } from "./layout";
 import { initialInstanceUiState, instanceUiReducer } from "./instance-ui-state";
+import { AgentFilterProvider } from "./AgentFilterContext";
+import type { AgentStatusFilter } from "./agent-filter";
 import { Ionicons } from "./icons";
 import type { RootStackParamList, TabParamList, SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
@@ -236,6 +238,11 @@ function AppShell() {
   const handleSelectDestination = useCallback((destination: SidebarDestination) => {
     dispatch({ type: "destination", destination });
   }, []);
+  // Agents 列表状态过滤(issue #56):同样属于每实例记忆,经 context
+  // 暴露给列表页(宽窄两树共同挂载点),切换实例时随快照记忆/恢复。
+  const handleStatusFilter = useCallback((statusFilter: AgentStatusFilter) => {
+    dispatch({ type: "statusFilter", statusFilter });
+  }, []);
   const requestPairing = useCallback(() => setPairingRequested(true), []);
   const dismissPairing = useCallback(() => setPairingRequested(false), []);
   const openCompletedAgentWide = useCallback((agent: Agent) => {
@@ -243,32 +250,32 @@ function AppShell() {
     dispatch({ type: "selectedAgent", selectedAgentId: agent.source_id });
   }, []);
 
-  if (isWide) {
-    return (
-      <>
-        <DoneSoundProvider
-          viewingSourceId={activeDestination === "Agents" ? selectedAgentId : undefined}
-          onOpenAgent={openCompletedAgentWide}
-        />
-        <SplitLayout
-          activeDestination={activeDestination}
-          onSelectDestination={handleSelectDestination}
-          selectedAgentId={selectedAgentId}
-          onSelectAgent={(agent) => dispatch({ type: "selectedAgent", selectedAgentId: agent.source_id })}
-          onRequestPairing={requestPairing}
-        />
-        <PairingOverlay visible={pairingRequested} onDismiss={dismissPairing} />
-      </>
-    );
-  }
-
   return (
-    <ThemedNavigation
-      activeDestination={activeDestination}
-      selectedAgentId={selectedAgentId}
-      onSelectAgent={handleSelectAgentWide}
-      onSelectDestination={handleSelectDestination}
-    />
+    <AgentFilterProvider statusFilter={ui.statusFilter} setStatusFilter={handleStatusFilter}>
+      {isWide ? (
+        <>
+          <DoneSoundProvider
+            viewingSourceId={activeDestination === "Agents" ? selectedAgentId : undefined}
+            onOpenAgent={openCompletedAgentWide}
+          />
+          <SplitLayout
+            activeDestination={activeDestination}
+            onSelectDestination={handleSelectDestination}
+            selectedAgentId={selectedAgentId}
+            onSelectAgent={(agent) => dispatch({ type: "selectedAgent", selectedAgentId: agent.source_id })}
+            onRequestPairing={requestPairing}
+          />
+          <PairingOverlay visible={pairingRequested} onDismiss={dismissPairing} />
+        </>
+      ) : (
+        <ThemedNavigation
+          activeDestination={activeDestination}
+          selectedAgentId={selectedAgentId}
+          onSelectAgent={handleSelectAgentWide}
+          onSelectDestination={handleSelectDestination}
+        />
+      )}
+    </AgentFilterProvider>
   );
 }
 
