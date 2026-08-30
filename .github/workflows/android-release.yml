@@ -1,9 +1,9 @@
 name: Android Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  # 暂停 tag 自动触发：release keystore 签名 secrets（ANDROID_KEYSTORE_BASE64 等）
+  # 尚未配置，自动触发只会稳定失败。配置好 secrets 后可恢复 tag 触发或手动 dispatch。
+  # https://github.com/Tomyail/herdr-connect/actions/workflows/android-release.yml
   workflow_dispatch:
     inputs:
       tag:
