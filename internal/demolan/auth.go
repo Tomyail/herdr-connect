@@ -12,6 +12,7 @@ import (
 
 const (
 	PairPath          = "/v1/pair"
+	DevicePath        = "/v1/device"
 	maxPairingBody    = 4096
 	maxDeviceNameSize = 100
 )
@@ -68,7 +69,8 @@ func enforceClientVersion(response http.ResponseWriter, request *http.Request) b
 // 其余全部端点要求已配对设备的 bearer token。所有路径都经过 rateLimiter：
 //   - /v1/pair 与未认证请求（401 路径）走 per-IP 限流；
 //   - 认证成功后的请求走 per-Device 限流（读 / 写分别设阈值）。
-// 现有 agents handler 保持不变。
+// 认证成功后再分发：/v1/device（设备自吊销，issue #52）在本层就地处理
+//（deviceID 已由 token 反查得到），其余请求交给 agents handler。
 func secureHandler(agents http.Handler, database *store.Store, cert lanauth.Certificate) http.Handler {
 	return secureHandlerWithLimiter(agents, database, cert, newRateLimiter())
 }
@@ -117,9 +119,33 @@ func secureHandlerWithLimiter(agents http.Handler, database *store.Store, cert l
 				writeRateLimited(response)
 				return
 			}
+			if request.URL.Path == DevicePath {
+				setCommonHeaders(response)
+				handleSelfRevoke(response, request, database, deviceID)
+				return
+			}
 			agents.ServeHTTP(response, requestWithDeviceID(request, deviceID))
 		}
 	})
+}
+
+// handleSelfRevoke 处理已认证设备的自吊销（issue #52）：吊销的是请求者自己
+// token 对应的设备，deviceID 由鉴权中间件从 bearer token 反查得到，客户端
+// 不传参——一台设备只能吊销自己，不能吊销其它设备。复用
+// lanauth.RevokeDevice（与 CLI devices revoke 同一条存储路径），吊销立即
+// 生效：同一 token 的下一个请求会被三态鉴权判为 AuthStatusRevoked →
+// 401 revoked，语义与 CLI 吊销完全一致。
+func handleSelfRevoke(response http.ResponseWriter, request *http.Request, database *store.Store, deviceID string) {
+	if request.Method != http.MethodDelete {
+		response.Header().Set("Allow", http.MethodDelete)
+		writeError(response, http.StatusMethodNotAllowed, "method_not_allowed", "device endpoint only accepts DELETE")
+		return
+	}
+	if err := lanauth.RevokeDevice(request.Context(), database, deviceID); err != nil {
+		writeError(response, http.StatusInternalServerError, "revoke_failed", "device could not be revoked")
+		return
+	}
+	response.WriteHeader(http.StatusNoContent)
 }
 
 func handlePair(response http.ResponseWriter, request *http.Request, database *store.Store, cert lanauth.Certificate) {
