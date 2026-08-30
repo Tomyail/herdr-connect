@@ -42,7 +42,7 @@ import {
 import { discoveryRetryDelay } from "./discovery-lifecycle";
 import { serviceKey, type ServiceAssociations } from "./discovery-match";
 import { toErrorCode } from "./i18n/errors";
-import { focusAgent } from "./network";
+import { focusAgent, revokeDevice } from "./network";
 import { loadPairedInstances, removeInstanceCredentials, selectActiveInstance } from "./credentials";
 import {
   listInstances,
@@ -50,6 +50,11 @@ import {
   type DeviceCredentials,
   type PairedInstancesModel,
 } from "./paired-instances";
+import { deleteInstanceAlias } from "./instance-alias-storage";
+import {
+  classifyRevocationFailure,
+  planForgetInstance,
+} from "./instance-revocation";
 import {
   planForegroundTransition,
   planSessionRetry,
@@ -61,7 +66,7 @@ import {
   type StreamStatus,
 } from "./connection-session";
 import { useI18n } from "./i18n/I18nContext";
-import { NetworkError } from "./i18n/errors";
+import { NetworkError, type NetworkErrorCode } from "./i18n/errors";
 
 export type { ConnectionState, StreamStatus, AuthInvalidKind } from "./connection-session";
 
@@ -97,7 +102,23 @@ interface ConnectionValue {
   switchInstance: (fingerprint: string) => Promise<void>;
   /** 每实例连接状态(fingerprint → 摘要),并行会话的可达性查询面。 */
   instanceStates: Readonly<Record<string, InstanceSessionStatus>>;
+  /** 忘记实例(本地凭据 + 本机别名删除,远端 token 同步吊销)。 */
+  forgetInstance: (
+    fingerprint: string,
+    options?: { readonly localOnly?: boolean },
+  ) => Promise<ForgetResult>;
 }
+
+/** 忘记实例的编排结果,决策规则见 instance-revocation.ts;UI 映射提示。 */
+export type ForgetResult =
+  /** 完成:本地凭据与别名已删(远端已吊销或本就无效,或用户选了仅本地删除)。 */
+  | { readonly outcome: "forgotten" }
+  /** daemon 未连接(无已验证地址可发吊销):未动任何本地状态,交用户裁决。 */
+  | { readonly outcome: "revocation_unavailable" }
+  /** 吊销请求失败(daemon 拒绝/不可达):未动任何本地状态,交用户裁决。 */
+  | { readonly outcome: "revocation_failed"; readonly code: NetworkErrorCode }
+  /** fingerprint 不在已配对集合中(幂等重入/已被鉴权终态移除)。 */
+  | { readonly outcome: "not_found" };
 
 const ConnectionContext = createContext<ConnectionValue | undefined>(undefined);
 
@@ -341,6 +362,47 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     syncModel(model);
   }, [syncModel]);
 
+  /**
+   * 忘记实例(issue #55):本地凭据 + 本机别名删除,远端 token 同步吊销。
+   *
+   * 编排决策在 instance-revocation.ts(纯):吊销成功或服务端本就无效
+   * (401)→ 继续本地删除;不可达/失败 → 不动本地状态,把决策交回用户
+   * (仅本地删除/重试/取消,不静默)。吊销地址只取该实例会话已验证的
+   * connected 服务——未连接时无可靠地址可发,按 revocation_unavailable
+   * 交用户裁决。忘记活动实例后活动指针回退沿用 #53 的既有规则。
+   */
+  const forgetInstance = useCallback(
+    async (
+      fingerprint: string,
+      options?: { readonly localOnly?: boolean },
+    ): Promise<ForgetResult> => {
+      const model = await loadPairedInstances();
+      const credentials = model.instances[fingerprint];
+      if (!credentials) return { outcome: "not_found" };
+      if (!options?.localOnly) {
+        const sessionState = sessionsRef.current.get(fingerprint)?.getState();
+        const service =
+          sessionState?.phase === "connected" ? sessionState.service : undefined;
+        if (!service) return { outcome: "revocation_unavailable" };
+        try {
+          await revokeDevice(service, {
+            fingerprint: credentials.fingerprint,
+            token: credentials.token,
+          });
+        } catch (error) {
+          const code = toErrorCode(error, "revoke_http");
+          const plan = planForgetInstance(classifyRevocationFailure(code));
+          if (!plan.removeLocal) return { outcome: "revocation_failed", code };
+        }
+      }
+      const next = await removeInstanceCredentials(fingerprint);
+      deleteInstanceAlias(fingerprint);
+      if (mountedRef.current) syncModel(next);
+      return { outcome: "forgotten" };
+    },
+    [syncModel],
+  );
+
   useEffect(() => {
     mountedRef.current = true;
 
@@ -445,8 +507,9 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
       activeFingerprint,
       switchInstance,
       instanceStates,
+      forgetInstance,
     }),
-    [state, focusResult, streamStatus, refresh, switchAgent, unpair, instances, activeFingerprint, switchInstance, instanceStates],
+    [state, focusResult, streamStatus, refresh, switchAgent, unpair, instances, activeFingerprint, switchInstance, instanceStates, forgetInstance],
   );
 
   return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;

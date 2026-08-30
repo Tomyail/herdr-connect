@@ -32,6 +32,12 @@ export type NetworkErrorCode =
   | "interrupt_timeout"
   | "interrupt_tls"
   | "interrupt_failed"
+  /** 设备自吊销（DELETE /v1/device）的非 2xx/非 401 HTTP 错误。 */
+  | "revoke_http"
+  /** 设备自吊销请求超时。 */
+  | "revoke_timeout"
+  /** 设备自吊销请求的传输层/TLS 失败（daemon 离线等）。 */
+  | "revoke_tls"
   | "discovery_search_failed"
   | "discovery_resolve_failed"
   | "connect_failed"
@@ -73,6 +79,9 @@ export const NETWORK_ERROR_CODES: readonly NetworkErrorCode[] = [
   "interrupt_timeout",
   "interrupt_tls",
   "interrupt_failed",
+  "revoke_http",
+  "revoke_timeout",
+  "revoke_tls",
   "discovery_search_failed",
   "discovery_resolve_failed",
   "connect_failed",

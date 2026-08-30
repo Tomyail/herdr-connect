@@ -53,6 +53,11 @@ export function agentsEventsUrl(address: string, port: number): string {
   return `${agentsUrl(address, port)}/events`;
 }
 
+/** Device self-revocation endpoint (issue #52). Bearer-authed DELETE, 204 on success. */
+export function deviceUrl(address: string, port: number): string {
+  return `https://${formatHost(address)}:${port}/v1/device`;
+}
+
 export function devServerFallbackService(scriptURL: string | undefined): DiscoveredService | undefined {
   if (!scriptURL) return undefined;
 
@@ -247,6 +252,56 @@ export async function interruptAgent(
     tlsErrorCode: "interrupt_tls",
     timeoutErrorCode: "interrupt_timeout",
     httpErrorCode: "interrupt_http",
+  });
+}
+
+/**
+ * Revoke a device token on its daemon via `DELETE /v1/device` (issue #52).
+ *
+ * Bearer-authed by the token being revoked; no request body. Success is 204.
+ * A 401 surfaces as NetworkError `unauthorized`/`revoked` — callers classify
+ * that as "already invalid" (the server side has no live token anymore), see
+ * instance-revocation.ts. Used by "forget this installation" (#55).
+ */
+export async function revokeDevice(
+  service: DiscoveredService,
+  credentials: RequestCredentials,
+): Promise<void> {
+  const address = preferredAddress(service.addresses);
+  if (!address) throw new NetworkError("no_address");
+
+  await authPinnedFetch({
+    url: deviceUrl(address, service.port),
+    fingerprint: credentials.fingerprint,
+    token: credentials.token,
+    method: "DELETE",
+    tlsErrorCode: "revoke_tls",
+    timeoutErrorCode: "revoke_timeout",
+    httpErrorCode: "revoke_http",
+  });
+}
+
+/**
+ * Revoke a stale token against the QR payload's reachable hosts (re-pairing
+ * replacement semantics, #55). Addressed by the pairing payload (preferred
+ * host + port + pinned fingerprint) instead of a discovered service, because
+ * the old token belongs to an instance whose session may not exist yet.
+ */
+export async function revokeDeviceByPairingHosts(
+  payload: PairingQRPayload,
+  token: string,
+): Promise<void> {
+  const host = preferredAddress(payload.hosts);
+  if (!host) throw new NetworkError("no_address");
+
+  await authPinnedFetch({
+    url: deviceUrl(host, payload.port),
+    fingerprint: payload.fp,
+    token,
+    method: "DELETE",
+    tlsErrorCode: "revoke_tls",
+    timeoutErrorCode: "revoke_timeout",
+    httpErrorCode: "revoke_http",
   });
 }
 

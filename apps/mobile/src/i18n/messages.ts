@@ -12,6 +12,7 @@ import { DEFAULT_LOCALE, type ResolvedLocale } from "./locale";
 
 const en = {
   "common.unknown": "Unknown",
+  "common.cancel": "Cancel",
 
   "tab.agents": "Agents",
   "tab.settings": "Settings",
@@ -155,6 +156,12 @@ const en = {
   "pairing.cameraPermissionTitle": "Camera access needed",
   "pairing.cameraPermissionMessage": "Herdr Connect needs camera access to scan the pairing QR code",
   "pairing.grantCamera": "Grant access",
+  "pairing.aliasSectionTitle": "Paired successfully",
+  "pairing.aliasSectionBody": "Give this installation a name to tell it apart in the switcher.",
+  "pairing.aliasLabel": "Installation name",
+  "pairing.aliasPlaceholder": "e.g. Studio Mac",
+  "pairing.done": "Done",
+  "pairing.revocationWarning": "Paired, but the previous token could not be revoked on this daemon.",
 
   "settings.row.fingerprint": "Fingerprint",
   "settings.row.deviceName": "Paired as",
@@ -162,6 +169,27 @@ const en = {
   "settings.value.active": "Active",
   "settings.row.pairDevice": "Pair new device",
   "settings.row.unpairDevice": "Unpair device",
+
+  "switcher.openA11y": "Switch installation",
+  "switcher.reachable": "Reachable",
+  "switcher.offline": "Offline",
+
+  "instance.section": "Paired installations",
+  "instance.status.reachable": "Reachable",
+  "instance.status.offline": "Offline",
+  "instance.switchTo": "Switch to this installation",
+  "instance.rename": "Rename",
+  "instance.renameTitle": "Rename installation",
+  "instance.renameSave": "Save",
+  "instance.forget": "Forget this installation…",
+  "instance.forgetConfirmTitle": "Forget {name}?",
+  "instance.forgetConfirmBody": "This removes the credentials from this device and revokes its token on the daemon, so its agents become unreachable from this device.",
+  "instance.forgetAction": "Forget",
+  "instance.forgotten": "Installation forgotten",
+  "instance.revocationFailedTitle": "Could not revoke on the daemon",
+  "instance.revocationFailedBody": "The daemon is unreachable or refused the revocation. Its token stays valid until you pair again or revoke it on the Mac.",
+  "instance.removeLocally": "Remove locally only",
+  "instance.retry": "Retry",
 
   "permission.android.title": "Allow discovering nearby Herdr daemons",
   "permission.android.message":
@@ -174,6 +202,7 @@ export type MessageKey = keyof typeof en;
 
 const zhHans: Record<MessageKey, string> = {
   "common.unknown": "\u672A\u77E5",
+  "common.cancel": "\u53D6\u6D88",
 
   "tab.agents": "Agents",
   "tab.settings": "\u8BBE\u7F6E",
@@ -317,6 +346,12 @@ const zhHans: Record<MessageKey, string> = {
   "pairing.cameraPermissionTitle": "\u9700\u8981\u76F8\u673A\u6743\u9650",
   "pairing.cameraPermissionMessage": "Herdr Connect \u9700\u8981\u76F8\u673A\u6743\u9650\u6765\u626B\u63CF\u914D\u5BF9\u4E8C\u7EF4\u7801",
   "pairing.grantCamera": "\u6388\u4E88\u6743\u9650",
+  "pairing.aliasSectionTitle": "\u914D\u5BF9\u6210\u529F",
+  "pairing.aliasSectionBody": "\u4E3A\u8FD9\u53F0\u5B89\u88C5\u5B9E\u4F8B\u8D77\u4E2A\u540D\u5B57\uFF0C\u4FBF\u4E8E\u5728\u5207\u6362\u5668\u4E2D\u533A\u5206\u3002",
+  "pairing.aliasLabel": "\u5B9E\u4F8B\u540D\u79F0",
+  "pairing.aliasPlaceholder": "\u4F8B\u5982\uFF1A\u5DE5\u4F5C\u5BA4\u7684 Mac",
+  "pairing.done": "\u5B8C\u6210",
+  "pairing.revocationWarning": "\u5DF2\u914D\u5BF9\uFF0C\u4F46\u65E7\u4EE4\u724C\u672A\u80FD\u5728\u8FD9\u53F0 daemon \u4E0A\u540A\u9500\u3002",
 
   "settings.row.fingerprint": "\u8BC1\u4E66\u6307\u7EB9",
   "settings.row.deviceName": "\u5DF2\u914D\u5BF9\u4E3A",
@@ -324,6 +359,27 @@ const zhHans: Record<MessageKey, string> = {
   "settings.value.active": "\u5F53\u524D",
   "settings.row.pairDevice": "\u914D\u5BF9\u65B0\u8BBE\u5907",
   "settings.row.unpairDevice": "\u89E3\u9664\u914D\u5BF9",
+
+  "switcher.openA11y": "\u5207\u6362\u5B89\u88C5\u5B9E\u4F8B",
+  "switcher.reachable": "\u53EF\u8FBE",
+  "switcher.offline": "\u79BB\u7EBF",
+
+  "instance.section": "\u5DF2\u914D\u5BF9\u7684\u5B89\u88C5\u5B9E\u4F8B",
+  "instance.status.reachable": "\u53EF\u8FBE",
+  "instance.status.offline": "\u79BB\u7EBF",
+  "instance.switchTo": "\u5207\u6362\u5230\u6B64\u5B9E\u4F8B",
+  "instance.rename": "\u91CD\u547D\u540D",
+  "instance.renameTitle": "\u91CD\u547D\u540D\u5B9E\u4F8B",
+  "instance.renameSave": "\u4FDD\u5B58",
+  "instance.forget": "\u5FD8\u8BB0\u6B64\u5B9E\u4F8B…",
+  "instance.forgetConfirmTitle": "\u5FD8\u8BB0 {name}\uFF1F",
+  "instance.forgetConfirmBody": "\u5C06\u4ECE\u672C\u8BBE\u5907\u5220\u9664\u5176\u51ED\u636E\uFF0C\u5E76\u5728 daemon \u4E0A\u540A\u9500\u5176\u4EE4\u724C\uFF0C\u4E4B\u540E\u5C06\u65E0\u6CD5\u518D\u8BBF\u95EE\u8BE5\u5B9E\u4F8B\u7684 Agent\u3002",
+  "instance.forgetAction": "\u5FD8\u8BB0",
+  "instance.forgotten": "\u5DF2\u5FD8\u8BB0\u8BE5\u5B9E\u4F8B",
+  "instance.revocationFailedTitle": "\u65E0\u6CD5\u5728 daemon \u4E0A\u540A\u9500\u4EE4\u724C",
+  "instance.revocationFailedBody": "daemon \u4E0D\u53EF\u8FBE\u6216\u62D2\u7EDD\u4E86\u540A\u9500\u8BF7\u6C42\u3002\u5728\u91CD\u65B0\u914D\u5BF9\u6216\u5728 Mac \u4E0A\u540A\u9500\u4E4B\u524D\uFF0C\u8BE5\u4EE4\u724C\u4ECD\u7136\u6709\u6548\u3002",
+  "instance.removeLocally": "\u4EC5\u4ECE\u672C\u673A\u5220\u9664",
+  "instance.retry": "\u91CD\u8BD5",
 
   "permission.android.title": "\u5141\u8BB8\u53D1\u73B0\u9644\u8FD1\u7684 Herdr daemon",
   "permission.android.message":
@@ -362,6 +418,9 @@ const errorEn: Record<NetworkErrorCode, string> = {
   interrupt_timeout: "Timed out stopping agent",
   interrupt_tls: "TLS handshake failed while stopping agent",
   interrupt_failed: "Failed to stop agent",
+  revoke_http: "Failed to revoke device (HTTP {status})",
+  revoke_timeout: "Timed out revoking device",
+  revoke_tls: "Could not reach the daemon to revoke (network or TLS error)",
   discovery_search_failed: "Bonjour search failed (code {status})",
   discovery_resolve_failed: "Bonjour service resolution failed (code {status})",
   connect_failed: "Unable to connect to daemon",
@@ -401,6 +460,9 @@ const errorZhHans: Record<NetworkErrorCode, string> = {
   interrupt_timeout: "\u53EB\u505C\u8D85\u65F6",
   interrupt_tls: "\u53EB\u505C\u65F6 TLS \u63E1\u624B\u5931\u8D25",
   interrupt_failed: "\u53EB\u505C\u5931\u8D25",
+  revoke_http: "\u540A\u9500\u8BBE\u5907\u5931\u8D25\uFF08HTTP {status}\uFF09",
+  revoke_timeout: "\u540A\u9500\u8BBE\u5907\u8D85\u65F6",
+  revoke_tls: "\u65E0\u6CD5\u8FDE\u4E0A daemon \u5B8C\u6210\u540A\u9500\uFF08\u7F51\u7EDC\u6216 TLS \u9519\u8BEF\uFF09",
   discovery_search_failed: "Bonjour \u641C\u7D22\u5931\u8D25\uFF08\u9519\u8BEF\u7801 {status}\uFF09",
   discovery_resolve_failed: "Bonjour \u670D\u52A1\u89E3\u6790\u5931\u8D25\uFF08\u9519\u8BEF\u7801 {status}\uFF09",
   connect_failed: "\u65E0\u6CD5\u8FDE\u63A5 daemon",
