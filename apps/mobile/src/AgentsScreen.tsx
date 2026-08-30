@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMMKVString } from "react-native-mmkv";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { type Agent } from "./agent-contract";
+import { ActionSheet } from "./ActionSheet";
 import { agentStatus } from "./agent-status";
 import {
   NO_FILTER,
@@ -280,6 +281,7 @@ export function AgentsScreenContent({
   const { completedIds, clearCompleted } = useRecentCompletions();
   const { agentFilter, setAgentFilter } = useAgentFilter();
   const [filterOpen, setFilterOpen] = useState(false);
+  const [favoriteMenuAgent, setFavoriteMenuAgent] = useState<Agent | null>(null);
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -327,20 +329,11 @@ export function AgentsScreenContent({
     [activeFingerprint, favoriteSourceIds],
   );
   // 长按 AgentRow 弹收藏/取消收藏菜单(文案随当前状态切换);与 onPress
-  // 进详情/focus 互不冲突(Pressable 原生区分点按与长按)。
+  // 进详情/focus 互不冲突(Pressable 原生区分点按与长按)。菜单用自建
+  // ActionSheet 替代系统 Alert(视觉与 App 一致)。
   const showFavoriteMenu = useCallback(
-    (agent: Agent) => {
-      const favorited = isFavoriteSourceId(favoriteSourceIds, agent.source_id);
-      const title = agent.workspace_label || agent.display_name || t("agents.row.unnamed");
-      Alert.alert(title, undefined, [
-        {
-          text: favorited ? t("agents.favorite.remove") : t("agents.favorite.add"),
-          onPress: () => toggleFavorite(agent.source_id),
-        },
-        { text: t("common.cancel"), style: "cancel" },
-      ]);
-    },
-    [favoriteSourceIds, t, toggleFavorite],
+    (agent: Agent) => setFavoriteMenuAgent(agent),
+    [],
   );
 
   // workspace 集合随快照动态枚举(全量计数,不随过滤选择联动);
@@ -515,6 +508,23 @@ export function AgentsScreenContent({
           </View>
         )}
       </View>
+
+      {favoriteMenuAgent ? (
+        <ActionSheet
+          visible
+          title={favoriteMenuAgent.workspace_label || favoriteMenuAgent.display_name || t("agents.row.unnamed")}
+          actions={[
+            {
+              label: isFavoriteSourceId(favoriteSourceIds, favoriteMenuAgent.source_id)
+                ? t("agents.favorite.remove")
+                : t("agents.favorite.add"),
+              onPress: () => toggleFavorite(favoriteMenuAgent.source_id),
+            },
+            { label: t("common.cancel"), onPress: () => {} },
+          ]}
+          onDismiss={() => setFavoriteMenuAgent(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

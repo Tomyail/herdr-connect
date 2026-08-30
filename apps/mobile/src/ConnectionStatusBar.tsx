@@ -9,7 +9,7 @@
  *   状态点(discovering 显示 spinner)、connected 时的 live/polling 徽标;
  * - 已配对实例 ≥ 1 时整条可点,打开菜单:
  *   · 实例行:点按 = 切换活动实例(并行会话,零等待);行尾 ⋯ = 管理
- *     (切换到/重命名/忘记,Alert 菜单——自 Settings 迁入);
+ *     (切换到/重命名/忘记,ActionSheet 菜单——自 Settings 迁入);
  *   · 底部"配对新实例"行,进入配对流程(onStartPairing 由挂载方注入:
  *     窄屏 root-stack push,宽屏全屏 overlay);
  * - 未配对(0 实例)时,整条即配对入口:点击直接进入配对流程。
@@ -34,6 +34,7 @@ import {
 import { useMMKVString } from "react-native-mmkv";
 
 import { useConnection } from "./connection";
+import { ActionSheet } from "./ActionSheet";
 import type { DeviceCredentials } from "./paired-instances";
 import { displayInstanceLabel } from "./instance-alias";
 import { aliasKeyFor, instanceAliasStorage, readInstanceAlias, writeInstanceAlias } from "./instance-alias-storage";
@@ -146,6 +147,9 @@ export function ConnectionStatusBar({
   const [renaming, setRenaming] = useState<{ fingerprint: string; initial: string } | null>(null);
   /** 切换在途标记:防连点。 */
   const switchingRef = useRef(false);
+  const [instanceMenu, setInstanceMenu] = useState<{ instance: DeviceCredentials; label: string } | null>(null);
+  const [forgetConfirm, setForgetConfirm] = useState<{ fingerprint: string; label: string } | null>(null);
+  const [forgetFailure, setForgetFailure] = useState<{ fingerprint: string; detail: string } | null>(null);
 
   const connected = phase === "connected";
   const discovering = phase === "discovering";
@@ -168,39 +172,11 @@ export function ConnectionStatusBar({
   // ── 实例管理(切换/重命名/忘记),自 Settings.PairedInstancesCard 迁入 ──
 
   const openInstanceMenu = (instance: DeviceCredentials, label: string) => {
-    const isActive = instance.fingerprint === activeFingerprint;
-    const buttons: Array<{ text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }> = [];
-    if (!isActive) {
-      buttons.push({
-        text: t("instance.switchTo"),
-        onPress: () => handleSelect(instance.fingerprint),
-      });
-    }
-    buttons.push(
-      {
-        text: t("instance.rename"),
-        onPress: () =>
-          setRenaming({ fingerprint: instance.fingerprint, initial: readInstanceAlias(instance.fingerprint) ?? "" }),
-      },
-      {
-        text: t("instance.forget"),
-        style: "destructive",
-        onPress: () => confirmForget(instance.fingerprint, label),
-      },
-      { text: t("common.cancel"), style: "cancel" },
-    );
-    Alert.alert(label, undefined, buttons);
+    setInstanceMenu({ instance, label });
   };
 
   const confirmForget = (fingerprint: string, label: string) => {
-    Alert.alert(
-      t("instance.forgetConfirmTitle", { name: label }),
-      t("instance.forgetConfirmBody"),
-      [
-        { text: t("instance.forgetAction"), style: "destructive", onPress: () => void runForgetInstance(fingerprint) },
-        { text: t("common.cancel"), style: "cancel" },
-      ],
-    );
+    setForgetConfirm({ fingerprint, label });
   };
 
   const runForgetInstance = async (fingerprint: string) => {
@@ -216,16 +192,8 @@ export function ConnectionStatusBar({
       case "revocation_failed": {
         // 不静默:交用户裁决——仅本地删除 / 重试 / 取消。
         const detail =
-          result.outcome === "revocation_failed" ? `\n\n${tError(result.code)}` : "";
-        Alert.alert(t("instance.revocationFailedTitle"), `${t("instance.revocationFailedBody")}${detail}`, [
-          {
-            text: t("instance.removeLocally"),
-            style: "destructive",
-            onPress: () => void forgetInstance(fingerprint, { localOnly: true }),
-          },
-          { text: t("instance.retry"), onPress: () => void runForgetInstance(fingerprint) },
-          { text: t("common.cancel"), style: "cancel" },
-        ]);
+          result.outcome === "revocation_failed" ? tError(result.code) : "";
+        setForgetFailure({ fingerprint, detail });
         return;
       }
     }
@@ -337,6 +305,76 @@ export function ConnectionStatusBar({
           fingerprint={renaming.fingerprint}
           initial={renaming.initial}
           onClose={() => setRenaming(null)}
+        />
+      ) : null}
+
+      {instanceMenu ? (
+        <ActionSheet
+          visible
+          title={instanceMenu.label}
+          actions={[
+            ...(instanceMenu.instance.fingerprint !== activeFingerprint
+              ? [
+                  {
+                    label: t("instance.switchTo"),
+                    onPress: () => handleSelect(instanceMenu.instance.fingerprint),
+                  },
+                ]
+              : []),
+            {
+              label: t("instance.rename"),
+              onPress: () =>
+                setRenaming({
+                  fingerprint: instanceMenu.instance.fingerprint,
+                  initial: readInstanceAlias(instanceMenu.instance.fingerprint) ?? "",
+                }),
+            },
+            {
+              label: t("instance.forget"),
+              destructive: true,
+              onPress: () => confirmForget(instanceMenu.instance.fingerprint, instanceMenu.label),
+            },
+            { label: t("common.cancel"), onPress: () => {} },
+          ]}
+          onDismiss={() => setInstanceMenu(null)}
+        />
+      ) : null}
+
+      {forgetConfirm ? (
+        <ActionSheet
+          visible
+          title={t("instance.forgetConfirmTitle", { name: forgetConfirm.label })}
+          message={t("instance.forgetConfirmBody")}
+          actions={[
+            {
+              label: t("instance.forgetAction"),
+              destructive: true,
+              onPress: () => void runForgetInstance(forgetConfirm.fingerprint),
+            },
+            { label: t("common.cancel"), onPress: () => {} },
+          ]}
+          onDismiss={() => setForgetConfirm(null)}
+        />
+      ) : null}
+
+      {forgetFailure ? (
+        <ActionSheet
+          visible
+          title={t("instance.revocationFailedTitle")}
+          message={forgetFailure.detail ? `${t("instance.revocationFailedBody")}\n\n${forgetFailure.detail}` : t("instance.revocationFailedBody")}
+          actions={[
+            {
+              label: t("instance.removeLocally"),
+              destructive: true,
+              onPress: () => void forgetInstance(forgetFailure.fingerprint, { localOnly: true }),
+            },
+            {
+              label: t("instance.retry"),
+              onPress: () => void runForgetInstance(forgetFailure.fingerprint),
+            },
+            { label: t("common.cancel"), onPress: () => {} },
+          ]}
+          onDismiss={() => setForgetFailure(null)}
         />
       ) : null}
     </>
