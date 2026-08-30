@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,14 +7,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { type Agent } from "./agent-contract";
 import { agentStatus } from "./agent-status";
 import {
-  NO_STATUS_FILTER,
+  NO_FILTER,
   STATUS_GROUPS,
+  activeFilterChipCount,
+  enumerateWorkspaceOptions,
   filterAgents,
-  isStatusFilterActive,
+  isFilterActive,
+  pruneWorkspaces,
   statusGroupLabelKey,
   toggleStatusGroup,
-  type AgentStatusFilter,
+  toggleWorkspace,
+  type AgentListFilter,
   type AgentStatusGroup,
+  type WorkspaceOption,
 } from "./agent-filter";
 import { useAgentFilter } from "./AgentFilterContext";
 import { AgentBrandIcon } from "./AgentBrandIcon";
@@ -106,40 +111,93 @@ function AgentRow({
   );
 }
 
-/** 状态组多选面板(issue #56):四个 chips,组内 OR,再点取消。 */
-function StatusFilterPanel({
-  statusFilter,
-  onToggle,
+/**
+ * 过滤面板(issue #56 状态维 + #57 workspace 维):两组分区,各自组内
+ * 多选 OR。workspace chips 显示快照全量计数并按数量降序;workspace 多时
+ * 面板整体可滚动(两个分区一起滚,保持单一滚动上下文)。
+ */
+function FilterPanel({
+  agentFilter,
+  workspaceOptions,
+  onToggleStatusGroup,
+  onToggleWorkspace,
 }: {
-  statusFilter: AgentStatusFilter;
-  onToggle: (group: AgentStatusGroup) => void;
+  agentFilter: AgentListFilter;
+  workspaceOptions: readonly WorkspaceOption[];
+  onToggleStatusGroup: (group: AgentStatusGroup) => void;
+  onToggleWorkspace: (workspaceKey: string) => void;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.filterPanel}>
-      {STATUS_GROUPS.map((group) => {
-        const selected = statusFilter.statusGroups.includes(group);
-        return (
-          <Pressable
-            key={group}
-            accessibilityRole="button"
-            accessibilityState={selected ? { selected: true } : undefined}
-            onPress={() => onToggle(group)}
-            style={({ pressed }) => [
-              styles.filterChip,
-              selected && styles.filterChipSelected,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            {selected ? <Ionicons name="checkmark" size={13} color={colors.onAction} /> : null}
-            <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-              {t(statusGroupLabelKey[group])}
+      <ScrollView
+        style={styles.filterPanelScroll}
+        contentContainerStyle={styles.filterPanelContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.filterSectionTitle}>{t("agents.filter.section.status")}</Text>
+        <View style={styles.filterChips}>
+          {STATUS_GROUPS.map((group) => {
+            const selected = agentFilter.statusGroups.includes(group);
+            return (
+              <Pressable
+                key={group}
+                accessibilityRole="button"
+                accessibilityState={selected ? { selected: true } : undefined}
+                onPress={() => onToggleStatusGroup(group)}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  selected && styles.filterChipSelected,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                {selected ? <Ionicons name="checkmark" size={13} color={colors.onAction} /> : null}
+                <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
+                  {t(statusGroupLabelKey[group])}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {workspaceOptions.length > 0 ? (
+          <>
+            <Text style={[styles.filterSectionTitle, styles.filterSectionTitleSpaced]}>
+              {t("agents.filter.section.workspace")}
             </Text>
-          </Pressable>
-        );
-      })}
+            <View style={styles.filterChips}>
+              {workspaceOptions.map((option) => {
+                const selected = agentFilter.workspaces.includes(option.key);
+                const label = option.isUnnamed ? t("agents.filter.workspace.unnamed") : option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    accessibilityRole="button"
+                    accessibilityState={selected ? { selected: true } : undefined}
+                    onPress={() => onToggleWorkspace(option.key)}
+                    style={({ pressed }) => [
+                      styles.filterChip,
+                      selected && styles.filterChipSelected,
+                      pressed && styles.buttonPressed,
+                    ]}
+                  >
+                    {selected ? (
+                      <Ionicons name="checkmark" size={13} color={colors.onAction} />
+                    ) : null}
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.filterChipText, selected && styles.filterChipTextSelected]}
+                    >
+                      {label} ({option.count})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+      </ScrollView>
     </View>
   );
 }
@@ -165,21 +223,41 @@ export function AgentsScreenContent({
 }) {
   const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
-  const { statusFilter, setStatusFilter } = useAgentFilter();
+  const { agentFilter, setAgentFilter } = useAgentFilter();
   const [filterOpen, setFilterOpen] = useState(false);
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
 
-  const filterActive = isStatusFilterActive(statusFilter);
+  const filterActive = isFilterActive(agentFilter);
   const toggleFilterGroup = useCallback(
-    (group: AgentStatusGroup) => setStatusFilter(toggleStatusGroup(statusFilter, group)),
-    [statusFilter, setStatusFilter],
+    (group: AgentStatusGroup) => setAgentFilter(toggleStatusGroup(agentFilter, group)),
+    [agentFilter, setAgentFilter],
+  );
+  const toggleFilterWorkspace = useCallback(
+    (workspaceKey: string) => setAgentFilter(toggleWorkspace(agentFilter, workspaceKey)),
+    [agentFilter, setAgentFilter],
   );
 
   const connected = state.phase === "connected" ? state : undefined;
+  const agents = connected?.data.agents;
+  // workspace 集合随快照动态枚举(全量计数,不随过滤选择联动);
+  // 快照引用不变时复用同一结果。
+  const workspaceOptions = useMemo(
+    () => (agents ? enumerateWorkspaceOptions(agents) : []),
+    [agents],
+  );
+  // 防悬空选择:选择中已不在快照枚举集合里的 workspace 自动剔除——
+  // 同时覆盖快照刷新(workspace 消失)与实例切换恢复记忆槽两个场景。
+  // 空快照不剔除(断线/加载瞬间不清空记忆)。
+  useEffect(() => {
+    if (workspaceOptions.length === 0) return;
+    const pruned = pruneWorkspaces(agentFilter, workspaceOptions.map((option) => option.key));
+    if (pruned !== agentFilter) setAgentFilter(pruned);
+  }, [workspaceOptions, agentFilter, setAgentFilter]);
+
   // 归并与状态 pill 同源:completedIds 提供“刚完成”瞬态;未过滤时原引用直通。
-  const visibleAgents = connected ? filterAgents(connected.data.agents, completedIds, statusFilter) : [];
+  const visibleAgents = connected ? filterAgents(connected.data.agents, completedIds, agentFilter) : [];
   const statusTitleKey: MessageKey =
     state.phase === "discovering"
       ? "agents.status.discovering"
@@ -268,14 +346,19 @@ export function AgentsScreenContent({
                   />
                   {filterActive ? (
                     <View style={styles.filterBadge}>
-                      <Text style={styles.filterBadgeText}>{statusFilter.statusGroups.length}</Text>
+                      <Text style={styles.filterBadgeText}>{activeFilterChipCount(agentFilter)}</Text>
                     </View>
                   ) : null}
                 </Pressable>
               </View>
             </View>
             {filterOpen ? (
-              <StatusFilterPanel statusFilter={statusFilter} onToggle={toggleFilterGroup} />
+              <FilterPanel
+                agentFilter={agentFilter}
+                workspaceOptions={workspaceOptions}
+                onToggleStatusGroup={toggleFilterGroup}
+                onToggleWorkspace={toggleFilterWorkspace}
+              />
             ) : null}
             <FlatList
               data={visibleAgents}
@@ -303,7 +386,7 @@ export function AgentsScreenContent({
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={t("agents.filter.clear")}
-                      onPress={() => setStatusFilter(NO_STATUS_FILTER)}
+                      onPress={() => setAgentFilter(NO_FILTER)}
                       style={({ pressed }) => [styles.clearFilterButton, pressed && styles.buttonPressed]}
                     >
                       <Text style={styles.clearFilterText}>{t("agents.filter.clear")}</Text>
@@ -352,8 +435,14 @@ const createStyles = (colors: ThemeColors) =>
     filterButtonActive: { backgroundColor: colors.accent },
     filterBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: colors.actionBg, alignItems: "center", justifyContent: "center" },
     filterBadgeText: { color: colors.onDanger, fontSize: 10, fontWeight: "700" },
-    filterPanel: { flexDirection: "row", flexWrap: "wrap", gap: 8, backgroundColor: colors.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 10, marginBottom: 12 },
-    filterChip: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    filterPanel: { backgroundColor: colors.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, marginBottom: 12 },
+    // workspace 多时面板整体可滚动(状态区 + workspace 区同一滚动上下文)。
+    filterPanelScroll: { maxHeight: 232 },
+    filterPanelContent: { padding: 10 },
+    filterSectionTitle: { color: colors.textSecondary, fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+    filterSectionTitleSpaced: { marginTop: 12 },
+    filterChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+    filterChip: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, maxWidth: "100%" },
     filterChipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
     filterChipText: { color: colors.textSecondary, fontSize: 13, fontWeight: "600" },
     filterChipTextSelected: { color: colors.onAction },

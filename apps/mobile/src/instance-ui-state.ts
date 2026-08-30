@@ -3,8 +3,9 @@
  *
  * issue #54:切换活动实例瞬间完成、界面原样恢复。App 的可记忆界面状态是
  * AppShell 提升的“当前目标页(Agents/Settings)+ 选中的 Agent + Agents 列表
- * 状态过滤(issue #56)”——窄屏由 React Navigation 树呈现(镜像回提升状态),
- * 宽屏由 SplitLayout 直接消费。本模块把这份提升状态组织为 reducer:
+ * 过滤(issue #56 状态维 / issue #57 workspace 维)”——窄屏由 React
+ * Navigation 树呈现(镜像回提升状态),宽屏由 SplitLayout 直接消费。本模块
+ * 把这份提升状态组织为 reducer:
  *
  * - selection:用户操作(切 tab、进/出 Agent 详情)更新当前显示状态;
  * - focusSwitch:切换活动实例时,先把当前状态存入旧实例的记忆槽,再恢复
@@ -15,15 +16,15 @@
  * 记忆是内存态(app 会话内),与 Keychain 凭据不同:实例消失即丢弃。
  */
 
-import { NO_STATUS_FILTER, type AgentStatusFilter } from "./agent-filter";
+import { NO_FILTER, type AgentListFilter } from "./agent-filter";
 import type { SidebarDestination } from "./navigation";
 
-/** 单个实例的界面状态快照(所在页面 + 展开的 Agent + 列表状态过滤)。 */
+/** 单个实例的界面状态快照(所在页面 + 展开的 Agent + 列表过滤)。 */
 export interface InstanceUiSnapshot {
   readonly destination: SidebarDestination;
   readonly selectedAgentId: string | undefined;
-  /** Agents 列表状态过滤(issue #56):空 = 不过滤。 */
-  readonly statusFilter: AgentStatusFilter;
+  /** Agents 列表过滤(状态 + workspace 两维):两维皆空 = 不过滤。 */
+  readonly agentFilter: AgentListFilter;
 }
 
 /** fingerprint → 界面状态快照。 */
@@ -33,7 +34,7 @@ export type InstanceUiStateMap = Record<string, InstanceUiSnapshot>;
 export const DEFAULT_INSTANCE_UI_SNAPSHOT: InstanceUiSnapshot = {
   destination: "Agents",
   selectedAgentId: undefined,
-  statusFilter: NO_STATUS_FILTER,
+  agentFilter: NO_FILTER,
 };
 
 /** reducer 全量状态:记忆槽 + 当前(焦点实例的)显示状态。 */
@@ -41,20 +42,20 @@ export interface InstanceUiState {
   readonly map: InstanceUiStateMap;
   readonly destination: SidebarDestination;
   readonly selectedAgentId: string | undefined;
-  readonly statusFilter: AgentStatusFilter;
+  readonly agentFilter: AgentListFilter;
 }
 
 export const initialInstanceUiState: InstanceUiState = {
   map: {},
   destination: DEFAULT_INSTANCE_UI_SNAPSHOT.destination,
   selectedAgentId: DEFAULT_INSTANCE_UI_SNAPSHOT.selectedAgentId,
-  statusFilter: DEFAULT_INSTANCE_UI_SNAPSHOT.statusFilter,
+  agentFilter: DEFAULT_INSTANCE_UI_SNAPSHOT.agentFilter,
 };
 
 export type InstanceUiAction =
   | { readonly type: "destination"; readonly destination: SidebarDestination }
   | { readonly type: "selectedAgent"; readonly selectedAgentId: string | undefined }
-  | { readonly type: "statusFilter"; readonly statusFilter: AgentStatusFilter }
+  | { readonly type: "agentFilter"; readonly agentFilter: AgentListFilter }
   /** 焦点切换:previousFingerprint 为 null(冷启动/全部解绑)时只做恢复。 */
   | {
       readonly type: "focusSwitch";
@@ -82,8 +83,8 @@ export function instanceUiReducer(
       return { ...state, destination: action.destination };
     case "selectedAgent":
       return { ...state, selectedAgentId: action.selectedAgentId };
-    case "statusFilter":
-      return { ...state, statusFilter: action.statusFilter };
+    case "agentFilter":
+      return { ...state, agentFilter: action.agentFilter };
     case "focusSwitch": {
       const { previousFingerprint, nextFingerprint } = action;
       let map = state.map;
@@ -94,7 +95,7 @@ export function instanceUiReducer(
           [previousFingerprint]: {
             destination: state.destination,
             selectedAgentId: state.selectedAgentId,
-            statusFilter: state.statusFilter,
+            agentFilter: state.agentFilter,
           },
         };
       }
@@ -104,7 +105,7 @@ export function instanceUiReducer(
         map,
         destination: snapshot.destination,
         selectedAgentId: snapshot.selectedAgentId,
-        statusFilter: snapshot.statusFilter,
+        agentFilter: snapshot.agentFilter,
       };
     }
     case "prune": {
