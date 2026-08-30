@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Modal, Pressable, View } from "react-native";
 import {
   DarkTheme,
@@ -28,6 +28,9 @@ import { PairingScreen } from "./PairingScreen";
 import { VoiceLanguageProvider } from "./voice/VoiceLanguageContext";
 import { SplitLayout } from "./SplitLayout";
 import { useIsWideLayout } from "./layout";
+import { initialInstanceUiState, instanceUiReducer } from "./instance-ui-state";
+import { AgentFilterProvider } from "./AgentFilterContext";
+import type { AgentListFilter } from "./agent-filter";
 import { Ionicons } from "./icons";
 import type { RootStackParamList, TabParamList, SidebarDestination } from "./navigation";
 import { sidebarIcons } from "./navigation";
@@ -128,6 +131,17 @@ function ThemedNavigation({
   //   - if an agent was selected, push its AgentDetail
   // Runs once the navigator is ready. Same single-source-of-truth state used
   // for the agent id is used here for the destination.
+  //
+  // The same effect also serves instance focus switches (#54): the lifted
+  // selection is swapped to the remembered snapshot of the newly focused
+  // instance, and this effect reconciles the navigation tree with it. When the
+  // new instance's snapshot references an agent whose data is not connected
+  // yet, we wait for the next `connection` update instead of dropping the
+  // restore — parallel sessions usually make the data already available, so
+  // switches complete without any visible loading. Re-running on connection
+  // updates is safe: when the tree already shows the target route this is a
+  // no-op, and when the user navigated away `handleStateChange` mirrors that
+  // back into the lifted state first.
   useEffect(() => {
     if (!navReady) return;
 
@@ -142,20 +156,15 @@ function ThemedNavigation({
     }
 
     if (!selectedAgentId) return;
+    const connected = connection.phase === "connected" ? connection : undefined;
+    const agent = connected?.data.agents.find((candidate) => candidate.source_id === selectedAgentId);
+    if (!agent) return; // 目标 Agent 数据未就绪:等下一个 connection 更新再恢复
     const root = navigationRef.current?.getRootState();
     const focused = root?.routes[root.index ?? 0];
     const params = (focused?.params ?? {}) as { agent?: { source_id?: string } };
     if (focused?.name === "AgentDetail" && params.agent?.source_id === selectedAgentId) return;
-    const connected = connection.phase === "connected" ? connection : undefined;
-    const agent = connected?.data.agents.find((candidate) => candidate.source_id === selectedAgentId);
-    if (agent) {
-      navigationRef.current?.navigate("AgentDetail", { agent });
-    }
-    // Intentionally excludes `connection`: we only want to restore once when the
-    // narrow tree becomes ready with a prior selection, not re-push on every
-    // connection refresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navReady, activeDestination, selectedAgentId]);
+    navigationRef.current?.navigate("AgentDetail", { agent });
+  }, [navReady, activeDestination, selectedAgentId, connection]);
 
   return (
     <NavigationContainer
@@ -188,51 +197,86 @@ function ThemedNavigation({
 
 function AppShell() {
   const isWide = useIsWideLayout();
+  const { activeFingerprint, instances } = useConnection();
   // Lifted above the narrow/wide branch so selection survives live resize.
-  const [activeDestination, setActiveDestination] = useState<SidebarDestination>("Agents");
-  const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
+  // Per-instance UI memory (#54): the reducer keeps a snapshot per paired
+  // installation (destination + selected agent). Switching the active instance
+  // swaps the lifted selection to the remembered snapshot — navigating back to
+  // exactly where the user left that instance, with no reload.
+  const [ui, dispatch] = useReducer(instanceUiReducer, undefined, () => initialInstanceUiState);
+  const activeDestination = ui.destination;
+  const selectedAgentId = ui.selectedAgentId;
+  // undefined = focus not resolved yet (cold start): the first resolution
+  // applies the remembered/default snapshot without remembering anything.
+  const previousFocusRef = useRef<string | null | undefined>(undefined);
   // Wide mode only: Pairing is a focused, one-time task that must cover the
   // whole app (sidebar + columns included), so it is presented as a full-screen
   // overlay above <SplitLayout>. Narrow mode keeps its existing push-based
   // Pairing on the root stack, which already covers the full phone screen.
   const [pairingRequested, setPairingRequested] = useState(false);
 
+  // 焦点切换:活动实例变化时记忆旧焦点界面、恢复新焦点记忆。
+  useEffect(() => {
+    const previous = previousFocusRef.current;
+    previousFocusRef.current = activeFingerprint;
+    if (previous === activeFingerprint) return;
+    dispatch({
+      type: "focusSwitch",
+      previousFingerprint: previous ?? null,
+      nextFingerprint: activeFingerprint,
+    });
+  }, [activeFingerprint]);
+
+  // 实例集合收缩时清理对应记忆槽(解绑/鉴权失效后防泄漏)。
+  useEffect(() => {
+    dispatch({ type: "prune", liveFingerprints: instances.map((instance) => instance.fingerprint) });
+  }, [instances]);
+
   const handleSelectAgentWide = useCallback((sourceId: string | undefined) => {
-    setSelectedAgentId(sourceId);
+    dispatch({ type: "selectedAgent", selectedAgentId: sourceId });
+  }, []);
+  const handleSelectDestination = useCallback((destination: SidebarDestination) => {
+    dispatch({ type: "destination", destination });
+  }, []);
+  // Agents 列表过滤(issue #56 状态维 / #57 workspace 维):同样属于每实例
+  // 记忆,经 context 暴露给列表页(宽窄两树共同挂载点),切换实例时随
+  // 快照记忆/恢复。
+  const handleAgentFilter = useCallback((agentFilter: AgentListFilter) => {
+    dispatch({ type: "agentFilter", agentFilter });
   }, []);
   const requestPairing = useCallback(() => setPairingRequested(true), []);
   const dismissPairing = useCallback(() => setPairingRequested(false), []);
   const openCompletedAgentWide = useCallback((agent: Agent) => {
-    setActiveDestination("Agents");
-    setSelectedAgentId(agent.source_id);
+    dispatch({ type: "destination", destination: "Agents" });
+    dispatch({ type: "selectedAgent", selectedAgentId: agent.source_id });
   }, []);
 
-  if (isWide) {
-    return (
-      <>
-        <DoneSoundProvider
-          viewingSourceId={activeDestination === "Agents" ? selectedAgentId : undefined}
-          onOpenAgent={openCompletedAgentWide}
-        />
-        <SplitLayout
-          activeDestination={activeDestination}
-          onSelectDestination={setActiveDestination}
-          selectedAgentId={selectedAgentId}
-          onSelectAgent={(agent) => setSelectedAgentId(agent.source_id)}
-          onRequestPairing={requestPairing}
-        />
-        <PairingOverlay visible={pairingRequested} onDismiss={dismissPairing} />
-      </>
-    );
-  }
-
   return (
-    <ThemedNavigation
-      activeDestination={activeDestination}
-      selectedAgentId={selectedAgentId}
-      onSelectAgent={handleSelectAgentWide}
-      onSelectDestination={setActiveDestination}
-    />
+    <AgentFilterProvider agentFilter={ui.agentFilter} setAgentFilter={handleAgentFilter}>
+      {isWide ? (
+        <>
+          <DoneSoundProvider
+            viewingSourceId={activeDestination === "Agents" ? selectedAgentId : undefined}
+            onOpenAgent={openCompletedAgentWide}
+          />
+          <SplitLayout
+            activeDestination={activeDestination}
+            onSelectDestination={handleSelectDestination}
+            selectedAgentId={selectedAgentId}
+            onSelectAgent={(agent) => dispatch({ type: "selectedAgent", selectedAgentId: agent.source_id })}
+            onRequestPairing={requestPairing}
+          />
+          <PairingOverlay visible={pairingRequested} onDismiss={dismissPairing} />
+        </>
+      ) : (
+        <ThemedNavigation
+          activeDestination={activeDestination}
+          selectedAgentId={selectedAgentId}
+          onSelectAgent={handleSelectAgentWide}
+          onSelectDestination={handleSelectDestination}
+        />
+      )}
+    </AgentFilterProvider>
   );
 }
 

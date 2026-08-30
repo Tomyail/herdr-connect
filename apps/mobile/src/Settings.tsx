@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -28,7 +28,6 @@ import {
 } from "./notifications/settings";
 import { Ionicons, type IoniconName } from "./icons";
 import { preferredAddress } from "./network";
-import { loadCredentials, type DeviceCredentials } from "./credentials";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import type { ThemeColors } from "./theme/tokens";
 import { appearanceLabelKey } from "./AppearanceScreen";
@@ -39,8 +38,8 @@ import type { ConnectionState } from "./connection";
 import { useConnection } from "./connection";
 import type { RootStackParamList } from "./navigation";
 
-/** The five existing Settings sections, used as the category list in wide mode. */
-export type SettingsCategoryKey = "general" | "notifications" | "connection" | "discovery" | "about";
+/** Settings 的四个分类(宽屏分类列表用);实例管理/配对入口已迁至首页连接状态条。 */
+export type SettingsCategoryKey = "general" | "notifications" | "connection" | "about";
 
 interface SettingsRow {
   icon: IoniconName;
@@ -223,7 +222,6 @@ export interface SettingsNavigation {
   onNavigateAppearance: () => void;
   onNavigateVoiceLanguage: () => void;
   onNavigateSilenceThreshold: () => void;
-  onRequestPairing: () => void;
 }
 
 export interface SettingsCategory {
@@ -249,29 +247,15 @@ export function useSettingsCategories(
 ): SettingsCategory[] {
   const { t, language } = useI18n();
   const { appearance } = useTheme();
-  const { unpair } = useConnection();
+  const { instances, activeFingerprint } = useConnection();
   const { choice: voiceChoice } = useVoiceLanguage();
 
   const connected = connectionState.phase === "connected" ? connectionState : undefined;
   const service: DiscoveredService | undefined = connected?.service;
   const data: AgentsResponse | undefined = connected?.data;
 
-  // Load credentials eagerly so Settings always shows current pairing state
-  // even when not connected (e.g. not_paired / fingerprint_mismatch). Single
-  // source of truth — both modes read the same `creds` value.
-  const [creds, setCreds] = useState<DeviceCredentials | null>(null);
-  const reloadCreds = useCallback(async () => {
-    const c = await loadCredentials();
-    setCreds(c);
-  }, []);
-  useEffect(() => {
-    void reloadCreds();
-  }, [reloadCreds]);
-
-  const handleUnpair = useCallback(async () => {
-    await unpair();
-    setCreds(null);
-  }, [unpair]);
+  // 实例列表来自 ConnectionProvider（配对/解绑/切换后自动同步）；这里不再
+  // 单独读凭据存储，单一数据源避免与连接层不一致。
 
   // Notifications switches — single MMKV subscription set shared by both modes.
   const [enabled, setEnabled] = useMMKVBoolean(DONE_SOUND_ENABLED_KEY, notificationStorage);
@@ -314,24 +298,8 @@ export function useSettingsCategories(
     );
   }
 
-  // Pairing section — separate card so the connection card stays about the live
-  // daemon link while this one is about the persistent pairing identity.
-  const pairingRows: SettingsRow[] = [];
-  if (creds) {
-    pairingRows.push(
-      { icon: "finger-print-outline", label: t("settings.row.fingerprint"), value: creds.fingerprint.slice(-8) },
-      { icon: "phone-portrait-outline", label: t("settings.row.deviceName"), value: creds.deviceName },
-    );
-    pairingRows.push(
-      { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: navigation.onRequestPairing },
-      { icon: "trash-outline", label: t("settings.row.unpairDevice"), value: "", onPress: () => void handleUnpair() },
-    );
-  } else {
-    pairingRows.push(
-      { icon: "finger-print-outline", label: t("settings.row.status"), value: t("settings.value.notPaired") },
-      { icon: "qr-code-outline", label: t("settings.row.pairDevice"), value: "", onPress: navigation.onRequestPairing },
-    );
-  }
+  // 实例列表与配对入口已迁至首页连接状态条(ConnectionStatusBar);
+  // 此处不再组装 pairingRows。
 
   return [
     {
@@ -404,12 +372,6 @@ export function useSettingsCategories(
       render: () => <SettingsCard title={t("settings.section.connection")} rows={connectionRows} />,
     },
     {
-      key: "discovery",
-      labelKey: "settings.section.discovery",
-      icon: "qr-code-outline",
-      render: () => <SettingsCard title={t("settings.section.discovery")} rows={pairingRows} />,
-    },
-    {
       key: "about",
       labelKey: "settings.section.about",
       icon: "information-circle-outline",
@@ -449,7 +411,6 @@ export function Settings({ connectionState }: { connectionState: ConnectionState
       onNavigateAppearance: () => rootNavigation.navigate("Appearance"),
       onNavigateVoiceLanguage: () => rootNavigation.navigate("VoiceLanguage"),
       onNavigateSilenceThreshold: () => rootNavigation.navigate("SilenceThreshold"),
-      onRequestPairing: () => rootNavigation.navigate("Pairing"),
     }),
     [rootNavigation],
   );

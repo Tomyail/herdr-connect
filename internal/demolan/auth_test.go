@@ -160,6 +160,175 @@ func TestRevokedTokenIsRejected(t *testing.T) {
 	assertErrorCode(t, response, "revoked")
 }
 
+// —— 设备自吊销（issue #52）——
+// DELETE /v1/device：已认证设备吊销自己的 token。device 身份从 bearer token
+// 反查，客户端不传参；吊销立即生效，原 token 此后对所有受保护端点返回 401
+// revoked，与 CLI devices revoke 语义一致。
+
+func authorizedRequest(token string) *http.Request {
+	request := httptest.NewRequest(http.MethodGet, Path, nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	return request
+}
+
+func selfRevokeRequest(token string) *http.Request {
+	request := httptest.NewRequest(http.MethodDelete, DevicePath, nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	return request
+}
+
+func TestSelfRevoke吊销后原Token立即失效并返回revoked语义(t *testing.T) {
+	fixture := newSecureFixture(t)
+	ctx := context.Background()
+
+	secret, _, err := lanauth.NewPairingSecret(ctx, fixture.database)
+	if err != nil {
+		t.Fatalf("create pairing secret: %v", err)
+	}
+	paired := fixture.pair(t, secret, "iPhone")
+
+	// 吊销前：token 可访问受保护端点。
+	before := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(before, authorizedRequest(paired.Token))
+	if before.Code != http.StatusOK {
+		t.Fatalf("吊销前状态码 = %d, body = %s", before.Code, before.Body.String())
+	}
+
+	// 自吊销：204 No Content。
+	revoke := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(revoke, selfRevokeRequest(paired.Token))
+	if revoke.Code != http.StatusNoContent {
+		t.Fatalf("自吊销状态码 = %d, body = %s", revoke.Code, revoke.Body.String())
+	}
+
+	// 吊销后：同一 token 对受保护端点（读 + 写各代表一个）立即 401 revoked，
+	// 区别于未知 token 的 unauthorized。鉴权在中间件层统一生效。
+	for name, request := range map[string]*http.Request{
+		"GET agents": authorizedRequest(paired.Token),
+		"POST focus": func() *http.Request {
+			request := httptest.NewRequest(http.MethodPost, Path+"/term-1/focus", nil)
+			request.Header.Set("Authorization", "Bearer "+paired.Token)
+			return request
+		}(),
+	} {
+		response := httptest.NewRecorder()
+		fixture.handler.ServeHTTP(response, request)
+		if response.Code != http.StatusUnauthorized {
+			t.Fatalf("吊销后 %s 状态码 = %d, want 401", name, response.Code)
+		}
+		assertErrorCode(t, response, "revoked")
+	}
+}
+
+func TestSelfRevoke未认证请求遵循既有鉴权错误契约(t *testing.T) {
+	fixture := newSecureFixture(t)
+
+	for name, request := range map[string]*http.Request{
+		"no token":    selfRevokeRequest(""),
+		"wrong token": selfRevokeRequest("bogus"),
+	} {
+		response := httptest.NewRecorder()
+		fixture.handler.ServeHTTP(response, request)
+		if response.Code != http.StatusUnauthorized {
+			t.Fatalf("%s: 状态码 = %d, want 401", name, response.Code)
+		}
+		assertErrorCode(t, response, "unauthorized")
+		// 公共响应头约定：401 也必须携带 api version 标记。
+		if response.Header().Get("X-Herdr-Connect-Api-Version") == "" {
+			t.Fatalf("%s: missing api version header", name)
+		}
+		if !strings.Contains(response.Body.String(), `"api_version"`) {
+			t.Fatalf("%s: missing api_version field: %s", name, response.Body.String())
+		}
+	}
+}
+
+func TestSelfRevoke已被吊销的Token不能再次自吊销(t *testing.T) {
+	// 已被 CLI 吊销的 token 调用自吊销端点：中间件先拒（401 revoked），
+	// 不会触到吊销逻辑——自吊销不会把“已吊销”变成成功或 500。
+	fixture := newSecureFixture(t)
+	ctx := context.Background()
+
+	secret, _, err := lanauth.NewPairingSecret(ctx, fixture.database)
+	if err != nil {
+		t.Fatalf("create pairing secret: %v", err)
+	}
+	paired := fixture.pair(t, secret, "iPhone")
+	if err := lanauth.RevokeDevice(ctx, fixture.database, paired.DeviceID); err != nil {
+		t.Fatalf("revoke device: %v", err)
+	}
+
+	response := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(response, selfRevokeRequest(paired.Token))
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("已吊销 token 自吊销状态码 = %d, want 401", response.Code)
+	}
+	assertErrorCode(t, response, "revoked")
+}
+
+func TestSelfRevoke只吊销调用方自己不影响其它设备(t *testing.T) {
+	fixture := newSecureFixture(t)
+	ctx := context.Background()
+
+	firstSecret, _, err := lanauth.NewPairingSecret(ctx, fixture.database)
+	if err != nil {
+		t.Fatalf("create first pairing secret: %v", err)
+	}
+	secondSecret, _, err := lanauth.NewPairingSecret(ctx, fixture.database)
+	if err != nil {
+		t.Fatalf("create second pairing secret: %v", err)
+	}
+	iphone := fixture.pair(t, firstSecret, "iPhone")
+	ipad := fixture.pair(t, secondSecret, "iPad")
+
+	revoke := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(revoke, selfRevokeRequest(iphone.Token))
+	if revoke.Code != http.StatusNoContent {
+		t.Fatalf("自吊销状态码 = %d, body = %s", revoke.Code, revoke.Body.String())
+	}
+
+	// 吊销方失效。
+	revoked := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(revoked, authorizedRequest(iphone.Token))
+	if revoked.Code != http.StatusUnauthorized {
+		t.Fatalf("吊销方状态码 = %d, want 401", revoked.Code)
+	}
+	assertErrorCode(t, revoked, "revoked")
+
+	// 其它设备不受影响，token 仍可用。
+	other := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(other, authorizedRequest(ipad.Token))
+	if other.Code != http.StatusOK {
+		t.Fatalf("其它设备状态码 = %d, body = %s", other.Code, other.Body.String())
+	}
+}
+
+func TestSelfRevoke端点只接受DELETE(t *testing.T) {
+	fixture := newSecureFixture(t)
+	ctx := context.Background()
+
+	secret, _, err := lanauth.NewPairingSecret(ctx, fixture.database)
+	if err != nil {
+		t.Fatalf("create pairing secret: %v", err)
+	}
+	paired := fixture.pair(t, secret, "iPhone")
+
+	request := httptest.NewRequest(http.MethodGet, DevicePath, nil)
+	request.Header.Set("Authorization", "Bearer "+paired.Token)
+	response := httptest.NewRecorder()
+	fixture.handler.ServeHTTP(response, request)
+	if response.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("GET 状态码 = %d, want 405", response.Code)
+	}
+	assertErrorCode(t, response, "method_not_allowed")
+	if got := response.Header().Get("Allow"); got != http.MethodDelete {
+		t.Fatalf("Allow = %q, want DELETE", got)
+	}
+	if response.Header().Get("X-Herdr-Connect-Api-Version") == "" {
+		t.Fatal("missing api version header")
+	}
+}
+
 func TestPairEndpointValidatesMethodAndBody(t *testing.T) {
 	fixture := newSecureFixture(t)
 

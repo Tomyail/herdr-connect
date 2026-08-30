@@ -5,8 +5,9 @@ import type { NetworkErrorCode } from "./i18n/errors";
 import { loadCredentials } from "./credentials";
 import { pinnedFetch, PinnedFetchError } from "pinned-fetch";
 import type { PairingQRPayload } from "./pairing";
-import { pairingUrl } from "./pairing";
+import { pairingUrls } from "./pairing";
 import { isIPv4, preferredAddress } from "./address";
+import { withHostFallback } from "./host-fallback";
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const DAEMON_PORT = 9_808;
@@ -53,8 +54,9 @@ export function agentsEventsUrl(address: string, port: number): string {
   return `${agentsUrl(address, port)}/events`;
 }
 
-export function serviceKey(service: DiscoveredService): string {
-  return `${service.name}|${service.type}|${service.domain}`;
+/** Device self-revocation endpoint (issue #52). Bearer-authed DELETE, 204 on success. */
+export function deviceUrl(address: string, port: number): string {
+  return `https://${formatHost(address)}:${port}/v1/device`;
 }
 
 export function devServerFallbackService(scriptURL: string | undefined): DiscoveredService | undefined {
@@ -167,20 +169,42 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
 }
 
 /** Ensure credentials exist, throwing a typed error if not. */
-async function requireCredentials(): Promise<{ fingerprint: string; token: string }> {
+async function requireCredentials(override?: RequestCredentials): Promise<RequestCredentials> {
+  // 会话级覆盖:并行会话各自携带实例凭据(issue #54);UI 调用方不传,
+  // 回退到活动实例凭据(既有语义)。
+  if (override) return override;
   const creds = await loadCredentials();
   if (!creds) throw new NetworkError("not_credentials");
   return { fingerprint: creds.fingerprint, token: creds.token };
 }
 
+/**
+ * Per-request pinned credentials. Parallel connection sessions pass their
+ * own instance's credentials explicitly (issue #54); omitting it falls back
+ * to the ACTIVE instance's credentials, which is what UI callers want.
+ */
+export interface RequestCredentials {
+  fingerprint: string;
+  token: string;
+}
+
+/**
+ * Fetch the agents snapshot from a discovered service.
+ *
+ * 注意:不接收 AbortSignal——pinned-fetch 原生层没有请求取消通道
+ * (URLSession task 不对外暴露,options 也不携带 signal),这里的“取消”
+ * 语义是调用方丢弃结果(connection-session.ts 的探测循环每次迭代前
+ * 检查 abort)。若未来原生层支持取消,应在此透传 signal 并把在途请求
+ * 一并中止。
+ */
 export async function fetchAgents(
   service: DiscoveredService,
-  _outerSignal?: AbortSignal,
+  credentials?: RequestCredentials,
 ): Promise<AgentsResponse> {
   const address = preferredAddress(service.addresses);
   if (!address) throw new NetworkError("no_address");
 
-  const { fingerprint, token } = await requireCredentials();
+  const { fingerprint, token } = await requireCredentials(credentials);
 
   const response = await authPinnedFetch({
     url: agentsUrl(address, service.port),
@@ -238,6 +262,64 @@ export async function interruptAgent(
     timeoutErrorCode: "interrupt_timeout",
     httpErrorCode: "interrupt_http",
   });
+}
+
+/**
+ * Revoke a device token on its daemon via `DELETE /v1/device` (issue #52).
+ *
+ * Bearer-authed by the token being revoked; no request body. Success is 204.
+ * A 401 surfaces as NetworkError `unauthorized`/`revoked` — callers classify
+ * that as "already invalid" (the server side has no live token anymore), see
+ * instance-revocation.ts. Used by "forget this installation" (#55).
+ */
+export async function revokeDevice(
+  service: DiscoveredService,
+  credentials: RequestCredentials,
+): Promise<void> {
+  const address = preferredAddress(service.addresses);
+  if (!address) throw new NetworkError("no_address");
+
+  await authPinnedFetch({
+    url: deviceUrl(address, service.port),
+    fingerprint: credentials.fingerprint,
+    token: credentials.token,
+    method: "DELETE",
+    tlsErrorCode: "revoke_tls",
+    timeoutErrorCode: "revoke_timeout",
+    httpErrorCode: "revoke_http",
+  });
+}
+
+/**
+ * Revoke a stale token against the QR payload's reachable hosts (re-pairing
+ * replacement semantics, #55). Addressed by the pairing payload (preferred
+ * host + port + pinned fingerprint) instead of a discovered service, because
+ * the old token belongs to an instance whose session may not exist yet.
+ */
+export async function revokeDeviceByPairingHosts(
+  payload: PairingQRPayload,
+  token: string,
+): Promise<void> {
+  // 与配对同样做多地址回退：旧 token 所在实例可能正忙于多宿主地址。
+  // authPinnedFetch 会把连接层错误映射为 revoke_* 错误码的 NetworkError，
+  // 因此通过 connectionErrorCodes 识别回退；应用层错误（revoked/
+  // unauthorized/revoke_http）说明已连通 daemon，不回退。
+  await withHostFallback(
+    "revoke",
+    payload.hosts.map((host) => deviceUrl(host, payload.port)),
+    (url) =>
+      authPinnedFetch({
+        url,
+        fingerprint: payload.fp,
+        token,
+        method: "DELETE",
+        tlsErrorCode: "revoke_tls",
+        timeoutErrorCode: "revoke_timeout",
+        httpErrorCode: "revoke_http",
+      }),
+    (error) => mapPinnedFetchError(error, "revoke_tls", "revoke_timeout"),
+    new Set(["revoke_tls", "revoke_timeout", "fingerprint_mismatch"]),
+  );
 }
 
 export async function fetchAgentHistory(
@@ -316,60 +398,57 @@ export async function pairDaemon(
   payload: PairingQRPayload,
   deviceName: string,
 ): Promise<PairResult> {
-  const url = pairingUrl(payload);
-  if (!url) throw new NetworkError("no_address");
+  // 多宿主 daemon 的 hosts 含手机不可达的地址（Docker 网桥/VPN），逐个尝试回退。
+  const response = await withHostFallback(
+    "pair",
+    pairingUrls(payload),
+    (url) =>
+      pinnedFetch(url, payload.fp, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
+        },
+        body: JSON.stringify({ device_name: deviceName, secret: payload.secret }),
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      }),
+    (error) => mapPinnedFetchError(error, "daemon_tls", "daemon_timeout"),
+    new Set(),
+  );
 
-  try {
-    const response = await pinnedFetch(url, payload.fp, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
-      },
-      body: JSON.stringify({ device_name: deviceName, secret: payload.secret }),
-      timeoutMs: REQUEST_TIMEOUT_MS,
-    });
-
-    if (response.status === 400) {
-      throw new NetworkError("pairing_failed");
-    }
-    if (response.status === 426) {
-      throw new NetworkError("app_outdated");
-    }
-    if (response.status < 200 || response.status >= 300) {
-      throw new NetworkError("pairing_failed", response.status);
-    }
-
-    const data: unknown = JSON.parse(response.body);
-    if (
-      typeof data !== "object" ||
-      data === null ||
-      typeof (data as Record<string, unknown>).api_version !== "number" ||
-      typeof (data as Record<string, unknown>).device_id !== "string" ||
-      typeof (data as Record<string, unknown>).token !== "string" ||
-      typeof (data as Record<string, unknown>).device_name !== "string" ||
-      typeof (data as Record<string, unknown>).fingerprint !== "string"
-    ) {
-      throw new NetworkError("pairing_failed");
-    }
-
-    const record = data as Record<string, unknown>;
-    const apiVersion = record.api_version as number;
-    assertDaemonSupported(apiVersion);
-
-    return {
-      apiVersion,
-      deviceId: record.device_id as string,
-      token: record.token as string,
-      deviceName: record.device_name as string,
-      fingerprint: record.fingerprint as string,
-    };
-  } catch (error) {
-    if (error instanceof NetworkError) throw error;
-    if (error instanceof PinnedFetchError) {
-      throw mapPinnedFetchError(error, "daemon_tls", "daemon_timeout");
-    }
-    throw error;
+  if (response.status === 400) {
+    throw new NetworkError("pairing_failed");
   }
+  if (response.status === 426) {
+    throw new NetworkError("app_outdated");
+  }
+  if (response.status < 200 || response.status >= 300) {
+    throw new NetworkError("pairing_failed", response.status);
+  }
+
+  const data: unknown = JSON.parse(response.body);
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    typeof (data as Record<string, unknown>).api_version !== "number" ||
+    typeof (data as Record<string, unknown>).device_id !== "string" ||
+    typeof (data as Record<string, unknown>).token !== "string" ||
+    typeof (data as Record<string, unknown>).device_name !== "string" ||
+    typeof (data as Record<string, unknown>).fingerprint !== "string"
+  ) {
+    throw new NetworkError("pairing_failed");
+  }
+
+  const record = data as Record<string, unknown>;
+  const apiVersion = record.api_version as number;
+  assertDaemonSupported(apiVersion);
+
+  return {
+    apiVersion,
+    deviceId: record.device_id as string,
+    token: record.token as string,
+    deviceName: record.device_name as string,
+    fingerprint: record.fingerprint as string,
+  };
 }
