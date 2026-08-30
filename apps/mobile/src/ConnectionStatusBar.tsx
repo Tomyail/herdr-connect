@@ -337,8 +337,8 @@ export function ConnectionStatusBar({
               destructive: true,
               onPress: () => confirmForget(instanceMenu.instance.fingerprint, instanceMenu.label),
             },
-            { label: t("common.cancel"), onPress: () => {} },
           ]}
+          cancelLabel={t("common.cancel")}
           onDismiss={() => setInstanceMenu(null)}
         />
       ) : null}
@@ -354,8 +354,8 @@ export function ConnectionStatusBar({
               destructive: true,
               onPress: () => void runForgetInstance(forgetConfirm.fingerprint),
             },
-            { label: t("common.cancel"), onPress: () => {} },
           ]}
+          cancelLabel={t("common.cancel")}
           onDismiss={() => setForgetConfirm(null)}
         />
       ) : null}
@@ -375,8 +375,8 @@ export function ConnectionStatusBar({
               label: t("instance.retry"),
               onPress: () => void runForgetInstance(forgetFailure.fingerprint),
             },
-            { label: t("common.cancel"), onPress: () => {} },
           ]}
+          cancelLabel={t("common.cancel")}
           onDismiss={() => setForgetFailure(null)}
         />
       ) : null}

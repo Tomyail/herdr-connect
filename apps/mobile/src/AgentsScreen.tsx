@@ -520,8 +520,8 @@ export function AgentsScreenContent({
                 : t("agents.favorite.add"),
               onPress: () => toggleFavorite(favoriteMenuAgent.source_id),
             },
-            { label: t("common.cancel"), onPress: () => {} },
           ]}
+          cancelLabel={t("common.cancel")}
           onDismiss={() => setFavoriteMenuAgent(null)}
         />
       ) : null}
