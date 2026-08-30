@@ -33,7 +33,6 @@ import {
   type DeviceCredentials,
   type PairedInstancesModel,
 } from "./paired-instances";
-
 export type { DeviceCredentials, PairedInstancesModel } from "./paired-instances";
 
 /** 旧版单凭据键（只读迁移源，迁移后删除）。 */
@@ -144,21 +143,21 @@ export async function loadCredentials(): Promise<DeviceCredentials | null> {
 }
 
 /**
- * 移除**活动实例**的凭据（unpair / daemon 侧 401、revoked 时使用）。
- * 其他已配对实例保留，活动指针按规则回退（paired-instances.ts）。
- * 返回更新后的模型，调用方据此决定切换到回退实例还是进入 not_paired。
+ * 移除**指定实例**的凭据(issue #54 并行连接:会话观察到鉴权失效、或
+ * unpair 解绑活动实例时使用,只解绑该实例,不影响其他会话)。返回更新
+ * 后的模型;若移除的是活动实例,活动指针按 paired-instances.ts 规则回
+ * 退。幂等:fingerprint 不存在时返回原模型且不写盘。
  */
-export async function clearCredentials(): Promise<PairedInstancesModel> {
+export async function removeInstanceCredentials(fingerprint: string): Promise<PairedInstancesModel> {
   const model = await loadPairedInstances();
-  const active = resolveActiveInstance(model);
-  const next = active ? removeInstance(model, active.fingerprint) : model;
-  await writeModel(next);
+  const next = removeInstance(model, fingerprint);
+  if (next !== model) await writeModel(next);
   return next;
 }
 
 /**
- * 切换活动实例（Settings 实例列表）。fingerprint 未知时返回 `null` 且不
- * 落盘；成功时返回更新后的模型。
+ * 切换活动实例(Settings 实例列表)。fingerprint 未知时返回 `null` 且不
+ * 落盘;成功时返回更新后的模型。
  */
 export async function selectActiveInstance(fingerprint: string): Promise<PairedInstancesModel | null> {
   const model = await loadPairedInstances();

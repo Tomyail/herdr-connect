@@ -163,20 +163,34 @@ async function authPinnedFetch(params: AuthRequestParams): Promise<{ status: num
 }
 
 /** Ensure credentials exist, throwing a typed error if not. */
-async function requireCredentials(): Promise<{ fingerprint: string; token: string }> {
+async function requireCredentials(override?: RequestCredentials): Promise<RequestCredentials> {
+  // 会话级覆盖:并行会话各自携带实例凭据(issue #54);UI 调用方不传,
+  // 回退到活动实例凭据(既有语义)。
+  if (override) return override;
   const creds = await loadCredentials();
   if (!creds) throw new NetworkError("not_credentials");
   return { fingerprint: creds.fingerprint, token: creds.token };
 }
 
+/**
+ * Per-request pinned credentials. Parallel connection sessions pass their
+ * own instance's credentials explicitly (issue #54); omitting it falls back
+ * to the ACTIVE instance's credentials, which is what UI callers want.
+ */
+export interface RequestCredentials {
+  fingerprint: string;
+  token: string;
+}
+
 export async function fetchAgents(
   service: DiscoveredService,
   _outerSignal?: AbortSignal,
+  credentials?: RequestCredentials,
 ): Promise<AgentsResponse> {
   const address = preferredAddress(service.addresses);
   if (!address) throw new NetworkError("no_address");
 
-  const { fingerprint, token } = await requireCredentials();
+  const { fingerprint, token } = await requireCredentials(credentials);
 
   const response = await authPinnedFetch({
     url: agentsUrl(address, service.port),
