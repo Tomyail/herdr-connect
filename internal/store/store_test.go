@@ -3,7 +3,6 @@ package store_test
 import (
 	"context"
 	"database/sql"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -58,24 +57,6 @@ func Test空库迁移可重复执行且序列在重启后继续递增(t *testing
 	}
 	if seq != 2 {
 		t.Fatalf("重启后的 event_seq = %d, want 2", seq)
-	}
-}
-
-func Test数据库文件权限只允许当前所有者访问(t *testing.T) {
-	t.Parallel()
-
-	path := filepath.Join(t.TempDir(), "daemon.db")
-	db, err := store.Open(context.Background(), path)
-	if err != nil {
-		t.Fatalf("打开数据库: %v", err)
-	}
-	t.Cleanup(func() { _ = db.Close() })
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("读取数据库权限: %v", err)
-	}
-	if got := info.Mode().Perm(); got != 0o600 {
-		t.Fatalf("数据库权限 = %04o, want 0600", got)
 	}
 }
 

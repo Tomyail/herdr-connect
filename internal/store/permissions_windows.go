@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
@@ -15,7 +14,7 @@ func prepareSecureDatabase(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return fmt.Errorf("创建数据库目录: %w", err)
 	}
-	sd, acl, err := ownerOnlySecurity()
+	acl, err := ownerOnlyACL()
 	if err != nil {
 		return err
 	}
@@ -23,15 +22,15 @@ func prepareSecureDatabase(path string) error {
 	if err != nil {
 		return fmt.Errorf("编码数据库路径: %w", err)
 	}
-	sa := &windows.SecurityAttributes{
-		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
-		SecurityDescriptor: sd,
-	}
+	// 这里不能传 SECURITY_ATTRIBUTES：能拿到的 SECURITY_DESCRIPTOR 都会带
+	// SE_SACL_PRESENT，内核随即要求已启用的 SeSecurityPrivilege（普通用户没有，
+	// 提权后也只是 present 而非 enabled），必然 ERROR_PRIVILEGE_NOT_HELD。
+	// 先普通创建，再由 setOwnerOnlyACL 施加 protected owner-only DACL。
 	handle, err := windows.CreateFile(
 		pathUTF16,
 		windows.GENERIC_READ|windows.GENERIC_WRITE,
 		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE,
-		sa,
+		nil,
 		windows.OPEN_ALWAYS,
 		windows.FILE_ATTRIBUTE_NORMAL,
 		0,
@@ -46,7 +45,7 @@ func prepareSecureDatabase(path string) error {
 }
 
 func secureSQLiteFiles(path string) error {
-	_, acl, err := ownerOnlySecurity()
+	acl, err := ownerOnlyACL()
 	if err != nil {
 		return err
 	}
@@ -63,10 +62,14 @@ func secureSQLiteFiles(path string) error {
 	return nil
 }
 
-func ownerOnlySecurity() (*windows.SECURITY_DESCRIPTOR, *windows.ACL, error) {
+// ownerOnlyACL 只构造 DACL，不再构造 SECURITY_DESCRIPTOR：owner 字段对
+// 文件访问控制没有实际作用（创建者本来就是 owner），而
+// BuildSecurityDescriptor 生成的 SD 会带上 SE_SACL_PRESENT，任何把它交给
+// 内核的路径都会要求 SeSecurityPrivilege。
+func ownerOnlyACL() (*windows.ACL, error) {
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
-		return nil, nil, fmt.Errorf("读取当前 Windows 所有者 SID: %w", err)
+		return nil, fmt.Errorf("读取当前 Windows 所有者 SID: %w", err)
 	}
 	entries := []windows.EXPLICIT_ACCESS{{
 		AccessPermissions: windows.GENERIC_ALL,
@@ -79,18 +82,9 @@ func ownerOnlySecurity() (*windows.SECURITY_DESCRIPTOR, *windows.ACL, error) {
 	}}
 	acl, err := windows.ACLFromEntries(entries, nil)
 	if err != nil {
-		return nil, nil, fmt.Errorf("构造 owner-only Windows ACL: %w", err)
+		return nil, fmt.Errorf("构造 owner-only Windows ACL: %w", err)
 	}
-	owner := &windows.TRUSTEE{
-		TrusteeForm:  windows.TRUSTEE_IS_SID,
-		TrusteeType:  windows.TRUSTEE_IS_USER,
-		TrusteeValue: windows.TrusteeValueFromSID(user.User.Sid),
-	}
-	sd, err := windows.BuildSecurityDescriptor(owner, nil, entries, nil, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("构造 owner-only Windows security descriptor: %w", err)
-	}
-	return sd, acl, nil
+	return acl, nil
 }
 
 func setOwnerOnlyACL(path string, acl *windows.ACL) error {
