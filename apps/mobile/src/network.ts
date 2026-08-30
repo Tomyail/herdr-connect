@@ -5,8 +5,9 @@ import type { NetworkErrorCode } from "./i18n/errors";
 import { loadCredentials } from "./credentials";
 import { pinnedFetch, PinnedFetchError } from "pinned-fetch";
 import type { PairingQRPayload } from "./pairing";
-import { pairingUrl } from "./pairing";
+import { pairingUrls } from "./pairing";
 import { isIPv4, preferredAddress } from "./address";
+import { withHostFallback } from "./host-fallback";
 
 const REQUEST_TIMEOUT_MS = 5_000;
 const DAEMON_PORT = 9_808;
@@ -299,18 +300,26 @@ export async function revokeDeviceByPairingHosts(
   payload: PairingQRPayload,
   token: string,
 ): Promise<void> {
-  const host = preferredAddress(payload.hosts);
-  if (!host) throw new NetworkError("no_address");
-
-  await authPinnedFetch({
-    url: deviceUrl(host, payload.port),
-    fingerprint: payload.fp,
-    token,
-    method: "DELETE",
-    tlsErrorCode: "revoke_tls",
-    timeoutErrorCode: "revoke_timeout",
-    httpErrorCode: "revoke_http",
-  });
+  // 与配对同样做多地址回退：旧 token 所在实例可能正忙于多宿主地址。
+  // authPinnedFetch 会把连接层错误映射为 revoke_* 错误码的 NetworkError，
+  // 因此通过 connectionErrorCodes 识别回退；应用层错误（revoked/
+  // unauthorized/revoke_http）说明已连通 daemon，不回退。
+  await withHostFallback(
+    "revoke",
+    payload.hosts.map((host) => deviceUrl(host, payload.port)),
+    (url) =>
+      authPinnedFetch({
+        url,
+        fingerprint: payload.fp,
+        token,
+        method: "DELETE",
+        tlsErrorCode: "revoke_tls",
+        timeoutErrorCode: "revoke_timeout",
+        httpErrorCode: "revoke_http",
+      }),
+    (error) => mapPinnedFetchError(error, "revoke_tls", "revoke_timeout"),
+    new Set(["revoke_tls", "revoke_timeout", "fingerprint_mismatch"]),
+  );
 }
 
 export async function fetchAgentHistory(
@@ -389,60 +398,57 @@ export async function pairDaemon(
   payload: PairingQRPayload,
   deviceName: string,
 ): Promise<PairResult> {
-  const url = pairingUrl(payload);
-  if (!url) throw new NetworkError("no_address");
+  // 多宿主 daemon 的 hosts 含手机不可达的地址（Docker 网桥/VPN），逐个尝试回退。
+  const response = await withHostFallback(
+    "pair",
+    pairingUrls(payload),
+    (url) =>
+      pinnedFetch(url, payload.fp, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
+        },
+        body: JSON.stringify({ device_name: deviceName, secret: payload.secret }),
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      }),
+    (error) => mapPinnedFetchError(error, "daemon_tls", "daemon_timeout"),
+    new Set(),
+  );
 
-  try {
-    const response = await pinnedFetch(url, payload.fp, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        [CLIENT_VERSION_HEADER]: String(CLIENT_API_VERSION),
-      },
-      body: JSON.stringify({ device_name: deviceName, secret: payload.secret }),
-      timeoutMs: REQUEST_TIMEOUT_MS,
-    });
-
-    if (response.status === 400) {
-      throw new NetworkError("pairing_failed");
-    }
-    if (response.status === 426) {
-      throw new NetworkError("app_outdated");
-    }
-    if (response.status < 200 || response.status >= 300) {
-      throw new NetworkError("pairing_failed", response.status);
-    }
-
-    const data: unknown = JSON.parse(response.body);
-    if (
-      typeof data !== "object" ||
-      data === null ||
-      typeof (data as Record<string, unknown>).api_version !== "number" ||
-      typeof (data as Record<string, unknown>).device_id !== "string" ||
-      typeof (data as Record<string, unknown>).token !== "string" ||
-      typeof (data as Record<string, unknown>).device_name !== "string" ||
-      typeof (data as Record<string, unknown>).fingerprint !== "string"
-    ) {
-      throw new NetworkError("pairing_failed");
-    }
-
-    const record = data as Record<string, unknown>;
-    const apiVersion = record.api_version as number;
-    assertDaemonSupported(apiVersion);
-
-    return {
-      apiVersion,
-      deviceId: record.device_id as string,
-      token: record.token as string,
-      deviceName: record.device_name as string,
-      fingerprint: record.fingerprint as string,
-    };
-  } catch (error) {
-    if (error instanceof NetworkError) throw error;
-    if (error instanceof PinnedFetchError) {
-      throw mapPinnedFetchError(error, "daemon_tls", "daemon_timeout");
-    }
-    throw error;
+  if (response.status === 400) {
+    throw new NetworkError("pairing_failed");
   }
+  if (response.status === 426) {
+    throw new NetworkError("app_outdated");
+  }
+  if (response.status < 200 || response.status >= 300) {
+    throw new NetworkError("pairing_failed", response.status);
+  }
+
+  const data: unknown = JSON.parse(response.body);
+  if (
+    typeof data !== "object" ||
+    data === null ||
+    typeof (data as Record<string, unknown>).api_version !== "number" ||
+    typeof (data as Record<string, unknown>).device_id !== "string" ||
+    typeof (data as Record<string, unknown>).token !== "string" ||
+    typeof (data as Record<string, unknown>).device_name !== "string" ||
+    typeof (data as Record<string, unknown>).fingerprint !== "string"
+  ) {
+    throw new NetworkError("pairing_failed");
+  }
+
+  const record = data as Record<string, unknown>;
+  const apiVersion = record.api_version as number;
+  assertDaemonSupported(apiVersion);
+
+  return {
+    apiVersion,
+    deviceId: record.device_id as string,
+    token: record.token as string,
+    deviceName: record.device_name as string,
+    fingerprint: record.fingerprint as string,
+  };
 }

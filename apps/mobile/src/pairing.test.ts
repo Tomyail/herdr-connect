@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { NetworkError } from "./i18n/errors";
-import { parsePairingQRPayload, pairingUrl } from "./pairing";
+import { parsePairingQRPayload, pairingUrls } from "./pairing";
 
 const validQRPayload = JSON.stringify({
   v: 1,
@@ -146,13 +146,15 @@ test("parsePairingQRPayload throws pairing_qr_invalid when port is non-positive"
   );
 });
 
-test("pairingUrl prefers IPv4 address", () => {
+test("pairingUrls 保持 daemon 给出的地址顺序（IPv4 升序在前）", () => {
   const payload = parsePairingQRPayload(validQRPayload);
-  const url = pairingUrl(payload);
-  assert.equal(url, "https://192.168.1.100:9808/v1/pair");
+  assert.deepEqual(pairingUrls(payload), [
+    "https://192.168.1.100:9808/v1/pair",
+    "https://[fe80::1]:9808/v1/pair",
+  ]);
 });
 
-test("pairingUrl brackets IPv6 when no IPv4 is present", () => {
+test("pairingUrls brackets IPv6 addresses", () => {
   const payload = parsePairingQRPayload(
     JSON.stringify({
       v: 1,
@@ -162,15 +164,12 @@ test("pairingUrl brackets IPv6 when no IPv4 is present", () => {
       secret: "s",
     }),
   );
-  const url = pairingUrl(payload);
-  assert.equal(url, "https://[fe80::1]:9808/v1/pair");
+  assert.deepEqual(pairingUrls(payload), ["https://[fe80::1]:9808/v1/pair"]);
 });
 
-test("pairingUrl returns undefined when hosts is empty (should not happen after validation)", () => {
-  // This tests the defensive undefined return path — parsePairingQRPayload
-  // already rejects empty hosts, but pairingUrl is a public function.
-  const url = pairingUrl({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s" });
-  assert.equal(url, undefined);
+test("pairingUrls returns an empty list when hosts is empty (caller falls back to no_address)", () => {
+  // parsePairingQRPayload 已拒绝空 hosts，这里验证防御路径。
+  assert.deepEqual(pairingUrls({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s" }), []);
 });
 
 test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
@@ -183,6 +182,6 @@ test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
       secret: "s",
     }),
   );
-  const url = pairingUrl(payload);
-  assert.equal(url, "https://10.0.0.1:443/v1/pair");
+  const url = pairingUrls(payload);
+  assert.deepEqual(url, ["https://10.0.0.1:443/v1/pair"]);
 });
