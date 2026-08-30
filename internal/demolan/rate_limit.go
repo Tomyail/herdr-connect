@@ -108,10 +108,11 @@ func (l *rateLimiter) allowIP(ip string) bool {
 	return l.ipLimiterFor(ip).Allow()
 }
 
-// isWriteMethodPath 判定一个已认证请求是否走写阈值。
-// POST 视为写（focus / messages），其余（GET agents / history）视为读。
+// isWriteRequest 判定一个已认证请求是否走写阈值。
+// POST 视为写（focus / messages），DELETE 视为写（/v1/device 自吊销，
+// 持久化状态变更），其余（GET agents / history）视为读。
 func isWriteRequest(request *http.Request) bool {
-	return request.Method == http.MethodPost
+	return request.Method == http.MethodPost || request.Method == http.MethodDelete
 }
 
 // clientIP 从 request.RemoteAddr 提取 IP（去掉端口）。httptest.NewRequest
