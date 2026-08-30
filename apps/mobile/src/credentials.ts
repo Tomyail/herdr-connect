@@ -23,6 +23,7 @@
 
 import * as SecureStore from "expo-secure-store";
 
+import { planKeychainWrites } from "./keychain-write-plan";
 import {
   migrateLegacyCredentials,
   parseInstanceRecordJson,
@@ -79,59 +80,90 @@ async function readModel(): Promise<PairedInstancesModel> {
   return { activeFingerprint, instances };
 }
 
-/** 写入完整模型：逐条写实例、更新索引、同步活动指针、清理孤儿条目。 */
+/**
+ * 模型变更串行队列:所有 load→变换→write 的 Keychain 操作共享一个
+ * 互斥队列。调用方(provider 的 unpair/switchInstance/forget/鉴权失效、
+ * 配对流程的 saveCredentials、旧键迁移)来自不同入口,若交错执行,后写
+ * 者会基于 stale 模型整体覆盖——刚解绑的实例凭据可能因此复活。入队后
+ * 每个变更都完整地「读取最新模型 → 变换 → 写回」。
+ */
+let modelMutationQueue: Promise<unknown> = Promise.resolve();
+
+function enqueueModelMutation<T>(operation: () => Promise<T>): Promise<T> {
+  const run = modelMutationQueue.then(operation, operation);
+  // 队列吞掉 rejection 继续前进;错误由本次调用的返回 promise 传达。
+  modelMutationQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+/** 写入完整模型:步骤顺序由 planKeychainWrites 规划(崩溃窗口自愈,见
+ *  keychain-write-plan.ts)。 */
 async function writeModel(model: PairedInstancesModel): Promise<void> {
   const previous = parseIndex(await SecureStore.getItemAsync(INSTANCES_INDEX_KEY));
-  const fingerprints = Object.keys(model.instances);
-  for (const fingerprint of fingerprints) {
-    await SecureStore.setItemAsync(
-      instanceKeyFor(fingerprint),
-      JSON.stringify(model.instances[fingerprint]),
-      KEYCHAIN_OPTIONS,
-    );
-  }
-  for (const fingerprint of previous) {
-    if (!(fingerprint in model.instances)) {
-      await SecureStore.deleteItemAsync(instanceKeyFor(fingerprint));
+  for (const step of planKeychainWrites(previous, model)) {
+    switch (step.kind) {
+      case "delete_instance":
+        await SecureStore.deleteItemAsync(instanceKeyFor(step.fingerprint));
+        break;
+      case "write_index":
+        await SecureStore.setItemAsync(
+          INSTANCES_INDEX_KEY,
+          JSON.stringify(step.fingerprints),
+          KEYCHAIN_OPTIONS,
+        );
+        break;
+      case "write_instance":
+        await SecureStore.setItemAsync(
+          instanceKeyFor(step.fingerprint),
+          JSON.stringify(model.instances[step.fingerprint]),
+          KEYCHAIN_OPTIONS,
+        );
+        break;
+      case "set_active":
+        if (step.fingerprint) {
+          await SecureStore.setItemAsync(ACTIVE_INSTANCE_KEY, step.fingerprint, KEYCHAIN_OPTIONS);
+        } else {
+          await SecureStore.deleteItemAsync(ACTIVE_INSTANCE_KEY);
+        }
+        break;
     }
   }
-  await SecureStore.setItemAsync(INSTANCES_INDEX_KEY, JSON.stringify(fingerprints), KEYCHAIN_OPTIONS);
-  if (model.activeFingerprint) {
-    await SecureStore.setItemAsync(ACTIVE_INSTANCE_KEY, model.activeFingerprint, KEYCHAIN_OPTIONS);
-  } else {
-    await SecureStore.deleteItemAsync(ACTIVE_INSTANCE_KEY);
-  }
 }
 
-/**
- * 旧键迁移：合法旧凭据并入新模型后删除旧键；损坏的旧值（无法解析）直接
- * 删除——两种路径都收敛到“旧键不存在”，重复调用无副作用。
- */
-async function migrateLegacyIfNeeded(model: PairedInstancesModel): Promise<PairedInstancesModel> {
-  const legacyRaw = await SecureStore.getItemAsync(LEGACY_CREDENTIALS_KEY);
-  if (legacyRaw === null) return model;
-  const legacy = parseInstanceRecordJson(legacyRaw);
-  const next = legacy ? migrateLegacyCredentials(model, legacy) : model;
-  await writeModel(next);
-  await SecureStore.deleteItemAsync(LEGACY_CREDENTIALS_KEY);
-  return next;
-}
-
-/** 读取完整模型（含旧键迁移）。任何缺失/损坏都收敛为空模型，不抛出。 */
+/** 读取完整模型(含旧键迁移)。任何缺失/损坏都收敛为空模型,不抛出。
+ *
+ * 迁移路径含 Keychain 写入:入队与并发模型变更互斥,并在队内重读模型,
+ * 防止覆盖等待期间完成的变更;迁移规则幂等(同 fingerprint 已存在即跳
+ * 过),重复调用无副作用。 */
 export async function loadPairedInstances(): Promise<PairedInstancesModel> {
   const model = await readModel();
-  return migrateLegacyIfNeeded(model);
+  const legacyRaw = await SecureStore.getItemAsync(LEGACY_CREDENTIALS_KEY);
+  if (legacyRaw === null) return model;
+  return enqueueModelMutation(async () => {
+    const current = await readModel();
+    const legacy = parseInstanceRecordJson(legacyRaw);
+    const next = legacy ? migrateLegacyCredentials(current, legacy) : current;
+    if (next !== current) await writeModel(next);
+    // 迁移收敛后删除旧键;损坏的旧值(legacy 解析失败)同样删除。
+    await SecureStore.deleteItemAsync(LEGACY_CREDENTIALS_KEY);
+    return next;
+  });
 }
 
 /**
  * Persist pairing credentials. 不再覆盖其他实例：按 fingerprint 键控
  * upsert，并把该实例设为活动实例（配对完成即连接它；重新配对同一实例
- * 为替换语义）。返回更新后的模型。
+ * 为替换语义）。返回更新后的模型。写入在模型变更串行队列内执行。
  */
 export async function saveCredentials(credentials: DeviceCredentials): Promise<PairedInstancesModel> {
-  const next = upsertInstance(await loadPairedInstances(), credentials, { activate: true });
-  await writeModel(next);
-  return next;
+  return enqueueModelMutation(async () => {
+    const next = upsertInstance(await readModel(), credentials, { activate: true });
+    await writeModel(next);
+    return next;
+  });
 }
 
 /**
@@ -149,10 +181,12 @@ export async function loadCredentials(): Promise<DeviceCredentials | null> {
  * 退。幂等:fingerprint 不存在时返回原模型且不写盘。
  */
 export async function removeInstanceCredentials(fingerprint: string): Promise<PairedInstancesModel> {
-  const model = await loadPairedInstances();
-  const next = removeInstance(model, fingerprint);
-  if (next !== model) await writeModel(next);
-  return next;
+  return enqueueModelMutation(async () => {
+    const model = await readModel();
+    const next = removeInstance(model, fingerprint);
+    if (next !== model) await writeModel(next);
+    return next;
+  });
 }
 
 /**
@@ -160,9 +194,11 @@ export async function removeInstanceCredentials(fingerprint: string): Promise<Pa
  * 落盘;成功时返回更新后的模型。
  */
 export async function selectActiveInstance(fingerprint: string): Promise<PairedInstancesModel | null> {
-  const model = await loadPairedInstances();
-  const next = setActiveInstance(model, fingerprint);
-  if (next === model) return null;
-  await writeModel(next);
-  return next;
+  return enqueueModelMutation(async () => {
+    const model = await readModel();
+    const next = setActiveInstance(model, fingerprint);
+    if (next === model) return null;
+    await writeModel(next);
+    return next;
+  });
 }
