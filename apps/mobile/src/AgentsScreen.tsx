@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMMKVString } from "react-native-mmkv";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,12 +16,25 @@ import {
   isFilterActive,
   pruneWorkspaces,
   statusGroupLabelKey,
+  toggleFavoritesOnly,
   toggleStatusGroup,
   toggleWorkspace,
   type AgentListFilter,
   type AgentStatusGroup,
   type WorkspaceOption,
 } from "./agent-filter";
+import {
+  isFavoriteSourceId,
+  parseFavoriteSourceIds,
+  pruneFavoriteSourceIds,
+  toggleFavoriteSourceId,
+} from "./agent-favorites";
+import {
+  FAVORITES_INACTIVE_KEY,
+  agentFavoritesStorage,
+  favoritesKeyFor,
+  writeFavoriteSourceIds,
+} from "./agent-favorites-storage";
 import { useAgentFilter } from "./AgentFilterContext";
 import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
@@ -61,14 +75,20 @@ function AgentRow({
   focusPhase,
   justCompleted,
   selected,
+  favorited,
   onPress,
+  onLongPress,
 }: {
   agent: Agent;
   focusPhase?: FocusPhase;
   justCompleted: boolean;
   /** Wide split layout only: this row is the one currently shown in the detail column. */
   selected?: boolean;
+  /** 已收藏(星标源数据):仅已收藏时渲染星标,未收藏行布局不变。 */
+  favorited: boolean;
   onPress: () => void;
+  /** 长按弹收藏/取消收藏菜单(与 onPress 进详情/focus 互不冲突)。 */
+  onLongPress: () => void;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -77,7 +97,10 @@ function AgentRow({
   const feedback = focusPhase ? FOCUS_FEEDBACK[focusPhase] : undefined;
   const feedbackColor = feedback?.color ? colors[feedback.color] : undefined;
   const switchA11y = t("agents.row.switchA11y", { title, tab: agent.tab_label ?? "" });
-  const a11yLabel = justCompleted ? `${switchA11y}, ${t("agents.row.justCompleted")}` : switchA11y;
+  const a11yParts = [switchA11y];
+  if (favorited) a11yParts.push(t("agents.row.favorited"));
+  if (justCompleted) a11yParts.push(t("agents.row.justCompleted"));
+  const a11yLabel = a11yParts.join(", ");
   // Persistent selection (wide layout) and the transient "just switched" feedback
   // are independent and compose: a row can be the selected one AND briefly show
   // the switched/switching/failed feedback at the same time.
@@ -88,6 +111,7 @@ function AgentRow({
       accessibilityState={selected ? { selected: true } : undefined}
       accessibilityLabel={a11yLabel}
       onPress={onPress}
+      onLongPress={onLongPress}
       style={({ pressed }) => [styles.agentCard, pressed && styles.agentCardPressed, highlighted && styles.agentCardSelected]}
     >
       <View style={styles.agentAvatar}>
@@ -97,6 +121,7 @@ function AgentRow({
       <View style={styles.agentBody}>
         <View style={styles.agentHeading}>
           <Text numberOfLines={1} style={styles.agentName}>{title}</Text>
+          {favorited ? <Ionicons name="star" size={12} color={colors.accent} /> : null}
           <StatusPill agent={agent} justCompleted={justCompleted} />
         </View>
         {agent.tab_label || feedback ? (
@@ -112,24 +137,32 @@ function AgentRow({
 }
 
 /**
- * 过滤面板(issue #56 状态维 + #57 workspace 维):两组分区,各自组内
- * 多选 OR。workspace chips 显示快照全量计数并按数量降序;workspace 多时
- * 面板整体可滚动(两个分区一起滚,保持单一滚动上下文)。
+ * 过滤面板(issue #56 状态维 + #57 workspace 维 + #58 收藏维):「仅看
+ * 收藏」开关置顶(跨两维的全局修饰,旁标收藏总数,选中实心星),其下
+ * 两组分区各自组内多选 OR。workspace chips 显示快照全量计数并按数量
+ * 降序;workspace 多时面板整体可滚动(所有分区一起滚,保持单一滚动
+ * 上下文)。收藏总数不随过滤选择联动(当前实例收藏集合的全量口径)。
  */
 function FilterPanel({
   agentFilter,
   workspaceOptions,
+  favoritesCount,
   onToggleStatusGroup,
   onToggleWorkspace,
+  onToggleFavoritesOnly,
 }: {
   agentFilter: AgentListFilter;
   workspaceOptions: readonly WorkspaceOption[];
+  /** 当前实例收藏总数(面板旁标;不随其他维过滤联动)。 */
+  favoritesCount: number;
   onToggleStatusGroup: (group: AgentStatusGroup) => void;
   onToggleWorkspace: (workspaceKey: string) => void;
+  onToggleFavoritesOnly: () => void;
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const favoritesOnly = agentFilter.favoritesOnly;
   return (
     <View style={styles.filterPanel}>
       <ScrollView
@@ -137,7 +170,29 @@ function FilterPanel({
         contentContainerStyle={styles.filterPanelContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.filterSectionTitle}>{t("agents.filter.section.status")}</Text>
+        <View style={styles.filterChips}>
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: favoritesOnly }}
+            accessibilityLabel={t("agents.filter.favoritesOnly")}
+            onPress={onToggleFavoritesOnly}
+            style={({ pressed }) => [
+              styles.filterChip,
+              favoritesOnly && styles.filterChipSelected,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Ionicons
+              name={favoritesOnly ? "star" : "star-outline"}
+              size={13}
+              color={favoritesOnly ? colors.onAction : colors.textSecondary}
+            />
+            <Text style={[styles.filterChipText, favoritesOnly && styles.filterChipTextSelected]}>
+              {t("agents.filter.favoritesOnly")} ({favoritesCount})
+            </Text>
+          </Pressable>
+        </View>
+        <Text style={[styles.filterSectionTitle, styles.filterSectionTitleSpaced]}>{t("agents.filter.section.status")}</Text>
         <View style={styles.filterChips}>
           {STATUS_GROUPS.map((group) => {
             const selected = agentFilter.statusGroups.includes(group);
@@ -221,7 +276,7 @@ export function AgentsScreenContent({
   selectedAgentId?: string;
   onStartPairing: () => void;
 }) {
-  const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
+  const { state, focusResult, refresh, switchAgent, streamStatus, activeFingerprint } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
   const { agentFilter, setAgentFilter } = useAgentFilter();
   const [filterOpen, setFilterOpen] = useState(false);
@@ -238,9 +293,56 @@ export function AgentsScreenContent({
     (workspaceKey: string) => setAgentFilter(toggleWorkspace(agentFilter, workspaceKey)),
     [agentFilter, setAgentFilter],
   );
+  const toggleFilterFavoritesOnly = useCallback(
+    () => setAgentFilter(toggleFavoritesOnly(agentFilter)),
+    [agentFilter, setAgentFilter],
+  );
+
+  // ── 收藏(issue #58,纯客户端本地行为,per-instance MMKV)──
+  // 响应式读取:同 key 写入(长按菜单/悬空剔除)自动重渲染星标、计数
+  // 与过滤结果。无焦点实例(未配对瞬间)订阅永不写入的哨兵 key。
+  const favoritesKey = activeFingerprint ? favoritesKeyFor(activeFingerprint) : FAVORITES_INACTIVE_KEY;
+  const [favoritesRaw] = useMMKVString(favoritesKey, agentFavoritesStorage);
+  const favoriteSourceIds = useMemo(() => parseFavoriteSourceIds(favoritesRaw), [favoritesRaw]);
 
   const connected = state.phase === "connected" ? state : undefined;
   const agents = connected?.data.agents;
+  // 悬空收藏剔除:pane 消失(source_id 永不复用)即从收藏集合移除;空
+  // 快照不剔除(断线/加载瞬间防误清——沿用悬空 workspace 剔除的模式,
+  // 守卫在纯函数 pruneFavoriteSourceIds 内)。实例切换恢复记忆槽时,本
+  // effect 随新实例快照重跑,同样剔除。
+  useEffect(() => {
+    if (!activeFingerprint || !agents || agents.length === 0) return;
+    const pruned = pruneFavoriteSourceIds(favoriteSourceIds, agents.map((agent) => agent.source_id));
+    if (pruned !== favoriteSourceIds) writeFavoriteSourceIds(activeFingerprint, pruned);
+  }, [activeFingerprint, agents, favoriteSourceIds]);
+
+  // 长按菜单切换收藏:读当前集合 → 纯函数切换 → 整体覆写(写入即触发
+  // 上面的响应式读取重渲,星标/计数/过滤即时生效)。
+  const toggleFavorite = useCallback(
+    (sourceId: string) => {
+      if (!activeFingerprint) return;
+      writeFavoriteSourceIds(activeFingerprint, toggleFavoriteSourceId(favoriteSourceIds, sourceId));
+    },
+    [activeFingerprint, favoriteSourceIds],
+  );
+  // 长按 AgentRow 弹收藏/取消收藏菜单(文案随当前状态切换);与 onPress
+  // 进详情/focus 互不冲突(Pressable 原生区分点按与长按)。
+  const showFavoriteMenu = useCallback(
+    (agent: Agent) => {
+      const favorited = isFavoriteSourceId(favoriteSourceIds, agent.source_id);
+      const title = agent.workspace_label || agent.display_name || t("agents.row.unnamed");
+      Alert.alert(title, undefined, [
+        {
+          text: favorited ? t("agents.favorite.remove") : t("agents.favorite.add"),
+          onPress: () => toggleFavorite(agent.source_id),
+        },
+        { text: t("common.cancel"), style: "cancel" },
+      ]);
+    },
+    [favoriteSourceIds, t, toggleFavorite],
+  );
+
   // workspace 集合随快照动态枚举(全量计数,不随过滤选择联动);
   // 快照引用不变时复用同一结果。
   const workspaceOptions = useMemo(
@@ -257,7 +359,10 @@ export function AgentsScreenContent({
   }, [workspaceOptions, agentFilter, setAgentFilter]);
 
   // 归并与状态 pill 同源:completedIds 提供“刚完成”瞬态;未过滤时原引用直通。
-  const visibleAgents = connected ? filterAgents(connected.data.agents, completedIds, agentFilter) : [];
+  // 收藏维命中查当前实例收藏集合(第三维 AND)。
+  const visibleAgents = connected
+    ? filterAgents(connected.data.agents, completedIds, agentFilter, favoriteSourceIds)
+    : [];
   const statusTitleKey: MessageKey =
     state.phase === "discovering"
       ? "agents.status.discovering"
@@ -356,8 +461,10 @@ export function AgentsScreenContent({
               <FilterPanel
                 agentFilter={agentFilter}
                 workspaceOptions={workspaceOptions}
+                favoritesCount={favoriteSourceIds.length}
                 onToggleStatusGroup={toggleFilterGroup}
                 onToggleWorkspace={toggleFilterWorkspace}
+                onToggleFavoritesOnly={toggleFilterFavoritesOnly}
               />
             ) : null}
             <FlatList
@@ -369,11 +476,13 @@ export function AgentsScreenContent({
                   focusPhase={focusResult?.sourceID === item.source_id ? focusResult.phase : undefined}
                   justCompleted={completedIds.has(item.source_id)}
                   selected={selectedAgentId === item.source_id}
+                  favorited={isFavoriteSourceId(favoriteSourceIds, item.source_id)}
                   onPress={() => {
                     clearCompleted([item.source_id]);
                     onAgentPress(item);
                     void switchAgent(connected.service, item);
                   }}
+                  onLongPress={() => showFavoriteMenu(item)}
                 />
               )}
               contentContainerStyle={

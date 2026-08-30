@@ -1,7 +1,8 @@
 /**
- * Agents 列表过滤(issue #56 状态维 + issue #57 workspace 维,纯逻辑)。
+ * Agents 列表过滤(issue #56 状态维 + issue #57 workspace 维 + issue #58
+ * 收藏维,纯逻辑)。
  *
- * 过滤是两个独立维度的组合:
+ * 过滤是三个独立维度的组合:
  *
  * - 状态维(四组:工作中 / 需要我(blocked + ready_input 合并)/ 已完成 /
  *   失败)。归组投影自 agent-status 的展示层语义状态
@@ -10,16 +11,21 @@
  *   cancelled 与空闲不属任何组:任一组被选中时它们即被过滤掉。
  * - workspace 维:按 Agent.workspace_label 归一后的 key 分组(见
  *   workspaceKeyFor;空 label 归入"未命名 workspace")。
+ * - 收藏维(issue #58):「仅看收藏」布尔开关,与状态/workspace 无关的
+ *   全局修饰维(收藏的 idle/cancelled Agent 同样保留)。收藏集合由
+ *   调用方传入(per-instance 存储,见 agent-favorites-storage),
+ *   判定复用 isFavoriteSourceId——与星标/长按菜单同一口径。
  *
- * 组合语义:组内 OR(多个状态组、多个 workspace 之间各自 OR),组间 AND
- * (状态维 × workspace 维取交集)。任一维度未选择 = 该维直通(不过滤)。
- * 空选择 = 不过滤(列表与现状完全一致)。
+ * 组合语义:维度内 OR(多个状态组、多个 workspace 之间各自 OR),维度
+ * 间 AND(状态 × workspace × 收藏 取交集)。任一维度未选择 = 该维
+ * 直通(不过滤)。空选择 = 不过滤(列表与现状完全一致)。
  *
  * workspace 集合与全量计数由 enumerateWorkspaceOptions 从快照枚举——计数
  * 只依赖传入的 agents 列表,不与任何过滤选择联动(签名即契约)。
  */
 
 import type { Agent } from "./agent-contract";
+import { isFavoriteSourceId } from "./agent-favorites";
 import { semanticAgentStatus } from "./agent-status";
 import type { MessageKey } from "./i18n/messages";
 
@@ -47,25 +53,28 @@ export const statusGroupLabelKey: Record<AgentStatusGroup, MessageKey> = {
 export const UNNAMED_WORKSPACE_KEY = "\u0000unnamed";
 
 /**
- * Agents 列表过滤选择:状态组 + workspace 两维度。
- * 每维空数组 = 该维不过滤;两维都空 = 完全不过滤。
+ * Agents 列表过滤选择:状态组 + workspace + 收藏开关三个维度。
+ * 状态/workspace 每维空数组 = 该维不过滤;favoritesOnly false = 收藏维
+ * 不过滤;三维都空 = 完全不过滤。
  */
 export interface AgentListFilter {
   readonly statusGroups: readonly AgentStatusGroup[];
   readonly workspaces: readonly string[];
+  /** 「仅看收藏」开关:与另两维 AND 组合,关 = 直通。 */
+  readonly favoritesOnly: boolean;
 }
 
 /** 默认不过滤。 */
-export const NO_FILTER: AgentListFilter = { statusGroups: [], workspaces: [] };
+export const NO_FILTER: AgentListFilter = { statusGroups: [], workspaces: [], favoritesOnly: false };
 
-/** 过滤是否激活(任一维度有选择)。 */
+/** 过滤是否激活(任一维度有选择/开启)。 */
 export function isFilterActive(filter: AgentListFilter): boolean {
-  return filter.statusGroups.length > 0 || filter.workspaces.length > 0;
+  return filter.statusGroups.length > 0 || filter.workspaces.length > 0 || filter.favoritesOnly;
 }
 
-/** 过滤中已选中的 chip 总数(激活态徽标用)。 */
+/** 过滤中已选中的可选项总数(激活态徽标用;收藏开关开启即计入)。 */
 export function activeFilterChipCount(filter: AgentListFilter): number {
-  return filter.statusGroups.length + filter.workspaces.length;
+  return filter.statusGroups.length + filter.workspaces.length + (filter.favoritesOnly ? 1 : 0);
 }
 
 /**
@@ -100,11 +109,12 @@ export function workspaceKeyFor(agent: Agent): string {
   return label.length > 0 ? label : UNNAMED_WORKSPACE_KEY;
 }
 
-/** 单个 Agent 是否通过过滤;两维都空恒通过(包括 idle/cancelled)。 */
+/** 单个 Agent 是否通过过滤;三维都空恒通过(包括 idle/cancelled)。 */
 export function matchesFilter(
   agent: Agent,
   justCompleted: boolean,
   filter: AgentListFilter,
+  favoriteSourceIds: readonly string[] = [],
 ): boolean {
   // 状态维未选择 = 直通;选中任一组时 cancelled/idle 不属任何组,被排除。
   if (filter.statusGroups.length > 0) {
@@ -115,22 +125,31 @@ export function matchesFilter(
   if (filter.workspaces.length > 0 && !filter.workspaces.includes(workspaceKeyFor(agent))) {
     return false;
   }
+  // 收藏维关闭 = 直通;开启则必须命中收藏集合(判定与星标/长按菜单
+  // 共用 isFavoriteSourceId,收藏维不约束状态——收藏的 idle 也保留)。
+  if (filter.favoritesOnly && !isFavoriteSourceId(favoriteSourceIds, agent.source_id)) {
+    return false;
+  }
   return true;
 }
 
 /**
- * 应用过滤到列表(组内 OR、组间 AND)。任一维度未激活时该维直通;两维
- * 都未激活时原样返回同一引用(调用方可安全作为 FlatList data,无多余
- * 拷贝/重渲);激活时保序过滤,"刚完成"瞬态由 completedIds 提供(与
- * 状态 pill 的 justCompleted 同源)。
+ * 应用过滤到列表(维度内 OR、维度间 AND)。任一维度未激活时该维直通;
+ * 三维都未激活时原样返回同一引用(调用方可安全作为 FlatList data,无
+ * 多余拷贝/重渲);激活时保序过滤,"刚完成"瞬态由 completedIds 提供
+ * (与状态 pill 的 justCompleted 同源),收藏维命中查 favoriteSourceIds
+ * (当前实例的收藏集合)。
  */
 export function filterAgents(
   agents: readonly Agent[],
   completedIds: ReadonlySet<string>,
   filter: AgentListFilter,
+  favoriteSourceIds: readonly string[] = [],
 ): readonly Agent[] {
   if (!isFilterActive(filter)) return agents;
-  return agents.filter((agent) => matchesFilter(agent, completedIds.has(agent.source_id), filter));
+  return agents.filter((agent) =>
+    matchesFilter(agent, completedIds.has(agent.source_id), filter, favoriteSourceIds),
+  );
 }
 
 /**
@@ -150,8 +169,8 @@ export function toggleStatusGroup(filter: AgentListFilter, group: AgentStatusGro
 }
 
 /**
- * 切换一个 workspace 的选中态(组内多选 OR),workspace 维内按首次出现序
- * 去重追加、取消即移除;状态维原样保留。
+ * 切换一个 workspace 的选中态(维度内多选 OR),workspace 维内按首次
+ * 出现序去重追加、取消即移除;状态维原样保留。
  */
 export function toggleWorkspace(filter: AgentListFilter, workspaceKey: string): AgentListFilter {
   const has = filter.workspaces.includes(workspaceKey);
@@ -159,6 +178,11 @@ export function toggleWorkspace(filter: AgentListFilter, workspaceKey: string): 
     ? filter.workspaces.filter((candidate) => candidate !== workspaceKey)
     : [...filter.workspaces, workspaceKey];
   return { ...filter, workspaces };
+}
+
+/** 切换「仅看收藏」开关;另两维原样保留(三维 AND,各自独立翻转)。 */
+export function toggleFavoritesOnly(filter: AgentListFilter): AgentListFilter {
+  return { ...filter, favoritesOnly: !filter.favoritesOnly };
 }
 
 /** workspace chip 的选项模型(枚举 + 全量计数)。 */
