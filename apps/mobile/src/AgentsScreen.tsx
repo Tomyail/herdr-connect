@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -6,6 +6,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { type Agent } from "./agent-contract";
 import { agentStatus } from "./agent-status";
+import {
+  NO_STATUS_FILTER,
+  STATUS_GROUPS,
+  filterAgents,
+  isStatusFilterActive,
+  statusGroupLabelKey,
+  toggleStatusGroup,
+  type AgentStatusFilter,
+  type AgentStatusGroup,
+} from "./agent-filter";
+import { useAgentFilter } from "./AgentFilterContext";
 import { AgentBrandIcon } from "./AgentBrandIcon";
 import { Ionicons } from "./icons";
 import { useConnection, type FocusPhase } from "./connection";
@@ -95,6 +106,44 @@ function AgentRow({
   );
 }
 
+/** 状态组多选面板(issue #56):四个 chips,组内 OR,再点取消。 */
+function StatusFilterPanel({
+  statusFilter,
+  onToggle,
+}: {
+  statusFilter: AgentStatusFilter;
+  onToggle: (group: AgentStatusGroup) => void;
+}) {
+  const { t } = useI18n();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  return (
+    <View style={styles.filterPanel}>
+      {STATUS_GROUPS.map((group) => {
+        const selected = statusFilter.statusGroups.includes(group);
+        return (
+          <Pressable
+            key={group}
+            accessibilityRole="button"
+            accessibilityState={selected ? { selected: true } : undefined}
+            onPress={() => onToggle(group)}
+            style={({ pressed }) => [
+              styles.filterChip,
+              selected && styles.filterChipSelected,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            {selected ? <Ionicons name="checkmark" size={13} color={colors.onAction} /> : null}
+            <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
+              {t(statusGroupLabelKey[group])}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 /**
  * Reusable agent-list content. Takes a resolved `onAgentPress` callback so it
  * has no navigation dependency and renders identically inside the narrow
@@ -116,11 +165,21 @@ export function AgentsScreenContent({
 }) {
   const { state, focusResult, refresh, switchAgent, streamStatus } = useConnection();
   const { completedIds, clearCompleted } = useRecentCompletions();
+  const { statusFilter, setStatusFilter } = useAgentFilter();
+  const [filterOpen, setFilterOpen] = useState(false);
   const { t, tError, formatTime } = useI18n();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
 
+  const filterActive = isStatusFilterActive(statusFilter);
+  const toggleFilterGroup = useCallback(
+    (group: AgentStatusGroup) => setStatusFilter(toggleStatusGroup(statusFilter, group)),
+    [statusFilter, setStatusFilter],
+  );
+
   const connected = state.phase === "connected" ? state : undefined;
+  // 归并与状态 pill 同源:completedIds 提供“刚完成”瞬态;未过滤时原引用直通。
+  const visibleAgents = connected ? filterAgents(connected.data.agents, completedIds, statusFilter) : [];
   const statusTitleKey: MessageKey =
     state.phase === "discovering"
       ? "agents.status.discovering"
@@ -187,12 +246,39 @@ export function AgentsScreenContent({
           <>
             <View style={styles.summaryRow}>
               <Text style={styles.sectionTitle}>{t("tab.agents")}</Text>
-              <Text style={styles.summaryText}>
-                {connected.data.source_online ? t("agents.summary.sourceOnline") : t("agents.summary.sourceOffline")} · {t("agents.summary.count", { count: connected.data.agents.length })} · {formatTime(connected.data.refreshed_at)}
-              </Text>
+              <View style={styles.summaryRight}>
+                <Text numberOfLines={1} style={styles.summaryText}>
+                  {connected.data.source_online ? t("agents.summary.sourceOnline") : t("agents.summary.sourceOffline")} · {filterActive ? t("agents.summary.filteredCount", { shown: visibleAgents.length, total: connected.data.agents.length }) : t("agents.summary.count", { count: connected.data.agents.length })} · {formatTime(connected.data.refreshed_at)}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("agents.filter.openA11y")}
+                  accessibilityState={{ expanded: filterOpen }}
+                  onPress={() => setFilterOpen((open) => !open)}
+                  style={({ pressed }) => [
+                    styles.filterButton,
+                    (filterActive || filterOpen) && styles.filterButtonActive,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  <Ionicons
+                    name={filterActive || filterOpen ? "funnel" : "funnel-outline"}
+                    size={16}
+                    color={colors.onAction}
+                  />
+                  {filterActive ? (
+                    <View style={styles.filterBadge}>
+                      <Text style={styles.filterBadgeText}>{statusFilter.statusGroups.length}</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              </View>
             </View>
+            {filterOpen ? (
+              <StatusFilterPanel statusFilter={statusFilter} onToggle={toggleFilterGroup} />
+            ) : null}
             <FlatList
-              data={connected.data.agents}
+              data={visibleAgents}
               keyExtractor={(agent) => agent.source_id}
               renderItem={({ item }) => (
                 <AgentRow
@@ -208,9 +294,25 @@ export function AgentsScreenContent({
                 />
               )}
               contentContainerStyle={
-                connected.data.agents.length === 0 ? styles.emptyList : styles.list
+                visibleAgents.length === 0 ? styles.emptyList : styles.list
               }
-              ListEmptyComponent={<Text style={styles.emptyText}>{t("agents.empty")}</Text>}
+              ListEmptyComponent={
+                filterActive ? (
+                  <View style={styles.emptyFiltered}>
+                    <Text style={styles.emptyText}>{t("agents.filter.noMatch")}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("agents.filter.clear")}
+                      onPress={() => setStatusFilter(NO_STATUS_FILTER)}
+                      style={({ pressed }) => [styles.clearFilterButton, pressed && styles.buttonPressed]}
+                    >
+                      <Text style={styles.clearFilterText}>{t("agents.filter.clear")}</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text style={styles.emptyText}>{t("agents.empty")}</Text>
+                )
+              }
               showsVerticalScrollIndicator={false}
             />
           </>
@@ -242,9 +344,22 @@ const createStyles = (colors: ThemeColors) =>
     screen: { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
     refreshButton: { backgroundColor: colors.actionBg, borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" },
     buttonPressed: { opacity: 0.72 },
-    summaryRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 },
+    summaryRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 },
     sectionTitle: { color: colors.textPrimary, fontSize: 21, fontWeight: "700" },
+    summaryRight: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
     summaryText: { color: colors.textSecondary, fontSize: 12 },
+    filterButton: { backgroundColor: colors.actionBg, borderRadius: 16, width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+    filterButtonActive: { backgroundColor: colors.accent },
+    filterBadge: { position: "absolute", top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: colors.actionBg, alignItems: "center", justifyContent: "center" },
+    filterBadgeText: { color: colors.onDanger, fontSize: 10, fontWeight: "700" },
+    filterPanel: { flexDirection: "row", flexWrap: "wrap", gap: 8, backgroundColor: colors.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder, padding: 10, marginBottom: 12 },
+    filterChip: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 7, backgroundColor: colors.background, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.cardBorder },
+    filterChipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+    filterChipText: { color: colors.textSecondary, fontSize: 13, fontWeight: "600" },
+    filterChipTextSelected: { color: colors.onAction },
+    emptyFiltered: { alignItems: "center", gap: 14 },
+    clearFilterButton: { borderRadius: 999, borderWidth: 1, borderColor: colors.accent, paddingHorizontal: 14, paddingVertical: 8 },
+    clearFilterText: { color: colors.accent, fontSize: 14, fontWeight: "600" },
     list: { paddingBottom: 28, gap: 10 },
     emptyList: { flexGrow: 1, alignItems: "center", justifyContent: "center" },
     emptyText: { color: colors.textSecondary, fontSize: 15 },
