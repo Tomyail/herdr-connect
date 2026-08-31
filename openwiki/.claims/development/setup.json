@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:11e1a40d2e8f2d813bf7b004c710581b3e7337a876463e99820d6f0a7ca6cf30",
+  "pageVersion": "sha256:d900337b97d2303f9a29654755ac5767a74fad3009708605c3e23e0ff6768337",
   "claims": [
     {
       "id": "claim_a9bc93cd14aa4879921d86b4f1adb25c",
@@ -90,11 +90,11 @@
     },
     {
       "id": "claim_a9e3ca78e01547cebc313d1c9cab0e21",
-      "statement": "The mobile app is an Expo 56 / React Native 0.85 / React 19 app using local file-module dependencies (pinned-fetch, pinned-stream, screenshot-launch-options) plus expo-camera, expo-notifications, and Bonjour discovery via @dawidzawada/bonjour-zeroconf.",
+      "statement": "The mobile app is an Expo ~56.0.16 / React Native 0.85.3 / React 19.2.3 app using local file-module dependencies (pinned-fetch, pinned-stream, screenshot-launch-options) plus expo-camera, expo-notifications, and Bonjour discovery via @dawidzawada/bonjour-zeroconf 2.2.0; devDependencies are limited to @types/node, @types/react, tsx, and typescript.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/package.json#L21-L48",
-          "version": "repo-lines-v1:sha256:a3053cb1e56968ae282e31e6a654a2083784e48363f264d1e76427faf9b576f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2I0NjlkOWUwOTc1NzIyNDY2NjczNGM5ZWY3YjI1NGQ4ODUzNGY1ZDViYjcwOTg5NjA4MDVjNTUzZGMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzA0NDNlMDI3YWRkZmY2ZTY0NWFlMDVjOGMwODJiMTU2Nzg5OWI0OWFkYzZiNmNhMzllNjI5ODQyOWEyMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYWVlNDVhNzllMjY1NDFhMTJkYjlmNDc4YTZiMTY1NzI3MTdiZGJjOTVlMGZmZDQ5MTlkM2U2ZDEzY2U2NGMifQ"
+          "resource": "repo://apps/mobile/package.json#L21-L54",
+          "version": "repo-lines-v1:sha256:acb531fadb3034b3674ed1183a8d2a9aaaa02cb4f5da353fbf869508590a2cd7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhM2I0NjlkOWUwOTc1NzIyNDY2NjczNGM5ZWY3YjI1NGQ4ODUzNGY1ZDViYjcwOTg5NjA4MDVjNTUzZGMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwYzA0NDNlMDI3YWRkZmY2ZTY0NWFlMDVjOGMwODJiMTU2Nzg5OWI0OWFkYzZiNmNhMzllNjI5ODQyOWEyMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
@@ -137,10 +137,30 @@
           "version": "repo-lines-v1:sha256:82ea7079459a4e0a1fcaa7258345c4f60ab6b1d3d6e2b4427dbc58c0c1c87eff:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM1YzZmMzE1MzA0ODFmYThhM2E5MzM4YzVlYmRjN2NhZmJkYWNmZWYyZjBkZGEzNTA4YWIxNjg1NGE2ZTQ1ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYyMDM4ZWUxMjRjMGY5YTdmNWJkNjNjNThmNGZkNDc3YjQ1YjE0YzUzZjY2YjQwYWE0OGQzMjZiNGRhM2FlZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU2OTg3NjA1NjZkNmVlZDJjN2ZlMDI3M2Y4NTJkZGJhMDU3NGZhZjMzNGZlZDEwZGEwNzY2MmZjMjlhNmRjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmJhZWNiYzQzNDE2NjZkMDZjN2M3MTJlZTdjMmY5YzM1YWQxOTJkZTIwOWI4YWI3MGU2NmFiMmFlMzI0MGE4YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_101d343ac83c4eaf99ad362abea58295",
+      "statement": "The @herdr-connect/mobile workspace (not the repo root) owns the release and screenshot scripts: release:ios:prepare/build/upload/distribute wrap scripts/ios-release.mjs phases, screenshots/screenshots:raw/screenshots:marketing wrap scripts/ios-screenshots.mjs, release:android runs scripts/android-release.sh, plus typecheck (tsc --noEmit), test (node --import tsx --test over src/*.test.ts, src/i18n, src/notifications, src/theme, and modules/pinned-stream tests), and config (expo config --type public).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L9-L19",
+          "version": "repo-lines-v1:sha256:d761116eef0938b3b2a723239678a8ddfc2bf834c6a4c00ad7090e2380fca9fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NTkyMjk2YzEwM2RlMmIzODAxNGQ0OGRhY2UwNGIyOGFiNjc4MjEyZTlhYmQ3YTM5Mjk4YzYyNmFkOTQzYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZmQzODk4M2IzMjVlOWVhNGVhMjYyMWYxMTgzMjQ0OGFjMWE3Y2JiM2YwMDg1ODc1NWJjMWVkNDhmZjdiNzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyOTNhZjM3OGY5MTVlNWE2ZjBkMjY4M2RmYTc1OWY2YjNiNjljNjg3MWYwZTdjMDgwNTU0OThjODNlNjdlOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZTg5NzFjZDRiZTZlNGQ0OGM2ODhiMjBhZWU1NGRkMzg0ZDhkNzc1MDI5NzRmOWFkOGEwNzU2MzhjNTFlM2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7653f48f6fa94433b04b5074979af7d5",
+      "statement": "apps/mobile/.mise.toml pins toolchain versions for mise users: Node 24.11.1, pnpm 10.34.5 (matching the root packageManager pin), and Ruby 4.0.6.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/.mise.toml",
+          "version": "repo-file-v1:sha256:ff522ebc5aa37fc8c43b377e3f4f33ec54f2b041aa419efa5d712ecf4841a05c"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "at": "2026-08-31T23:04:17.419Z"
   }
 }

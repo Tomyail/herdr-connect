@@ -5,8 +5,10 @@ description: How to build, run, and develop Herdr Connect from source for contri
 tags: [development, setup, build, dependencies, environment]
 verified:
   - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+    at: 2026-08-31T23:04:17.419Z
 sources:
+  - id: openwiki-source-c0c4c2d95f96c5ada6f3e2a1
+    resource: repo://apps/mobile/.mise.toml
   - id: openwiki-source-e86fe7b76c693666bc2cb828
     resource: repo://apps/mobile/package.json
   - id: openwiki-source-7bd911fdd3026b7b031a01e3
@@ -21,7 +23,7 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.4.3", at: "2026-08-31T23:04:17.419Z" }
 ---
 
 # Development Setup
@@ -38,6 +40,8 @@ This guide explains how to set up a development environment for contributing to 
 - **Node.js** 24 (recommended; 22 LTS may work)
 - **pnpm** 10 (the exact version is pinned as `packageManager: pnpm@10.34.5` in the root `package.json`; use `corepack enable` so corepack supplies it)
 - **Expo CLI** (included via the `expo` dependency; `expo start` is invoked through workspace scripts)
+
+The `apps/mobile/.mise.toml` file pins tool versions for mise users: Node `24.11.1`, pnpm `10.34.5`, and Ruby `4.0.6` (Ruby is needed for the CocoaPods toolchain used by iOS native builds).
 
 ### For Daemon Development
 
@@ -344,16 +348,16 @@ env GOOS=windows GOARCH=amd64 go build -o herdr-connect.exe ./cmd/herdr-connect
 
 ### iOS Release Build
 
-See `/docs/release/` for full instructions. Briefly:
+The release scripts live in the mobile workspace (`apps/mobile/scripts/ios-release.mjs`), not at the repo root, so run them through the workspace filter:
 
 ```sh
-pnpm release:ios:prepare
-pnpm release:ios:build
-pnpm release:ios:upload
-pnpm release:ios:distribute
+pnpm --filter @herdr-connect/mobile release:ios:prepare
+pnpm --filter @herdr-connect/mobile release:ios:build
+pnpm --filter @herdr-connect/mobile release:ios:upload
+pnpm --filter @herdr-connect/mobile release:ios:distribute
 ```
 
-This uses EAS Build and TestFlight.
+Each is a thin wrapper (`node scripts/ios-release.mjs <phase>`). The workspace also provides `screenshots` / `screenshots:raw` / `screenshots:marketing` (via `scripts/ios-screenshots.mjs`) and `release:android` (via `scripts/android-release.sh`).
 
 ## Common Issues
 
