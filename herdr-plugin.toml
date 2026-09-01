@@ -2,7 +2,7 @@ id = "herdr.connect"
 name = "Herdr Connect"
 version = "0.1.0"
 min_herdr_version = "0.7.0"
-description = "Control your Herdr agents from your iPhone over the local network"
+description = "Monitor and control your Herdr AI coding agents from your iPhone with this mobile companion app — read output, send follow-ups, and get notified when jobs finish, privately over LAN or Tailscale. No cloud, no accounts."
 platforms = ["linux", "macos"]
 
 [[actions]]
