@@ -1,0 +1,24 @@
+id = "herdr.connect"
+name = "Herdr Connect"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "Control your Herdr agents from your iPhone over the local network"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "doctor"
+title = "Diagnose Herdr installation"
+contexts = ["workspace"]
+command = ["herdr-connect", "doctor"]
+
+[[actions]]
+id = "pair"
+title = "Pair a device"
+contexts = ["workspace"]
+command = ["herdr-connect", "pair"]
+
+[[actions]]
+id = "service-status"
+title = "Show daemon service status"
+contexts = ["workspace"]
+command = ["herdr-connect", "service", "status"]
