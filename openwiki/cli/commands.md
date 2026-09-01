@@ -5,9 +5,11 @@ description: Complete reference for herdr-connect CLI commands, global options, 
 tags: [cli, commands, service-management, pairing, diagnostics]
 resource: /internal/daemoncli
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.0
+    at: 2026-09-01T21:29:42.104Z
 sources:
+  - id: openwiki-source-ed83ad663bbbba548306379d
+    resource: repo://herdr-plugin.toml
   - id: openwiki-source-435ef4d663e8147156c1b2dc
     resource: repo://internal/daemoncli/cli.go
   - id: openwiki-source-d856a0122f8052c3bcae2e4f
@@ -22,7 +24,7 @@ sources:
     resource: repo://internal/demolan/auth.go
   - id: openwiki-source-07d77e7f317cf6efc47a9b12
     resource: repo://internal/demolan/rate_limit.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-01T21:29:42.104Z" }
 ---
 
 # CLI Commands
@@ -295,6 +297,19 @@ Operational guidance remains: run only on a trusted LAN, revoke devices you no l
 - `ExecuteWithPreviewChecker` injects a fake preview-port probe so `service`/`pair`/`doctor` tests never bind real sockets.
 - `pairDeps` in `pair.go` injects secret creation, polling, address collection, QR rendering, clock, and sleep.
 - `secureHandlerWithLimiter` in demolan injects (or disables) the rate limiter for HTTP tests.
+
+## Herdr Plugin Manifest (`herdr-plugin.toml`)
+
+The repository root contains a `herdr-plugin.toml` manifest that is the integration surface through which Herdr exposes Herdr Connect commands to owners inside the Herdr UI. It declares:
+
+- **Identity and compatibility**: plugin id `herdr.connect`, display name "Herdr Connect", plugin `version = "0.1.0"`, and `min_herdr_version = "0.7.0"` — the minimum Herdr release required to load the plugin.
+- **Supported platforms**: `linux` and `macos` only (matching the platforms supported by the `service` manager).
+- **Workspace actions**: three actions, each scoped to the `workspace` context, that map directly onto the CLI commands documented above:
+  - `doctor` → `herdr-connect doctor` — "Diagnose Herdr installation"
+  - `pair` → `herdr-connect pair` — "Pair a device"
+  - `service-status` → `herdr-connect service status` — "Show daemon service status"
+
+Each action's `command` field is an argv vector invoking the `herdr-connect` binary, so the owner runs exactly the same code path as the terminal user. Notably, `service-status` maps to `service status`, whose exit codes (`0` healthy, `1` unhealthy/error, `3` not installed) can be surfaced by the Herdr UI as health indicators.
 
 ## Development Commands
 

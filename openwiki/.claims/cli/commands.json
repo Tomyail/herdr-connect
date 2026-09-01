@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d7682ad86d95a90672594227e3cb0580fe7f6e1a5af7db7c89370e946b61cef7",
+  "pageVersion": "sha256:92c82053866051c120c911ec786cc6e71585daa730f8f2faafeb661d9f28db14",
   "claims": [
     {
       "id": "claim_c67ae724294b4c849018eebd9f805e39",
@@ -215,10 +215,30 @@
           "version": "repo-lines-v1:sha256:49e9bad1173066128a8394e7af78f309bcf5d666293212c6d6c0cc0e381c715a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc5ZDNiNzM2MzlhYTk0ZGRmNzE2Yzg4OTc1NGJiYjRjNjFmMTRkOTcyZjFmMzgzNjBmMzg2ZjQ4ZmFhMGFiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM4OTFkYjhlNWNlNGQ3ZTU3YjljZTlkNTJmMWM3MTc0NTg0N2M2MjI3N2Y4YjI2MDlhYWI4ODc1YTE2MTk5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTNkYWNmMGE5MmEyYmQxOWVmNjk3N2FiZjEwZmY5OTZlODAyYWM2YmMwZmRmY2JhMmNiMjk2ZWNiNTZjMDQ5MCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_9532afaadcfb4bc2b8e2966494015dd9",
+      "statement": "herdr-plugin.toml at the repository root is the integration surface through which Herdr exposes Herdr Connect to owners: it declares plugin id herdr.connect, name \"Herdr Connect\", version 0.1.0, min_herdr_version 0.7.0, and platforms linux and macos.",
+      "evidence": [
+        {
+          "resource": "repo://herdr-plugin.toml#L1-L6",
+          "version": "repo-lines-v1:sha256:8cc59aa06fc763756eac7ad6392d9898ecce80c1690e1cf9c711064ab16e49e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU1NGIzMzcwNThkYThmMmVhYTc0ZjJmNzMxZTQyZjczMTdiNWMyMjJiZDIzODIwZGYzYjYzMzViNGI4MzY2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJjZTIyZjJjYTNlODIwYjViYmE4NmFmYzdlNGE5NjU1ODdmODdlZDAxN2NhM2M5NGQ1Mjc5ZGEyMjExMWIwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2RjZWQ5MTYxZTBkYWFiNTA1MzRmNGY0MTQ5ZDRhMWYyMzVjMTFiZWIzY2Y3MWRmNDgyOWU3Yjg1Njk4MmQ5ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b1aea5c794346d986f6523c4c6801da",
+      "statement": "The manifest defines three workspace-context actions (doctor, pair, service-status) whose command vectors invoke the herdr-connect CLI (`herdr-connect doctor`, `herdr-connect pair`, `herdr-connect service status`), so UI-invoked actions run the same code paths as terminal users.",
+      "evidence": [
+        {
+          "resource": "repo://herdr-plugin.toml#L8-L23",
+          "version": "repo-lines-v1:sha256:32230c11a6ef5d4367042fa5e1e7656ec4b45a712bd72e32168b5517706a8cba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZTAyNDEzNzY5ODhlZjliYTQ2Y2FjM2I0ZDllZjI2N2FhNGE2YzRhZjM0Zjc2ZWJlMzk3YTQ1ODg5ZjQ4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNmFkOGIyYmFiYzAxNWFiZTExNDEzMWMwOTU2ZWE1MjdmNzhmOTM0YjY2NTE5OGJiYTY0OTA2ZWEyZGRmNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5YzRjMTJjYzM5MTAzNmJjYjY1ZGFmY2I2Mjg3MTYwYWY4M2Y5Yzc5NGI5MmNmYjlhOTlkMzBkNGZkZWM4M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYjMxZjlmOGMzNGFjYjM1MDcwMDkzZjJjNzFlZGVhMmY3ZTEwY2I5ODhhZWM4ZTUyMzY5NzhkMjQ4YWNjNWUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-01T21:29:42.104Z"
   }
 }
