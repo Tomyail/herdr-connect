@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:db29f2aec0b84ba8d83eaeabfab01ac8eeb9d3dae568ac12857ada12aefae5ca",
+  "pageVersion": "sha256:559eb28b24976d338e7df2986af30ffce6c66527effbbb7310e4dbb1764b0a63",
   "claims": [
     {
       "id": "claim_0c1a682818444f59916c6a05970d3833",
@@ -251,10 +251,66 @@
           "version": "repo-lines-v1:sha256:a18d953ddff7c651200d06e4552571d30f4dcf9a9570604581311885509090f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxYTdlODA1OTE5OTk2NGY0MjdkODQ5ZTQ1YjczM2EwYmJiNzg4ZTRmZDczNTRiOGQ4ZmNhNTM3Yzc4NjM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhMTcxNGE5MGQzNTM3ODU5OGEzNTZmYzYzNTZmNDE5OWVkMzI0MTY0ZjBhZWUwNGNlNmM1ODdjYzljOWMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIyNDQxYjVlNDEzMGQyNzQ4MzE4NWQxYmM0YTk3ZTIwNWZhMDljMWM5ZDlkMWY1YTJjMmFjYWU1MTkzZGExOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmNWI1MWEzZTdiODhkYWY3YzE0NzVkMjg4MzM2NDNhZWM3OTRhNTNlZjVjY2Q3YTNiMDgyMzkwMmIyYjY1NiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_53c89d350a114814bd79b24957808b56",
+      "statement": "Settings content is organized into four SettingsCategoryKey categories (general, notifications, connection, about) built by the single useSettingsCategories hook, which owns all Settings state (MMKV notification switches, instance list from ConnectionProvider, connection state) so narrow and wide render modes cannot desync.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/Settings.tsx#L244-L247",
+          "version": "repo-lines-v1:sha256:af92de956b53917af2604bb4febef11d903630a33627819cc99311c11ecfd649:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmJhM2ViZWE1YjAzODEwZWViM2U0MjVmZTA5N2UxOGFjMmE3NDEwZDNjNTE2MzVhNjAyMjc3MTM5MTM4OTFiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTYxMWY1MTI1N2FjODA5MTZkYWRhZDkyNDVhMmIwOTNmNTE1YzBiZjcwYjU3MTdjZTY1Y2FjNzUzNzg2NGU2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjkxMDY4MTYzYTE4ODcxZjI0YmYwYTgzOGQ1MDBkYzdmYjQxODA2MjNmMjk5OThkZWJmNDAxNmNiYzJmZDY4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmRhZjhjNjA4YjlhMzE5NDgxODZlYmRjYTQ5YzJkYTEwMWI5ZTM0N2ZjNDgyOWFlMWU3MjYyZmQwYjUyZmQwNyJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/Settings.tsx#L42-L42",
+          "version": "repo-lines-v1:sha256:b77a1a4064f4d64adb2ef3cca2355f2deaa514dc04009b1e27ca548aacf8dd8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3YTFhNDA2NGY0ZDY0YWRiMmVmM2NjYTIzNTVmMmRlYWE1MTRkYzA0MDA5YjFlMjdjYTU0OGFhY2Y4ZGQ4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc3YTFhNDA2NGY0ZDY0YWRiMmVmM2NjYTIzNTVmMmRlYWE1MTRkYzA0MDA5YjFlMjdjYTU0OGFhY2Y4ZGQ4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjc1ZDI0Nzg5N2Q1OWRjOTczZGI4ZDJjNTk5NjQzM2Y4NjA0NjE1YTMzYzQwODRhYzkyOWFhM2JlYzYyODNmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDExMTcyODZmMTNlNTFiZTRkZjZjNjUzMDIyZTlkYmE3MmZlNTkwZDEyOGRhMGNlNDkwZmVkYjc5YmFjZWVmMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a4965105b3c64c40bdfdf9542138956d",
+      "statement": "In wide mode, SettingsColumns renders a category list in the list column (selection defaulting to \"general\") and the selected category's cards in the detail column, phone-width and centered (maxWidth 520), with row navigation pushing onto the detail column's own local nested NavigationIndependentTree stack containing Language, Appearance, VoiceLanguage, and SilenceThreshold screens.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/SplitLayout.tsx#L304-L328",
+          "version": "repo-lines-v1:sha256:b813541141e36e55a3a0cc69fc9bf6a0badfdc90360f4004b402d16b30b72232:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MjE2ZThlOWMwYTFhNjhkMDZjMmZiYWE1ZmQyMTM5NDgyYjhlZmQwYTE5MzE1YjkxNWU2Y2NlODQ5ZDg5ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MzUzYjIyM2Y1MmZjYTQ3OTc2N2E5YjgxNDA4MThjZmI0OTc2ZmRhOWU4OTZhZmUxMTZlMmNkYjllMmIxOTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMGNmZjE4YzI1MGRjYWNmOTAxZDY0NDMzNTFkYmQzYmJlMTU2NTQ0NmMzYjA2NDFiYTczZjU1M2Y3NThlZGMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/SplitLayout.tsx#L331-L359",
+          "version": "repo-lines-v1:sha256:a5c8f40c1045468f511b85f3d63034a319b5b9faf684b1a6d538132631134347:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YTk5ZTRiOWI2NGExODAwM2U5MTdmYTZmYTMwOGY1OTU2OWRlMjY4NTQ0NTU1NGZmNTdmNTllMzM5YmJlZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2NDc1ZGFhMGY1MWU5YWJjNDUyOWNmODE0YmZmOWVkZDdmMzliYTU2NjgyNWEyOWVmZGRkNjJlOTNkNDQ0N2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5666a1e3fe7e45c2807c92959324975a",
+      "statement": "The instance list and pairing entry no longer live in Settings; they were migrated to the home screen's connection status bar, reached via AgentsScreenContent.onStartPairing.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/Settings.tsx#L302-L303",
+          "version": "repo-lines-v1:sha256:585e42870300bb0b0cdea2abce93c10ae40f9c9e31f8160aecdb3fcd17bca9fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA2NTRjZWVjOTA4NmJkZDhlZmExNDY5ZTk4ZTg1YmE5ZjkxNDFkODhiNzUzZWVhY2ZlN2UwNzUwNzhkNmI0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM3NTY3MjlkN2NjODRlNzU0NjAxNTg0M2NkNjNlZDZkMDUzYzkxMGJjMGMzODk1MGNjZjhhNmM0YTZmZjc4YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWRiM2U3Y2QwYzNhNjIzMDQ3NjY4MTYxZDEwNGU5OWQ4NjIwOWNhM2U3NzU0YTI1YjExOWE0OTA3ODc4MDQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTIyMjY1YmU0MTNhOTc2NjU3OWJiMzE2NzdiNDlkMzJhNmM5Y2JlY2ExMGEyZmJkNTQzZmQ3YTNkZDkxODA2YSJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/SplitLayout.tsx#L391-L391",
+          "version": "repo-lines-v1:sha256:36a93ae32462cc130a460a7adeda101ec15cdb78e2320855e97bb8814ce75844:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZhOTNhZTMyNDYyY2MxMzBhNDYwYTdhZGVkYTEwMWVjMTVjZGI3OGUyMzIwODU1ZTk3YmI4ODE0Y2U3NTg0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzZhOTNhZTMyNDYyY2MxMzBhNDYwYTdhZGVkYTEwMWVjMTVjZGI3OGUyMzIwODU1ZTk3YmI4ODE0Y2U3NTg0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNiYTA0ZTBkYTJmMjY1ZDFlZTQ2MmI5M2Y2ZTM4YmZlMTI0N2U2MWIwYWY2NWYxOWUyNTY4ZTIyNjQyMjg3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODdjY2Q0ZDQ4YTdiMWI3NDdlZTUyMGE5NDM3Y2FhY2RhMTU4NTU3NDZmNzg5NWUxZDI0MmM0MDAzNjdmMTEwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc0eb9710dca42f89715cf76ba64687e",
+      "statement": "In wide mode Pairing is presented as a full-screen React Native Modal overlay (PairingOverlay in App.tsx) hosting its own NavigationIndependentTree stack with a close button, rendered above SplitLayout so it covers the sidebar and all columns; narrow mode keeps the push-based Pairing route on the root stack.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L238-L241",
+          "version": "repo-lines-v1:sha256:cc53cdacdca958e1ef08df4888d83edb57f466ada810808bc7019194684ef36e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRmNDA4NGJhZGQyYWJjMDU0ODAxNjZmODVhN2Q3MjkzMWQ0Y2FlYTIzNjg5MzVlODQ0YjZkZGQ4ZmQzNmRkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFhYTE0YmFkZmU5ZjEwN2I1NzY1Mzc5N2U0OTZhZWM2ZGIzNDBlODUxYzVmMWUwNGRkNmU5YzdlZmRhYjQ3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTFlOTA4NGI5YmFkYjFiZGUxYzMzMWQ3NDU0OTM0NzBmYThmZGQ3MTMxNDlkNTVmMTg2ZjFhZWRlOWNmMWVmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE5NzNkNDU2YmVmNjhhMjlkNTRlY2FlYWFjNzQ2ZGVlYjgxNjI2ZTU4M2I5ZmFkN2I4ODEwOTllNGE5YjA1NCJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/App.tsx#L328-L391",
+          "version": "repo-lines-v1:sha256:d017cd9cd40ce4bc264d5ffbd42cb8dff215bbaaba31c1dd492202117d0308b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYjkwMmUxZmY1MzdmZTA2NTFiNWEwNDc0ZTNkNjZkNGUzNTQ2OWRjZmE2OTk3ODUyOTI3YzIwZmQ2MjE4ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ODc3Y2ViZmI0OTA1MmU0OTcwYTllY2NhNzBmOTZlYmFhNmQzMDMzZWQxOTkyZDA2NTI2MDBkNDk5ZDYyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYWE2MjdiYWFiNGI0NTFmYmUzMDRhOTZiZjllYmM0ZjI4YzkxOTNmZGVkNTExZTQxM2MyYjExOWQ5MDA0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.0",
+    "at": "2026-09-03T21:31:01.471Z"
   }
 }

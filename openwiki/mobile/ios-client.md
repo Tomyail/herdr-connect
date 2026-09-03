@@ -3,8 +3,8 @@ type: "Reference"
 title: "iOS Mobile Client"
 openwiki_generated: true
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.0
+    at: 2026-09-03T21:31:01.471Z
 sources:
   - id: openwiki-source-a6ba9053969a3e00cd971742
     resource: repo://apps/mobile/app.config.ts
@@ -48,7 +48,11 @@ sources:
     resource: repo://apps/mobile/src/pairing.ts
   - id: openwiki-source-e6a02cada834f505385d247c
     resource: repo://apps/mobile/src/session-registry.ts
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+  - id: openwiki-source-292b05c1fcfbbce929beab75
+    resource: repo://apps/mobile/src/Settings.tsx
+  - id: openwiki-source-7b5a9165da5d011e9f652a26
+    resource: repo://apps/mobile/src/SplitLayout.tsx
+generated: { by: "openwiki/0.5.0", at: "2026-09-03T21:31:01.471Z" }
 ---
 
 
@@ -117,7 +121,7 @@ The app runs at native iPad resolution (`supportsTablet: true` in `app.config.ts
 - **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected. Exports `AgentsScreenContent` for use inside the split-layout list column.
 - **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, unified composer bar (send/interrupt), and voice input with optional continuous mode. Exports `AgentDetailBody`, `AgentDetailTitleBlock`, and `AgentDetailRefreshButton` so the wide layout can render the same content with an inline header.
 - **PairingScreen** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
-- **SettingsScreen** (`Settings.tsx`) — Links to language, appearance, pairing, diagnostics, voice recognition language, and silence threshold. Exports `useSettingsCategories` and `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
+- **SettingsScreen** (`SettingsScreen.tsx` → `Settings` in `Settings.tsx`) — Renders the four Settings categories (general/notifications/connection/about) built by `useSettingsCategories`; exports that hook plus `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
 - **LanguageScreen** (`LanguageScreen.tsx`) — English/Chinese selection
 - **AppearanceScreen** (`AppearanceScreen.tsx`) — Light/dark theme selection
 
@@ -244,21 +248,15 @@ An iOS-only Expo native module read at `App.tsx` startup (`__DEV__`-guarded) tha
 
 ### Credential Storage
 
-Device credentials are stored in iOS Keychain via `expo-secure-store` (`/apps/mobile/src/credentials.ts`):
-
-- Key: `"herdr-connect.paired-device"`
-- Shape: `{fingerprint, deviceId, token, deviceName, pairedAt}`
-- Keychain option: `WHEN_UNLOCKED_THIS_DEVICE_ONLY` (device-local, no iCloud sync)
-
-Credentials are cleared in three scenarios: generic 401 (unauthorized), explicit 401 revoked, and manual unpair from Settings.
+Device credentials are stored in iOS Keychain via `expo-secure-store` (`/apps/mobile/src/credentials.ts`) — one record per paired instance plus an index and active pointer (see [Multi-Instance Credential Model](#multi-instance-credential-model) above). Records use the `WHEN_UNLOCKED_THIS_DEVICE_ONLY` accessibility option (device-local, no iCloud sync).
 
 ### Pairing Flow
 
-1. User taps "Pair Device" in Settings → navigates to PairingScreen
+1. User starts pairing from the home screen's connection status bar → Pairing screen (stack push in narrow mode, full-app overlay in wide mode)
 2. Camera permission requested; QR scanner activates
 3. User scans the QR displayed by `herdr-connect pair` on the host terminal
 4. `parsePairingQRPayload` validates QR structure (`v`, `fp`, `hosts`, `port`, `secret`)
-5. `pairDaemon` POSTs `{device_name, secret}` to `/v1/pair` via pinned-fetch with the QR fingerprint
+5. `pairDaemon` POSTs `{device_name, secret}` to `/v1/pair` via pinned-fetch with the QR fingerprint (trying each QR host in turn via `withHostFallback`)
 6. On success, credentials are saved to Keychain and `connection.refresh()` restarts discovery
 7. On failure, a localized error alert is shown
 
@@ -661,6 +659,44 @@ See `/docs/release/ios-testflight.md` for troubleshooting.
 ### Xcode Cloud CI
 
 Xcode Cloud builds run a post-clone hook (`apps/mobile/ios/ci_scripts/ci_post_clone.sh`) that provisions the Node/pnpm toolchain via [mise](https://mise.jdx.dev/) — versions are pinned in `apps/mobile/.mise.toml` (Node `24.11.1`, pnpm `10.34.5`, ruby `4.0.6`). The script installs mise if missing, runs `mise install`, then `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare`.
+
+`ios-release.mjs prepare` detects the Xcode Cloud environment via `CI_XCODE_CLOUD === "TRUE"` and runs `pod install` directly (skipping Bundler); outside Xcode Cloud it falls back to `bundle exec pod install`. This is why ruby is pinned in `.mise.toml` even though Xcode Cloud does not use Bundler — local and Fastlane-driven builds still do.
+
+## Android Support
+
+Android is not currently supported. The Bonjour module has Android equivalents (NSD — Network Service Discovery), but:
+
+- A separate APK build is required
+- UI adaptations needed for Android navigation patterns
+- Distribution mechanism undecided (Play Store? APK download?)
+
+Future milestone after pairing and E2EE are implemented.
+
+## Troubleshooting
+
+### Discovery Not Working
+
+- Confirm both devices on same Wi-Fi
+- Disable VPN temporarily
+- Check local network permission in iOS Settings
+- Ensure daemon is running: `herdr-connect service status`
+- Check for client isolation on guest networks
+
+### App Shows "Source Offline"
+
+- Check Herdr is running: `herdr agent list`
+- Verify daemon can reach Herdr CLI
+- Check daemon logs: `herdr-connect service logs`
+
+### Input Not Sending
+
+- Verify agent is in `ready_input` state
+- Check input is under 4000 characters
+- Ensure source is online (not offline)
+- Retry after tapping the agent again
+
+For more issues, see `/docs/release/ios-testflight.md`.
+hen `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare`.
 
 `ios-release.mjs prepare` detects the Xcode Cloud environment via `CI_XCODE_CLOUD === "TRUE"` and runs `pod install` directly (skipping Bundler); outside Xcode Cloud it falls back to `bundle exec pod install`. This is why ruby is pinned in `.mise.toml` even though Xcode Cloud does not use Bundler — local and Fastlane-driven builds still do.
 

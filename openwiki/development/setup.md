@@ -4,8 +4,8 @@ title: Development Setup
 description: How to build, run, and develop Herdr Connect from source for contributors
 tags: [development, setup, build, dependencies, environment]
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-31T23:04:17.419Z
+  - by: openwiki/0.5.0
+    at: 2026-09-03T21:31:01.471Z
 sources:
   - id: openwiki-source-c0c4c2d95f96c5ada6f3e2a1
     resource: repo://apps/mobile/.mise.toml
