@@ -31,6 +31,7 @@ import {
 import { AgentDetailBody, AgentDetailTitleBlock, AgentDetailRefreshButton } from "./AgentDetail";
 import type { AgentHistory } from "./network";
 import { Ionicons } from "./icons";
+import { KickstartExchangeBanner } from "@tomyail/react-native-kickstart-exchange";
 import { useI18n } from "./i18n/I18nContext";
 import { useTheme, useThemedStyles } from "./theme/ThemeContext";
 import { useConnection } from "./connection";
@@ -254,6 +255,7 @@ function SettingsCategoryDetail({
           <Text style={styles.settingsDetailTitle}>{t(category?.labelKey ?? "settings.screenTitle")}</Text>
           <ScrollView style={styles.settingsDetailScroll} contentContainerStyle={styles.settingsDetailContent}>
             {category?.render()}
+            {__DEV__ ? <KickstartExchangeBanner apiKey="preview" /> : null}
           </ScrollView>
         </View>
       </View>

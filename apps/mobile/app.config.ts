@@ -16,7 +16,7 @@ const config: ExpoConfig = {
     // writes this static value straight into Info.plist on every Xcode Cloud
     // run (see apps/mobile/ios/ci_scripts/ci_post_clone.sh), so an unbumped
     // retag fails the upload rather than silently reusing the old build.
-    buildNumber: "38",
+    buildNumber: "40",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
     // `requireFullScreen` is intentionally left unset (defaults to false).
@@ -71,7 +71,11 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-localization",
-    "expo-audio",
+    // Background playback/recording default to true and add `audio` to
+    // UIBackgroundModes (App Store 2.5.4 rejection: no feature uses it —
+    // the done-sound chime and mic input are foreground-only, see
+    // src/audioMode.ts's `shouldPlayInBackground: false`).
+    ["expo-audio", { enableBackgroundPlayback: false, enableBackgroundRecording: false }],
     "expo-dev-client",
     "expo-camera",
     "expo-notifications",

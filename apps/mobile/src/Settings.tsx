@@ -33,6 +33,7 @@ import { appearanceLabelKey } from "./AppearanceScreen";
 import { useVoiceLanguage, VOICE_LANG_SYSTEM } from "./voice/VoiceLanguageContext";
 import { localeDisplay } from "./voice/config";
 import { silenceThresholdStorage } from "./voice/silenceThreshold";
+import { KickstartExchangeBanner } from "@tomyail/react-native-kickstart-exchange";
 import type { ConnectionState } from "./connection";
 import { useConnection } from "./connection";
 import type { RootStackParamList } from "./navigation";
@@ -426,6 +427,7 @@ export function Settings({ connectionState }: { connectionState: ConnectionState
       {categories.map((category) => (
         <View key={category.key}>{category.render()}</View>
       ))}
+      {__DEV__ ? <KickstartExchangeBanner apiKey="preview" /> : null}
     </ScrollView>
   );
 }
