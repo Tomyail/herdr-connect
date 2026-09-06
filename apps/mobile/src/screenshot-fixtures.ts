@@ -11,10 +11,10 @@ export function parseScreenshotScene(value: string | undefined): ScreenshotScene
 }
 
 const SCREENSHOT_SERVICE: DiscoveredService = {
-  name: "MacBook Pro · Herdr",
+  name: "MacBook Pro · Daemon",
   type: "_herdr-connect._tcp.",
   domain: "local.",
-  hostName: "herdr.local.",
+  hostName: "crozier.local.",
   addresses: ["192.168.1.42"],
   port: 9808,
   txt: { api_version: "1" },
@@ -24,7 +24,7 @@ const SCREENSHOT_AGENTS: readonly Agent[] = [
   {
     source_id: "screenshot-crozier",
     display_name: "Crozier",
-    workspace_label: "herdr-connect",
+    workspace_label: "crozier-mobile",
     tab_label: "mobile",
     agent_name: "claude",
     revision: 42,
@@ -54,7 +54,7 @@ const SCREENSHOT_AGENTS: readonly Agent[] = [
   {
     source_id: "screenshot-notes",
     display_name: "Release Notes",
-    workspace_label: "herdr-connect",
+    workspace_label: "crozier-docs",
     tab_label: "docs",
     agent_name: "claude",
     revision: 12,
@@ -65,7 +65,7 @@ const SCREENSHOT_AGENTS: readonly Agent[] = [
 
 const SCREENSHOT_RESPONSE: AgentsResponse = {
   api_version: 1,
-  source_name: "Herdr",
+  source_name: "Local Engine",
   source_online: true,
   refreshed_at: "2026-01-15T09:41:00.000Z",
   agents: [...SCREENSHOT_AGENTS],
