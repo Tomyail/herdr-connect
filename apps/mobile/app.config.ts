@@ -1,7 +1,11 @@
 import type { ExpoConfig } from "expo/config";
 
 const config: ExpoConfig = {
-  name: "Crozier",
+  // Native Xcode project/scheme name (via `expo prebuild`) — must stay "Herdr Connect"
+  // so it sanitizes to the existing HerdrConnect.xcodeproj/.xcworkspace/scheme that
+  // ios-release.mjs and Xcode Cloud hardcode. The App Store-facing name is
+  // ios.infoPlist.CFBundleDisplayName below.
+  name: "Herdr Connect",
   slug: "herdr-connect",
   icon: "./assets/icon.png",
   version: "0.1.0",
@@ -30,6 +34,7 @@ const config: ExpoConfig = {
     // Verified against @expo/config-plugins@56.0.13: ios/RequiresFullScreen.js
     // sets the ~ipad key; ios/Orientation.js only writes the base key.
     infoPlist: {
+      CFBundleDisplayName: "Crozier",
       ITSAppUsesNonExemptEncryption: false,
       NSBonjourServices: ["_herdr-connect._tcp"],
       NSLocalNetworkUsageDescription:
