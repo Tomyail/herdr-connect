@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "n
 import { spawn, spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { networkInterfaces } from "node:os";
 
 const mobileRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workspace = resolve(mobileRoot, "ios/HerdrConnect.xcworkspace");
@@ -125,8 +126,22 @@ function sleep(milliseconds) {
   return new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
 }
 
+function metroHost() {
+  for (const addresses of Object.values(networkInterfaces())) {
+    for (const address of addresses ?? []) {
+      if (address.family === "IPv4" && !address.internal) return address.address;
+    }
+  }
+  // `--localhost` Metro only binds the IPv6 loopback on some hosts, which
+  // both curl and expo-dev-launcher's bundle fetcher fail to reach over
+  // plain "localhost"/"127.0.0.1". Run Metro in LAN mode instead so it binds
+  // a real, unambiguous IPv4 address the Simulator (sharing the host's
+  // network stack) can always reach.
+  return "127.0.0.1";
+}
+
 function metroIsRunning() {
-  const result = spawnSync("curl", ["-fsS", `http://127.0.0.1:${metroPort}/status`], {
+  const result = spawnSync("curl", ["-fsS", `http://${metroHost()}:${metroPort}/status`], {
     cwd: mobileRoot,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
@@ -139,7 +154,7 @@ async function ensureMetro() {
 
   startedMetro = spawn(
     "pnpm",
-    ["exec", "expo", "start", "--dev-client", "--localhost", "--port", String(metroPort)],
+    ["exec", "expo", "start", "--dev-client", "--lan", "--port", String(metroPort)],
     {
       cwd: mobileRoot,
       env: process.env,
@@ -327,6 +342,12 @@ async function capture({ app, udid, device, scene, locale }) {
     "--terminate-running-process",
     udid,
     bundleId,
+    // expo-dev-launcher's native picker only auto-connects via LAN/Bonjour
+    // discovery, which never finds a `--localhost`-only Metro. --initialUrl
+    // is EXDevLauncherController's own bypass for exactly this case (see
+    // EXDevLauncherController.m's initialUrlFromProcessInfo).
+    "--initialUrl",
+    `http://${metroHost()}:${metroPort}`,
     "-appStoreScreenshotScene",
     scene,
     "-appStoreScreenshotLocale",
