@@ -35,8 +35,8 @@ const en = {
   "agents.detail.notPaired": "Go to Settings and pair this device with a daemon to get started.",
   "agents.detail.fingerprintMismatch": "The daemon certificate has changed. Go to Settings to pair again.",
   "agents.detail.revoked": "This device has been revoked from the daemon. Go to Settings to pair again.",
-  "agents.detail.daemonOutdated": "This daemon uses an older API version. Update Herdr Connect on your Mac, then try again.",
-  "agents.detail.appOutdated": "This app is too old for the daemon. Update Herdr Connect on your iPhone, then try again.",
+  "agents.detail.daemonOutdated": "This daemon uses an older API version. Update Crozier on your Mac, then try again.",
+  "agents.detail.appOutdated": "This app is too old for the daemon. Update Crozier on your iPhone, then try again.",
   "agents.summary.sourceOnline": "source online",
   "agents.summary.sourceOffline": "source offline",
   "agents.summary.count": "{count}",
@@ -97,7 +97,7 @@ const en = {
   "detail.voice.continuousModeDisabled": "Continuous conversation off.",
   "detail.voice.listening": "Listening…",
   "detail.voice.permissionTitle": "Voice input needs permission",
-  "detail.voice.permissionMessage": "Herdr Connect needs microphone and speech recognition access to turn your voice into text.",
+  "detail.voice.permissionMessage": "Crozier needs microphone and speech recognition access to turn your voice into text.",
   "detail.voice.permissionGrant": "Grant access",
   "detail.voice.error": "Voice input failed",
   "detail.interrupt": "Stop",
@@ -172,7 +172,7 @@ const en = {
   "pairing.success": "Paired successfully",
   "pairing.failed": "Pairing failed",
   "pairing.cameraPermissionTitle": "Camera access needed",
-  "pairing.cameraPermissionMessage": "Herdr Connect needs camera access to scan the pairing QR code",
+  "pairing.cameraPermissionMessage": "Crozier needs camera access to scan the pairing QR code",
   "pairing.grantCamera": "Grant access",
   "pairing.aliasSectionTitle": "Paired successfully",
   "pairing.aliasSectionBody": "Give this installation a name to tell it apart in the switcher.",
@@ -208,9 +208,9 @@ const en = {
   "instance.removeLocally": "Remove locally only",
   "instance.retry": "Retry",
 
-  "permission.android.title": "Allow discovering nearby Herdr daemons",
+  "permission.android.title": "Allow discovering nearby desktop daemons",
   "permission.android.message":
-    "Herdr Connect needs access to nearby devices to discover and connect to a Mac on the same local network.",
+    "Crozier needs access to nearby devices to discover and connect to a Mac on the same local network.",
   "permission.android.allow": "Allow",
   "permission.android.deny": "Don't allow",
 } as const;
@@ -242,8 +242,8 @@ const zhHans: Record<MessageKey, string> = {
   "agents.detail.notPaired": "前往设置配对设备以开始使用",
   "agents.detail.fingerprintMismatch": "daemon 证书已变更。请前往设置重新配对。",
   "agents.detail.revoked": "此设备已被 daemon 撤销。请前往设置重新配对。",
-  "agents.detail.daemonOutdated": "当前 daemon 使用的 API 版本过旧。请更新 Mac 上的 Herdr Connect 后重试。",
-  "agents.detail.appOutdated": "当前 App 对这个 daemon 来说过旧。请更新 iPhone 上的 Herdr Connect 后重试。",
+  "agents.detail.daemonOutdated": "当前 daemon 使用的 API 版本过旧。请更新 Mac 上的 Crozier 后重试。",
+  "agents.detail.appOutdated": "当前 App 对这个 daemon 来说过旧。请更新 iPhone 上的 Crozier 后重试。",
   "agents.summary.sourceOnline": "来源在线",
   "agents.summary.sourceOffline": "来源离线",
   "agents.summary.count": "{count} 个",
@@ -304,7 +304,7 @@ const zhHans: Record<MessageKey, string> = {
   "detail.voice.continuousModeDisabled": "已关闭连续对话",
   "detail.voice.listening": "正在识别…",
   "detail.voice.permissionTitle": "语音输入需要权限",
-  "detail.voice.permissionMessage": "Herdr Connect 需要麦克风与语音识别权限才能将你的语音转为文字。",
+  "detail.voice.permissionMessage": "Crozier 需要麦克风与语音识别权限才能将你的语音转为文字。",
   "detail.voice.permissionGrant": "授予权限",
   "detail.voice.error": "语音输入失败",
   "detail.interrupt": "叫停",
@@ -379,7 +379,7 @@ const zhHans: Record<MessageKey, string> = {
   "pairing.success": "配对成功",
   "pairing.failed": "配对失败",
   "pairing.cameraPermissionTitle": "需要相机权限",
-  "pairing.cameraPermissionMessage": "Herdr Connect 需要相机权限来扫描配对二维码",
+  "pairing.cameraPermissionMessage": "Crozier 需要相机权限来扫描配对二维码",
   "pairing.grantCamera": "授予权限",
   "pairing.aliasSectionTitle": "配对成功",
   "pairing.aliasSectionBody": "为这台安装实例起个名字，便于在切换器中区分。",
@@ -415,9 +415,9 @@ const zhHans: Record<MessageKey, string> = {
   "instance.removeLocally": "仅从本机删除",
   "instance.retry": "重试",
 
-  "permission.android.title": "允许发现附近的 Herdr daemon",
+  "permission.android.title": "允许发现附近的桌面端 daemon",
   "permission.android.message":
-    "Herdr Connect 需要访问附近设备，以发现并连接同一局域网中的 Mac。",
+    "Crozier 需要访问附近设备，以发现并连接同一局域网中的 Mac。",
   "permission.android.allow": "允许",
   "permission.android.deny": "暂不允许",
 };
@@ -465,8 +465,8 @@ const errorEn: Record<NetworkErrorCode, string> = {
   pairing_failed: "Pairing failed — check the secret and try again",
   pairing_qr_invalid: "Invalid pairing QR code — make sure you are scanning the correct code",
   not_credentials: "No stored device credentials found",
-  daemon_outdated: "This daemon API version is too old — update Herdr Connect on your Mac and try again",
-  app_outdated: "This app version is no longer supported by the daemon — update Herdr Connect and try again",
+  daemon_outdated: "This daemon API version is too old — update Crozier on your Mac and try again",
+  app_outdated: "This app version is no longer supported by the daemon — update Crozier and try again",
 };
 
 const errorZhHans: Record<NetworkErrorCode, string> = {
@@ -507,8 +507,8 @@ const errorZhHans: Record<NetworkErrorCode, string> = {
   pairing_failed: "配对失败——请检查密钥后重试",
   pairing_qr_invalid: "配对二维码无效——请确认扫描的是正确的二维码",
   not_credentials: "未找到已存储的设备凭据",
-  daemon_outdated: "daemon API 版本过旧——请更新 Mac 上的 Herdr Connect 后重试",
-  app_outdated: "此 App 版本已不受 daemon 支持——请更新 Herdr Connect 后重试",
+  daemon_outdated: "daemon API 版本过旧——请更新 Mac 上的 Crozier 后重试",
+  app_outdated: "此 App 版本已不受 daemon 支持——请更新 Crozier 后重试",
 };
 
 export const errorMessageBundles: Record<ResolvedLocale, Record<NetworkErrorCode, string>> = {

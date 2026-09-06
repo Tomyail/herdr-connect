@@ -22,8 +22,8 @@ const SCREENSHOT_SERVICE: DiscoveredService = {
 
 const SCREENSHOT_AGENTS: readonly Agent[] = [
   {
-    source_id: "screenshot-herdr-connect",
-    display_name: "Herdr Connect",
+    source_id: "screenshot-crozier",
+    display_name: "Crozier",
     workspace_label: "herdr-connect",
     tab_label: "mobile",
     agent_name: "claude",
@@ -90,7 +90,7 @@ const SCREENSHOT_INSTANCES: readonly DeviceCredentials[] = [
 
 const SCREENSHOT_HISTORY_COPY = {
   en: [
-    "## Herdr Connect",
+    "## Crozier",
     "",
     "Connected to the local daemon.",
     "",
@@ -101,7 +101,7 @@ const SCREENSHOT_HISTORY_COPY = {
     "- Waiting for your next instruction",
   ].join("\n"),
   "zh-Hans": [
-    "## Herdr Connect",
+    "## Crozier",
     "",
     "已连接到本地 daemon。",
     "",

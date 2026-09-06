@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.summary        = package['description']
   s.description    = package['description']
   s.license        = package['license'] || 'MIT'
-  s.author         = package['author'] || 'Herdr Connect'
+  s.author         = package['author'] || 'Crozier'
   s.homepage       = package['homepage'] || 'https://github.com/Tomyail/herdr-connect'
   s.platforms      = { :ios => '16.4' }
   s.source         = { git: 'https://github.com/Tomyail/herdr-connect.git' }

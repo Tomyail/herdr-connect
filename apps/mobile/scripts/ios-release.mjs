@@ -86,7 +86,7 @@ function prepare() {
   if (!existsSync(iosWorkspace)) {
     throw new Error(`Pod install 完成后仍未找到 workspace：${iosWorkspace}`);
   }
-  console.log(`iOS 工程已准备：Herdr Connect ${config.version} (${config.ios.buildNumber})`);
+  console.log(`iOS 工程已准备：Crozier ${config.version} (${config.ios.buildNumber})`);
 }
 
 function requiredEnv(name) {

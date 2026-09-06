@@ -9,7 +9,7 @@ export function ScreenHeader({ title, right }: { title: string; right?: ReactNod
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.eyebrow}>HERDR CONNECT</Text>
+        <Text style={styles.eyebrow}>CROZIER</Text>
         <Text style={styles.title}>{title}</Text>
       </View>
       {right}

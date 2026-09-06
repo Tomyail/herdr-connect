@@ -1,7 +1,7 @@
 import type { ExpoConfig } from "expo/config";
 
 const config: ExpoConfig = {
-  name: "Herdr Connect",
+  name: "Crozier",
   slug: "herdr-connect",
   icon: "./assets/icon.png",
   version: "0.1.0",
@@ -16,7 +16,7 @@ const config: ExpoConfig = {
     // writes this static value straight into Info.plist on every Xcode Cloud
     // run (see apps/mobile/ios/ci_scripts/ci_post_clone.sh), so an unbumped
     // retag fails the upload rather than silently reusing the old build.
-    buildNumber: "40",
+    buildNumber: "58",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
     // `requireFullScreen` is intentionally left unset (defaults to false).
@@ -33,7 +33,7 @@ const config: ExpoConfig = {
       ITSAppUsesNonExemptEncryption: false,
       NSBonjourServices: ["_herdr-connect._tcp"],
       NSLocalNetworkUsageDescription:
-        "Herdr Connect needs access to your local network to discover and connect to nearby Herdr daemons.",
+        "Crozier needs access to your local network to discover and connect to nearby desktop daemons.",
       CFBundleAllowMixedLocalizations: true,
       // NSAllowsLocalNetworking only exempts connections iOS classifies as
       // "local network" (same-subnet LAN, mDNS/.local); it does NOT cover
@@ -49,11 +49,11 @@ const config: ExpoConfig = {
         NSAllowsArbitraryLoads: true,
       },
       NSCameraUsageDescription:
-        "Herdr Connect uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
+        "Crozier uses the camera to scan the QR code shown by the desktop daemon when pairing a device.",
       NSPhotoLibraryUsageDescription:
-        "Herdr Connect accesses your photo library only when you choose a QR code image to pair with a nearby Herdr daemon.",
+        "Crozier accesses your photo library only when you choose a QR code image to pair with a nearby desktop daemon.",
       NSSpeechRecognitionUsageDescription:
-        "Herdr Connect uses speech recognition to turn your voice into text in the message composer.",
+        "Crozier uses speech recognition to turn your voice into text in the message composer.",
     },
   },
   android: {
@@ -83,8 +83,8 @@ const config: ExpoConfig = {
     [
       "expo-speech-recognition",
       {
-        microphonePermission: "Herdr Connect uses the microphone to turn your voice into text in the message composer.",
-        speechRecognitionPermission: "Herdr Connect uses speech recognition to turn your voice into text in the message composer.",
+        microphonePermission: "Crozier uses the microphone to turn your voice into text in the message composer.",
+        speechRecognitionPermission: "Crozier uses speech recognition to turn your voice into text in the message composer.",
       },
     ],
     "./plugins/withAndroidCleartextTraffic.cjs",

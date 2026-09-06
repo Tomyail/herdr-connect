@@ -98,7 +98,7 @@ APP_BUILD_GRADLE="${ANDROID_DIR}/app/build.gradle"
 [[ -f "${APP_BUILD_GRADLE}" ]] || fail "Expo prebuild 未生成 android/app/build.gradle"
 [[ -x "${ANDROID_DIR}/gradlew" ]] || chmod +x "${ANDROID_DIR}/gradlew"
 
-SIGNING_MARKER='Herdr Connect release signing'
+SIGNING_MARKER='Crozier release signing'
 if ! grep -Fq "${SIGNING_MARKER}" "${APP_BUILD_GRADLE}"; then
   printf '\n// %s\napply from: file("${rootDir}/../scripts/android-release-signing.gradle")\n' \
     "${SIGNING_MARKER}" >>"${APP_BUILD_GRADLE}"

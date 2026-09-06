@@ -69,7 +69,7 @@ function Sidebar({
   return (
     <SafeAreaView edges={["top", "left"]} style={styles.sidebarSafeArea}>
       <View style={styles.sidebar}>
-        <Text style={styles.sidebarEyebrow}>HERDR CONNECT</Text>
+        <Text style={styles.sidebarEyebrow}>CROZIER</Text>
         {destinations.map((destination) => {
           const selected = destination === active;
           const iconName = selected ? sidebarIcons[destination].active : sidebarIcons[destination].inactive;

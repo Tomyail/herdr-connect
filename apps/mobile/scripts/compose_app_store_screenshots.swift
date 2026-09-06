@@ -383,7 +383,7 @@ private struct MarketingScreenshot: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center) {
-                    Text("HERDR CONNECT")
+                    Text("CROZIER")
                         .font(
                             .system(
                                 size: device == .iphone ? 23 : 27,
