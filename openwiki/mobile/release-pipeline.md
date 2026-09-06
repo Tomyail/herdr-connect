@@ -4,8 +4,8 @@ title: Mobile Release Pipeline
 description: How iOS TestFlight releases, fixture-driven App Store screenshot generation, and the (currently dormant) Android release workflow work for the Herdr Connect mobile app.
 tags: [mobile, ios, android, release, testflight, screenshots, fastlane]
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.0
+    at: 2026-09-06T20:57:05.446Z
 sources:
   - id: openwiki-source-7e2feff63ac717cadd6c55fa
     resource: repo://.github/workflows/android-release.yml
@@ -27,7 +27,7 @@ sources:
     resource: repo://apps/mobile/src/screenshot-fixtures.ts
   - id: openwiki-source-570db0334c73da0ce96799d8
     resource: repo://docs/maintainers/releasing.md
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-09-06T20:57:05.446Z" }
 ---
 
 # Mobile Release Pipeline
@@ -74,7 +74,7 @@ App Store screenshots never connect to a real daemon and never touch the develop
 
 ### Fixture data: `src/screenshot-fixtures.ts`
 
-Defines three scenes — `agents`, `detail`, `settings` (`ScreenshotSceneName`) — plus stable fake data: a `DiscoveredService` (`MacBook Pro · Herdr`, port 9808), four agents in different interaction states (`working`, `ready_input`, `blocked`), an `AgentsResponse` with `source_online: true`, two `DeviceCredentials` instances (fake fingerprints/tokens), and localized history markdown in English and Simplified Chinese. `createScreenshotConnection()` returns a `ConnectionValue` in the `connected` phase with `streamStatus: "live"` and **all callbacks as no-ops**, so screenshot scenes cannot mutate real credentials.
+Defines three scenes — `agents`, `detail`, `settings` (`ScreenshotSceneName`, parsed from launch arguments by `parseScreenshotScene`) — plus stable fake data: a `DiscoveredService` (`MacBook Pro · Daemon`, port 9808), four agents in different interaction states (`working`, `ready_input`, `blocked`), an `AgentsResponse` with `source_online: true`, two `DeviceCredentials` instances (fake fingerprints/tokens), and history markdown whose copy is locale-aware (`createScreenshotHistory` accepts `"en"` or `"zh-Hans"`). `createScreenshotConnection()` returns a `ConnectionValue` in the `connected` phase with `streamStatus: "live"` and **all callbacks as deliberate no-ops** (`refresh`, `switchAgent`, `unpair`, `switchInstance`, `forgetInstance`), so screenshot runs never touch a real daemon and cannot mutate the developer's credentials.
 
 ### Debug-only scene: `src/AppStoreScreenshotScene.tsx`
 
