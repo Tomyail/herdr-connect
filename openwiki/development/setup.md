@@ -4,13 +4,19 @@ title: Development Setup
 description: How to build, run, and develop Herdr Connect from source for contributors
 tags: [development, setup, build, dependencies, environment]
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T21:31:01.471Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T21:49:26.805Z
 sources:
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
   - id: openwiki-source-c0c4c2d95f96c5ada6f3e2a1
     resource: repo://apps/mobile/.mise.toml
   - id: openwiki-source-e86fe7b76c693666bc2cb828
     resource: repo://apps/mobile/package.json
+  - id: openwiki-source-c110710c5650b0e3f7548a06
+    resource: repo://apps/mobile/src/i18n/messages.ts
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
   - id: openwiki-source-7bd911fdd3026b7b031a01e3
     resource: repo://go.mod
   - id: openwiki-source-07d77e7f317cf6efc47a9b12
@@ -23,7 +29,7 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
-generated: { by: "openwiki/0.4.3", at: "2026-08-31T23:04:17.419Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T21:49:26.805Z" }
 ---
 
 # Development Setup
@@ -297,6 +303,16 @@ Or use `avahi-browse` on Linux:
 ```sh
 avahi-browse --terminate _herdr-connect._tcp
 ```
+
+## Language Conventions
+
+### Code Language Rule (CLAUDE.md)
+
+All code identifiers (function/type/variable names), error messages, log output, test function names, and test assertion messages MUST be in English. Chinese test names and error strings in older code are legacy — do not add new ones, and convert them to English when you touch the surrounding code. Code comments may be written in Chinese. User-facing UI copy is exempt: it goes through the i18n system (`/apps/mobile/src/i18n/`), not this rule.
+
+### Documentation Language Policy (AGENTS.md)
+
+For context on where language rules apply: public-facing user documentation (root README, installation and release notes, privacy and security policies, the contribution guide, and community health files) uses the English version as canonical, with Simplified Chinese translations in `docs/zh-CN/`. When modifying public docs, keep the Chinese translations in sync or explicitly mark them as pending. Internal design documents, domain language, ADRs, specs, plans, reviews, and handover documents may continue in Simplified Chinese. Code identifiers, protocol fields, enum values, commands, and file names may stay in English where there is no accurate Chinese translation.
 
 ## IDE Setup
 

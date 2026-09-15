@@ -4,11 +4,13 @@ title: Herdr Connect
 description: Local-first companion for Herdr that enables LAN discovery and control of AI agents from mobile devices
 tags: [herdr, lan-discovery, mobile, ios, react-native, go]
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T21:49:26.805Z
 sources:
   - id: openwiki-source-7e2feff63ac717cadd6c55fa
     resource: repo://.github/workflows/android-release.yml
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
   - id: openwiki-source-39c3295efc089133e87a9c80
     resource: repo://CONTEXT.md
   - id: openwiki-source-570db0334c73da0ce96799d8
@@ -19,7 +21,7 @@ sources:
     resource: repo://docs/security/lan-tls-pairing.md
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T21:49:26.805Z" }
 ---
 
 # Herdr Connect
@@ -46,6 +48,25 @@ Herdr Connect is **not**:
 - A replacement for Herdr itself — it requires a separate Herdr installation
 
 All LAN communication is encrypted with TLS (self-signed certificate with fingerprint pinning) and authenticated with per-device bearer tokens obtained through [pairing](protocol/secure-pairing.md). There is no end-to-end encryption layer yet — TLS terminates at the daemon.
+
+## Task Routing
+
+Use this map to find the right page for a task:
+
+| Task / question | Go to |
+| --- | --- |
+| How is the system put together (components, data flow, security model)? | [Architecture Overview](architecture/overview.md) |
+| How does the daemon talk to the Herdr CLI? | [Herdr Source Adapters](domain/herdr-source-adapters.md) |
+| How is agent state synchronized and persisted? | [Agent Projection](domain/agent-projection.md) |
+| What CLI commands exist (service, pairing, devices, diagnostics)? | [CLI Commands](cli/commands.md) |
+| How does the iOS app discover, pair, and interact? | [iOS Client](mobile/ios-client.md) |
+| How are TestFlight/screenshot/Android releases built? | [Mobile Release Pipeline](mobile/release-pipeline.md) |
+| How do pairing, TLS pinning, and device trust work? | [Secure Pairing & TLS Protocol](protocol/secure-pairing.md) |
+| How do I set up a dev environment and build from source? | [Development Setup](development/setup.md) |
+| How do I run or write tests, and what does each suite protect? | [Testing Guide](development/testing.md) |
+| **Code-language rules** — which language for identifiers, error messages, logs, test names, assertion messages, comments, and UI copy? | [Development Setup](development/setup.md) and [Testing Guide](development/testing.md) |
+
+The code-language convention (from `CLAUDE.md`): all code identifiers, error messages, log output, test function names, and test assertion messages **must be in English** (Chinese ones in older code are legacy — do not add new ones, and convert them when touching the surrounding code). Code comments may be written in Chinese. User-facing UI copy follows the i18n system (`apps/mobile/src/i18n/`), not this rule. Setup and workflow details live in [Development Setup](development/setup.md); how the rule applies to tests, with concrete legacy examples, lives in [Testing Guide](development/testing.md).
 
 ## Current Scope
 
@@ -77,20 +98,6 @@ Not yet implemented:
 - ❌ End-to-end encryption (HPKE-based protocol exists but is not yet integrated)
 - ❌ Remote connections outside LAN (relay milestone)
 - ❌ Remote push notifications (APNs/Expo Push)
-
-## Documentation Structure
-
-Start here for project context, then explore specific areas:
-
-- **[Architecture Overview](architecture/overview.md)** — System components, data flow, security model, and design principles
-- **[Herdr Source Adapters](domain/herdr-source-adapters.md)** — How the daemon interfaces with Herdr CLI
-- **[Agent Projection](domain/agent-projection.md)** — State synchronization and persistence
-- **[CLI Commands](cli/commands.md)** — Daemon management, pairing, device management, and diagnostics
-- **[iOS Client](mobile/ios-client.md)** — Mobile app structure, pairing flow, discovery, and interaction
-- **[Mobile Release Pipeline](mobile/release-pipeline.md)** — fastlane-free iOS TestFlight releases via `asc`, App Store screenshot generation, and the dormant Android release workflow
-- **[Secure Pairing & TLS Protocol](protocol/secure-pairing.md)** — LAN pairing, TLS pinning, device lifecycle, and future E2EE design
-- **[Development Setup](development/setup.md)** — Build instructions and development workflow
-- **[Testing Guide](development/testing.md)** — Test suites and quality practices
 
 ## Quick Links
 

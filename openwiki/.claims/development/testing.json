@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b09ed775982e4db79793e86ff4d90e3fa893dedae166c3199e45ae4b81b7ab23",
+  "pageVersion": "sha256:e0cae3f4cd82ac8b6bddb3f324ee6d7d97b16dc00d7c46589d072e9b429a2b80",
   "claims": [
     {
       "id": "claim_564ffed8b4444598bc0086c333d71f74",
@@ -199,10 +199,42 @@
           "version": "repo-lines-v1:sha256:6241e283f2bb6361a5358a8d28fe03561d30a7b37a14fd2587e71a8fdd452b3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI0MWUyODNmMmJiNjM2MWE1MzU4YThkMjhmZTAzNTYxZDMwYTdiMzdhMTRmZDI1ODdlNzFhOGZkZDQ1MmIzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjI0MWUyODNmMmJiNjM2MWE1MzU4YThkMjhmZTAzNTYxZDMwYTdiMzdhMTRmZDI1ODdlNzFhOGZkZDQ1MmIzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU5NmQwMmEzMDNjMjFiOWZhZmQxMGVkNjQ1NGNjMGQ0YmYwNzA0Zjg3N2UwNzYyOWZkZWM4NjBmODU5ZmE5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjBjZmUxNWUwZWM3NjZhNTdiMWZiNmVhZTVlZDc5MTM2OTJjZDRkZDcwZGM1ZjI5YmZmZjQ4ZGVkMzJjOGY4MyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_536adddd0a6e4526969d4fb431bff97c",
+      "statement": "Repository convention (CLAUDE.md): test function names and test assertion messages must be in English; legacy Chinese test names and assertion strings must not be added and must be converted to English when touching the surrounding tests. Code comments may remain Chinese, and UI copy follows the i18n system.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L11-L13",
+          "version": "repo-lines-v1:sha256:96a2249ea6669f05a30f0ebb59116e4bf187a4271ceb3fa7a147e720a4622bce:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzIzODk4ZGVhZTRjOGJlY2M1OTJhMjQwMmJjZjRhNjc4MDdlYjE0ODQyZjI3Yzc1YjRkYzA1NzViYWU0ZDY4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU5NGFhNGZkYTYyMDAwYTAxYjY4ZmYzM2EyM2YxMzBhZWFlMzExYjFlYmNjYjJkMDhiNWQ2MzEwMjhkNzUyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ0MjRmNGE0MmYzMjk5YjQyNGJkZmRjYzI4YTM2ZGU0ZWY3M2FmMGEzN2FkM2RjMjRjMDU1Mzk5MzJiYTcxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9081b0f3aed342b0991503be9f4e3212",
+      "statement": "Legacy Chinese test names and assertion messages still exist in the tree as concrete conversion targets: Chinese-named TestSelfRevoke* functions in internal/demolan/auth_test.go, Chinese-named Test* functions and a Chinese t.Fatalf message in internal/daemoncli/cli_test.go, a Chinese t.Fatal in cmd/herdr-connect/main_test.go, and Chinese test titles in apps/mobile test files such as agent-favorites.test.ts.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/agent-favorites.test.ts#L67-L80",
+          "version": "repo-lines-v1:sha256:da327c874e3d84ff8d2f5415d2c6b20419bb8df2eaf02f8d726993eddbb9af7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3NWMxMGQ2MWQ3OTVlOGViYmIwNzU0ODA5YjNjMzUwYzkzYThmMjBmYWVjYTNjZDExZTg0MDVkNjgwZDA5ZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlOGYzMWI2MDBmNGY0MjRkZDU1M2UzNzM5MmE1NjYzNGNjZDBlMDkwZTk2YTlhNDgxN2NlMDJmNTJiZDY4NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwODRkMDdjNDZiMjM5YmRhNmY0ZjUzMTQ3ZmQwNzllYzRjNmI0NGM3MjQ1MmJmMDg0M2Q1N2E1OGI5OTUxNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhMDVmZmZjMTVhNDVlYTIyYTZiOTUyOTYwODJkMjQ5NWYyNjMxNTJjNGEyMTQxMjcwYjk2MGMzM2VkZTRmYjUifQ"
+        },
+        {
+          "resource": "repo://cmd/herdr-connect/main_test.go#L36-L36",
+          "version": "repo-lines-v1:sha256:4a933d1a9252f15a7ccc7fdb9ac8db798e83146d2c4fcb9a1799bc9ceb74f506:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE5MzNkMWE5MjUyZjE1YTdjY2M3ZmRiOWFjOGRiNzk4ZTgzMTQ2ZDJjNGZjYjlhMTc5OWJjOWNlYjc0ZjUwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE5MzNkMWE5MjUyZjE1YTdjY2M3ZmRiOWFjOGRiNzk4ZTgzMTQ2ZDJjNGZjYjlhMTc5OWJjOWNlYjc0ZjUwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzU2MzUzNzRiMGU5MTA5NzE0NjlhM2Q5N2E1OTM4YmI3NTU1YmRjYmRkY2U4NDg0M2RjYWY2ZDhmYzM0YTM3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmEyZmQ4NDMwODQzOTI3YjYyZWE0ZjNmM2JhODJkNWQ5MDFiNDUzMDU1MDUzMDFmZWRhMTRlMGUyOGY5N2IyOSJ9"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli_test.go#L32-L325",
+          "version": "repo-lines-v1:sha256:a628799c744d84e503ff8443f0d44b475bf67c3ab014e8f7c633012e9a62f1b3:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjk0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NDA0MmZiN2YwMTkwY2Y4NzBjN2M2NmY3ZmQ0ODY3YmE5MDBmMTdmMGE5MjA2YjgzYjk3MTA5MWRlYzdiMjAyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5YmQwMmQ4MmVkYWIzMDc5NTY5NzJkMDBjYTBlZjAxYWU1NzIwYTQxMjhiNmYyNmEzYWRhNjcwYzZkYjA4Yzc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzYTQwYzI4ZGE1OGYzZWJkMGQ1ZmY0YWEwOTc1ZDFhMzE0YjJlNjQyMThlOGJjZGI3MjkwZTA0YTMwMjNhNzY3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmMDAzNTFiOWFlZmY2ZjM4NWIxOTAyNjIwNTk2M2RlOWQxMWI5NTY1MTRkMDhhM2E5YmQ5NDZhYzA3NjQzZTAwIn0"
+        },
+        {
+          "resource": "repo://internal/demolan/auth_test.go#L246-L269",
+          "version": "repo-lines-v1:sha256:6ef0150ed84f982fce66a8e725655e5e25a9311450b2299c91a79856c198e7a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjM2ZlNTQyYmNmMzYwNmE4ZmYxNTUyNGVkZTcwNzQzZjkyNWIzZmQ2MzlhYzJmNDllYTQ1NjZmYWM0NTBmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGEzM2RkYjI1Y2ZiZTEyZjRhMTU2YzEyMWE2YmVjOGZhZGE5ZmE2NTdhM2IzYmUyNzRlMzdlMDczOWE1MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMTNkOGYzNTdiNzhjZDJiYTgyMzI2ZDdkZDQ3NWZjZjg1NDdiNzk3MDJjZGFjMDE2ZmI3MzgxYzhkYTc5M2YifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T21:49:26.805Z"
   }
 }

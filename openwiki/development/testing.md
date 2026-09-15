@@ -4,8 +4,8 @@ title: Development Testing
 description: Test suites across Go internal packages, TypeScript mobile unit tests, protocol conformance tests, and integration scripts, with how to run each suite and what invariants it protects.
 tags: [testing, conformance, unit-tests, integration-tests, mobile, protocol]
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-15T21:49:26.805Z
 sources:
   - id: openwiki-source-e86fe7b76c693666bc2cb828
     resource: repo://apps/mobile/package.json
@@ -29,6 +29,12 @@ sources:
     resource: repo://apps/mobile/src/screenshot-fixtures.test.ts
   - id: openwiki-source-d72f4ac504cc4295762c4136
     resource: repo://apps/mobile/src/session-registry.test.ts
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
+  - id: openwiki-source-ad2c63ba5cf8daff9d6ca28f
+    resource: repo://cmd/herdr-connect/main_test.go
+  - id: openwiki-source-e99b28a92903fdb3d538d94a
+    resource: repo://internal/daemoncli/cli_test.go
   - id: openwiki-source-e799143838233b0e8981fdbd
     resource: repo://internal/demolan/auth_test.go
   - id: openwiki-source-ba429e1c8db84aa50c809255
@@ -41,7 +47,7 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-d7d84306409d5a2bb025542b
     resource: repo://protocol/protocol_test.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-15T21:49:26.805Z" }
 ---
 
 # Development Testing
@@ -63,6 +69,21 @@ The project has five test entrypoints, exposed as pnpm scripts in the root `pack
 ### Mobile suite wiring
 
 The mobile package's `test` script is `node --import tsx --test src/*.test.ts src/i18n/*.test.ts src/notifications/*.test.ts src/theme/*.test.ts modules/pinned-stream/src/*.test.ts` — every test file is a colocated `*.test.ts` next to its module, and adding a new test file inside those directories requires no registration step. Because the runner is Node (not a React Native runtime), tests must target pure functions and reducers, not components or native modules.
+
+## Test Names and Assertion Messages Must Be English
+
+The repository's coding convention (CLAUDE.md) is: all code identifiers — including **test function names and test assertion messages** — must be in English. Chinese test names and assertion strings in older code are legacy artifacts, not patterns to follow:
+
+- **Do not add new ones.** Every new Go `func TestXxx` name, `t.Fatal`/`t.Errorf`/`Errorf` message, and every Node `test("...", ...)` title plus its assertion messages must be English.
+- **Convert them when you touch the surrounding tests.** If you edit a test that still has a Chinese name or Chinese assertion messages, rename/translate them in the same change rather than leaving the legacy form next to your edit.
+
+Concrete legacy examples still in the tree today:
+
+- Go test function names: `TestSelfRevoke已被吊销的Token不能再次自吊销` and `TestSelfRevoke只吊销调用方自己不影响其它设备` in `internal/demolan/auth_test.go`; `Test来源错误不会把敏感内容写入状态或日志`, `Test帮助版本和解析错误不会初始化来源或数据库`, and the other Chinese-named `Test*` functions in `internal/daemoncli/cli_test.go`.
+- Go assertion messages: `t.Fatal("addr 不应出现在公开版 source factory")` in `cmd/herdr-connect/main_test.go` and `t.Fatalf("stdout 不是 JSON: ...")` in `internal/daemoncli/cli_test.go`.
+- TypeScript mobile test titles: e.g. `test("空快照不剔除:断线/加载瞬间防误清,直通原引用", ...)` in `apps/mobile/src/agent-favorites.test.ts` and the Chinese test titles throughout `apps/mobile/src/agent-filter.test.ts`.
+
+Note the boundary: **code comments may remain in Chinese** (`// 同一 secret 不能再次使用。` in `auth_test.go` is fine), and user-facing UI copy is governed by the i18n system, not this rule. Only test names and assertion messages must be English.
 
 ## Go Unit Tests
 

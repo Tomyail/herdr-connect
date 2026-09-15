@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:76c8e285e4659960fd841862acb527a712ca5f30ea553996deef55a8ab8849cb",
+  "pageVersion": "sha256:e7698617b87c9c04b75bae57aa01bf652ed8dece749533cb5ee10e426715f7c9",
   "claims": [
     {
       "id": "claim_a9bc93cd14aa4879921d86b4f1adb25c",
@@ -157,10 +157,44 @@
           "version": "repo-file-v1:sha256:ff522ebc5aa37fc8c43b377e3f4f33ec54f2b041aa419efa5d712ecf4841a05c"
         }
       ]
+    },
+    {
+      "id": "claim_48c4ba3c7a404e6b872370e098e39b5b",
+      "statement": "Per CLAUDE.md, all code identifiers, error messages, log output, test function names, and test assertion messages must be in English; legacy Chinese test names and error strings must not be extended and are converted to English when surrounding code is touched. Code comments may be written in Chinese.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md",
+          "version": "repo-file-v1:sha256:e1a5bdcde9857498b2a05d21a05070e8cbeac1d81e04c1a998c624ef6fe8e017"
+        }
+      ]
+    },
+    {
+      "id": "claim_d794706ca6704faba299ec89caba16b7",
+      "statement": "User-facing UI copy is exempt from the English-only code language rule and is handled through the i18n system in apps/mobile/src/i18n/.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md",
+          "version": "repo-file-v1:sha256:e1a5bdcde9857498b2a05d21a05070e8cbeac1d81e04c1a998c624ef6fe8e017"
+        },
+        {
+          "resource": "repo://apps/mobile/src/i18n/messages.ts",
+          "version": "repo-file-v1:sha256:013dbd944f8fe74f76577b029d704a10baccc809d4361d74cff00b60a92378b7"
+        }
+      ]
+    },
+    {
+      "id": "claim_f749f5dc00304c2a8f0c5a21c297b6ed",
+      "statement": "Per AGENTS.md, public user documentation is canonical in English (root README, installation/release notes, privacy and security policies, contribution guide, community health files), with Simplified Chinese translations in docs/zh-CN/; internal design docs, domain language, ADRs, specs, plans, reviews, and handover documents may remain in Simplified Chinese.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md",
+          "version": "repo-file-v1:sha256:77667e9d1c514a66e1aaa0a104654b401e5a10635e689a380dcdbe18aae81c45"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-03T21:31:01.471Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-15T21:49:26.805Z"
   }
 }
