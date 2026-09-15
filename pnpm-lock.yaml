@@ -36,8 +36,8 @@ importers:
         specifier: ^7.18.2
         version: 7.18.10(@react-navigation/native@7.3.18(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native-safe-area-context@5.9.1(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native-screens@4.27.0(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       '@tomyail/react-native-kickstart-exchange':
-        specifier: 0.1.0
-        version: 0.1.0(expo-modules-core@56.0.25(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(expo@56.0.21)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
+        specifier: 0.2.0
+        version: 0.2.0(expo-modules-core@56.0.25(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(expo@56.0.21)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       expo:
         specifier: ~56.0.16
         version: 56.0.21(@babel/core@7.29.7)(@expo/dom-webview@56.0.6)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
@@ -979,8 +979,8 @@ packages:
   '@sinclair/typebox@0.27.12':
     resolution: {integrity: sha512-hhyNJ+nbR6ZR7pToHvllEFun9TL0sbL+tk/ON75lo+Xas054uez98qRbsuNt7MBCyZKK4+8Yli/OAGZhmfBZ/g==}
 
-  '@tomyail/react-native-kickstart-exchange@0.1.0':
-    resolution: {integrity: sha512-szo/v4/c07RKRmvYZsq904gxNiMbDcRLafcNvZu+6eV5ihO38wsedZcwcuPeOrFJ/Ipi9FMI63nDpNXsaqpWQQ==}
+  '@tomyail/react-native-kickstart-exchange@0.2.0':
+    resolution: {integrity: sha512-Umkw/zE2hF3v4cVZaLWUuFVi+yE1egxsjL4X55uAx7OLE+69Uj5E0PZgsPEj5jB0f68YPq7ncdneExOW6BAXOQ==}
     peerDependencies:
       expo: '>=54'
       expo-modules-core: '>=2'
@@ -3876,7 +3876,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.12': {}
 
-  '@tomyail/react-native-kickstart-exchange@0.1.0(expo-modules-core@56.0.25(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(expo@56.0.21)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)':
+  '@tomyail/react-native-kickstart-exchange@0.2.0(expo-modules-core@56.0.25(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3))(expo@56.0.21)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)':
     dependencies:
       expo: 56.0.21(@babel/core@7.29.7)(@expo/dom-webview@56.0.6)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
       expo-modules-core: 56.0.25(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
