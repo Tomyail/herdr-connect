@@ -1,19 +1,28 @@
 ---
 type: "Reference"
 title: "iOS Mobile Client"
-openwiki_generated: true
+description: The React Native/Expo iOS app (apps/mobile), displayed as "Crozier", that discovers Herdr Connect daemon installations over Bonjour, pairs via QR, and presents agents to their owner.
+tags: [mobile, ios, react-native, expo, pairing, bonjour, agents]
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-03T21:31:01.471Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-a6ba9053969a3e00cd971742
     resource: repo://apps/mobile/app.config.ts
+  - id: openwiki-source-0476f95fa65017fa5f69c9ee
+    resource: repo://apps/mobile/modules/pinned-fetch/index.ts
   - id: openwiki-source-995bb1cd56a296e6ac7f3df8
     resource: repo://apps/mobile/modules/pinned-fetch/ios/PinnedTrustEvaluator.swift
   - id: openwiki-source-8caa1ed5da285a5ed12f3882
     resource: repo://apps/mobile/modules/pinned-stream/ios/PinnedStreamModule.swift
   - id: openwiki-source-a04d6c803675fbfe778f6010
     resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
+  - id: openwiki-source-e86fe7b76c693666bc2cb828
+    resource: repo://apps/mobile/package.json
+  - id: openwiki-source-a2f946fc60a8fedc84c672fc
+    resource: repo://apps/mobile/scripts/android-release.sh
+  - id: openwiki-source-be755051e7015fe6b4486c30
+    resource: repo://apps/mobile/scripts/ios-release.mjs
   - id: openwiki-source-b57c14e2289bd72ec98a37db
     resource: repo://apps/mobile/src/agent-favorites-storage.ts
   - id: openwiki-source-38b1150eee85f40b715de4da
@@ -28,10 +37,16 @@ sources:
     resource: repo://apps/mobile/src/credentials.ts
   - id: openwiki-source-1c00c5e46276a4db0e941f92
     resource: repo://apps/mobile/src/discovery-match.ts
+  - id: openwiki-source-cba7939acaf44666c79c3cce
+    resource: repo://apps/mobile/src/discovery.ts
   - id: openwiki-source-2da2051c8302a8d6fdfd2aca
     resource: repo://apps/mobile/src/host-fallback.ts
   - id: openwiki-source-c890f5c82333113835480c0a
     resource: repo://apps/mobile/src/i18n/I18nContext.tsx
+  - id: openwiki-source-b4da6802afa72ab56c1dc0ff
+    resource: repo://apps/mobile/src/i18n/locale.ts
+  - id: openwiki-source-c110710c5650b0e3f7548a06
+    resource: repo://apps/mobile/src/i18n/messages.ts
   - id: openwiki-source-ba3c1aaf102f6f4307cebe0e
     resource: repo://apps/mobile/src/instance-alias.ts
   - id: openwiki-source-e22812b6232342b6874f6df8
@@ -52,13 +67,12 @@ sources:
     resource: repo://apps/mobile/src/Settings.tsx
   - id: openwiki-source-7b5a9165da5d011e9f652a26
     resource: repo://apps/mobile/src/SplitLayout.tsx
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T21:31:01.471Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
-
 
 # iOS Mobile Client
 
-The iOS client (`/apps/mobile/`) is a React Native application that pairs with one or more Herdr Connect daemon installations via QR code, discovers daemons via Bonjour, displays agent state, and interacts with agents (view output, switch focus, send text, interrupt). Each paired installation gets its own credential record and its own parallel connection session; switching instances is instant because all sessions stay live. The app is distributed via TestFlight beta and requires a development build due to native service discovery and pinned-fetch modules.
+The iOS client (`/apps/mobile/`, package `@herdr-connect/mobile`) is a React Native application that pairs with one or more Herdr Connect daemon installations via QR code, discovers daemons via Bonjour, displays agent state, and interacts with agents (view output, switch focus, send text, interrupt). The App Store-facing display name is **Crozier** (`ios.infoPlist.CFBundleDisplayName` in `app.config.ts`); the native Xcode project/scheme remains "Herdr Connect" because `ios-release.mjs` and the build scripts hardcode it. Each paired installation gets its own credential record and its own parallel connection session; switching instances is instant because all sessions stay live. The app is distributed via TestFlight beta and requires a development build due to the native pinned-fetch/pinned-stream modules.
 
 ## Architecture
 
@@ -127,7 +141,7 @@ The app runs at native iPad resolution (`supportsTablet: true` in `app.config.ts
 
 ## Connection & Pairing Flow
 
-The app uses `@inthepocket/react-native-service-discovery` for Bonjour browsing and a custom pinned-fetch native module for TLS-pinned HTTPS communication.
+The app uses `@dawidzawada/bonjour-zeroconf` (`discovery.ts` wraps its `BonjourScanner` for `_herdr-connect._tcp` on the `local` domain) for Bonjour browsing and a custom pinned-fetch native module for TLS-pinned HTTPS communication. The wrapper normalizes scan results into `DiscoveredService` (`name`, `hostName`, `addresses`, `port`) but the library does not surface TXT records (`txt` is always `{}`), so daemon identity is verified by the pinned TLS probe, not by mDNS metadata.
 
 ### Pinned-Fetch Module
 
@@ -135,7 +149,7 @@ The pinned-fetch module (`/apps/mobile/modules/pinned-fetch/`) is an iOS-only Ex
 
 Because iOS also runs its own system-level ATS trust evaluation independently of the delegate (and rejects the SAN-less self-signed certificate on non-local-network paths like Tailscale), `app.config.ts` sets `NSAllowsArbitraryLoads: true` so that `PinnedTrustEvaluator` is the sole TLS trust decision for every request to the daemon, on every network path.
 
-Error codes are deliberately limited (`fingerprint_mismatch`, `tls_handshake_failed`, `timeout`, `network_error`, `invalid_url`, `unsupported_platform`) to avoid leaking server state to unauthenticated callers.
+Error codes are deliberately limited (`fingerprint_mismatch`, `tls_handshake_failed`, `timeout`, `network_error`, `invalid_url`, `unsupported_platform`) to avoid leaking server state to unauthenticated callers. On any non-iOS platform (and when the native module is not linked), `pinnedFetch` throws `PinnedFetchError("unsupported_platform")` without touching the network — the module's JS entry (`modules/pinned-fetch/index.ts`) is the single platform gate.
 
 ### Pinned-Stream Module
 
@@ -147,7 +161,7 @@ Key characteristics:
 
 - **Dead-connection detection** — 30-second request timeout (daemon sends a 15-second heartbeat; two missed heartbeats trigger `.timedOut`)
 - **One active stream per instance** — A second `startStream` call silently replaces the previous stream
-- **Non-iOS platforms** — Throws `unsupported_platform`, no network touched
+- **Non-iOS platforms** — Throws `unsupported_platform`, no network touched (the `ConnectionProvider` exposes `streamSupported: Platform.OS === "ios"`, so only iOS opts into SSE; other platforms rely on polling alone)
 
 ## Multi-Instance Credential Model
 
@@ -243,8 +257,7 @@ Favorites are a purely client-side, per-instance set persisted in MMKV (`agent-f
 
 ### `screenshot-launch-options` native module
 
-An iOS-only Expo native module read at `App.tsx` startup (`__DEV__`-guarded) that returns launch options (`scene`, `locale`) passed to a Debug build, powering deterministic App Store screenshot scenes (`AppStoreScreenshotScene`, `screenshot-fixtures.ts`, `ConnectionFixtureProvider` — a context provider that supplies a fixed `ConnectionValue` without starting Bonjour, polling, or SSE). The JS binding loads the native module optionally so Android and Expo Go run the same bundle harmlessly; production never reaches the screenshot route due to the compile-time `__DEV__` guard.
-- **Graceful degradation** — Polling always covers freshness if SSE is unavailable
+An iOS-only Expo native module read at `App.tsx` startup (`__DEV__`-guarded) that returns launch options (`scene`, `locale`) passed to a Debug build, powering deterministic App Store screenshot scenes (`AppStoreScreenshotScene`, `screenshot-fixtures.ts`, `ConnectionFixtureProvider` — a context provider that supplies a fixed `ConnectionValue` without starting Bonjour, polling, or SSE). The JS binding loads the native module optionally so Android and Expo Go run the same bundle harmlessly; production never reaches the screenshot route due to the compile-time `__DEV__` guard. (See [Mobile Release Pipeline](../mobile/release-pipeline.md) for the full screenshot pipeline.)
 
 ### Credential Storage
 
@@ -490,10 +503,9 @@ All stored in MMKV (`"herdr-connect-prefs"` instance):
 
 The app supports English and Chinese via `I18nProvider`:
 
-### Translation Files
+### Translation Bundles (`i18n/messages.ts`)
 
-- `/apps/mobile/src/i18n/en.ts` — English strings
-- `/apps/mobile/src/i18n/zh-Hans.ts` — Simplified Chinese strings
+Both locale bundles live in a single module: the `en` object is the source of truth for the `MessageKey` type, and the `zh-Hans` bundle is typed `Record<MessageKey, string>` so the compiler guarantees both bundles expose exactly the same keys. Error text lives in a separate code-keyed table (`i18n/errors.ts`) so protocol/network code never depends on UI message keys.
 
 ### Usage
 
@@ -504,15 +516,9 @@ const { t } = useI18n();
 <Text>{t("agent.state.working")}</Text>
 ```
 
-### Language Detection
+### Locale Resolution (`i18n/locale.ts`)
 
-App language follows system language:
-
-- English system → English UI
-- Chinese system → Chinese UI
-- Other systems → English UI (default)
-
-Users can override in Settings.
+`AppLanguage` is the owner's choice (`system` / `zh-Hans` / `en`); `ResolvedLocale` is the concrete locale rendered (only `en` and `zh-Hans` are supported). An explicit choice wins; the `"system"` choice resolves from the device language tag — only Simplified Chinese variants (`zh-Hans`, `zh-CN`, `zh-SG`, `zh-MY`) map to `zh-Hans`, while Traditional Chinese and bare `zh` fall back to English because the app does not ship Traditional Chinese. Any other non-English system locale also falls back to English (`DEFAULT_LOCALE`). Unknown persisted values parse back to `"system"`.
 
 ## Theming
 
@@ -591,42 +597,37 @@ Icons are tested for color extraction accuracy in `brand-icons.test.ts`.
 
 ## Development Build
 
-The app requires an Expo development build due to the native Bonjour module:
-
-### Why Not Expo Go?
-
-Expo Go does not include `@inthepocket/react-native-service-discovery`. The app must be built with the native module included.
+The app requires an Expo development build (`expo-dev-client`): the local native modules `pinned-fetch`, `pinned-stream`, and `screenshot-launch-options` are custom Swift Expo modules that are not present in Expo Go, and `expo-speech-recognition` likewise needs a native build.
 
 ### Build Commands
 
 ```sh
-# Development build (requires iPhone)
+# Development build on a connected iPhone
+# (expo prebuild --no-install, strip-push-entitlement.mjs, expo run:ios --device)
 pnpm ios:mobile
 
-# Production build (requires EAS config)
+# Release pipeline (local Xcode + App Store Connect CLI, see below)
 pnpm release:ios:prepare
 pnpm release:ios:build
+pnpm release:ios:upload
 ```
 
 See [Development Setup](../development/setup.md) for full instructions.
 
 ## Testing
 
-Mobile tests cover:
+Mobile tests are plain `node --test` files (`pnpm test:mobile` runs `src/*.test.ts`, `src/i18n/*.test.ts`, `src/notifications/*.test.ts`, `src/theme/*.test.ts`, and `modules/pinned-stream/src/*.test.ts` via tsx). The connection model is deliberately split into pure "seam" modules so orchestration logic is testable without React Native:
 
-- **Status formatting** — `agent-status.test.ts`
-- **Agent contract parsing & version gates** — `agent-contract.test.ts`
-- **Brand icon detection** — `brand-icons.test.ts`
-- **History markdown parsing** — `history-markdown.test.ts`
-- **Done detection** — `notifications/doneDetection.test.ts`
-- **Done sound playback ordering** — `notifications/doneSoundPlayback.test.ts`
-- **Continuous voice agent state** — `continuousVoiceAgentState.test.ts`
-- **Composer action resolution** — `composerAction.test.ts`
-- **Continuous voice controls** — `continuousVoiceControls.test.ts`
+- **Multi-instance model** — `paired-instances.test.ts`, `keychain-write-plan.test.ts`
+- **Session orchestration** — `session-registry.test.ts`, `discovery-match.test.ts`, `discovery-lifecycle.test.ts`
+- **Pairing / revocation / aliases / per-instance UI state** — `pairing.test.ts`, `instance-revocation.test.ts`, `instance-alias.test.ts`, `instance-ui-state.test.ts`
+- **Networking helpers** — `host-fallback.test.ts`
+- **Agent contract & filtering** — `agent-contract.test.ts`, `agent-filter.test.ts`, `agent-status.test.ts`
+- **UI logic** — `composerAction.test.ts`, `history-markdown.test.ts`, `history-scroll.test.ts`, `brand-icons.test.ts`, `agent-favorites.test.ts`
+- **Notifications & voice** — `notifications/doneDetection.test.ts`, `notifications/doneSoundPlayback.test.ts`, `continuousVoiceAgentState.test.ts`, `continuousVoiceControls.test.ts`
+- **i18n** — `i18n/locale.test.ts`, `i18n/messages.test.ts`, `i18n/errors.test.ts`
 - **SSE stream event parsing** — `modules/pinned-stream/src/parseStreamEvent.test.ts`
-- **History scroll logic** — `history-scroll.test.ts`
-- **Localization** — `i18n/*.test.ts`
-- **Theme** — `theme/*.test.ts`
+- **Screenshot fixtures** — `screenshot-fixtures.test.ts`
 
 Run with:
 
@@ -644,71 +645,26 @@ Public beta: `https://testflight.apple.com/join/ZkRzJ6rm`
 
 ### Release Process
 
-TestFlight builds are cut by pushing an `ios-v*` tag, which triggers an Xcode Cloud workflow (configured in App Store Connect: tag start condition `ios-v`, App Store Connect distribution preparation, external TestFlight post-action). Maintainer runbook: `/docs/release/ios-release-process.md`.
+iOS releases are cut **locally** with Xcode plus the App Store Connect CLI (`asc`) — there is no EAS, Fastlane, or Xcode Cloud workflow in the current pipeline. All four `ios-release.mjs` subcommands first run `validateConfig()`, which enforces: `ios.bundleIdentifier === "com.tomyail.herdrconnect"`, a non-empty digit `ios.buildNumber`, `ITSAppUsesNonExemptEncryption: false` (export compliance), and a non-empty `NSPhotoLibraryUsageDescription`.
 
-Key invariants when cutting a release:
+Key invariants when cutting a release (maintainer runbook: `docs/maintainers/releasing.md`):
 
-1. **Bump `ios.buildNumber` in `apps/mobile/app.config.ts` first.** Nothing bumps it automatically — `ci_post_clone.sh` runs `expo prebuild`, which writes the static value into `Info.plist` — and App Store Connect rejects a re-used build number for the same app version.
-2. **Tag as `ios-v<version>-build<buildNumber>`** (e.g. `ios-v0.1.0-build7`) and push the tag. Never move or re-push an existing tag: Xcode Cloud triggers on tag creation, and a force-moved tag may not re-trigger.
+1. **Bump `ios.buildNumber` in `apps/mobile/app.config.ts` first.** Nothing bumps it automatically — `prepare` runs `expo prebuild`, which writes the static value into `Info.plist` — and App Store Connect rejects a re-used build number for the same app version.
+2. `prepare` → `build` (requires `APPLE_DEVELOPMENT_TEAM`; archives the `HerdrConnect` scheme and exports an App Store Connect IPA via `asc xcode archive` / `asc xcode export`, artifacts in `apps/mobile/build/ios/`) → `upload` (`asc builds upload --wait`) → `distribute` (TestFlight groups; requires `TESTFLIGHT_CHANGELOG` and `TESTFLIGHT_GROUPS`, `TESTFLIGHT_EXTERNAL=1` submits for Beta App Review).
 3. iOS deliberately does **not** share the daemon/Android `v*` tag scheme; compatibility with the daemon is enforced at runtime by `api_version` negotiation, not aligned marketing versions.
 
-Local EAS-based scripts (`release:ios:prepare` / `release:ios:build` / `release:ios:upload` / `release:ios:distribute` via `apps/mobile/scripts/ios-release.mjs`) still exist for building and uploading outside Xcode Cloud.
+A legacy Xcode Cloud post-clone hook (`apps/mobile/ios/ci_scripts/ci_post_clone.sh`) still exists, and `prepare` still detects `CI_XCODE_CLOUD === "TRUE"` to run `pod install` without Bundler — but the active pipeline is the local `asc`-driven one. Outside Xcode Cloud, `prepare` runs `bundle exec pod install`, which is why the Ruby toolchain stays pinned in `apps/mobile/Gemfile.lock`.
 
-See `/docs/release/ios-testflight.md` for troubleshooting.
-
-### Xcode Cloud CI
-
-Xcode Cloud builds run a post-clone hook (`apps/mobile/ios/ci_scripts/ci_post_clone.sh`) that provisions the Node/pnpm toolchain via [mise](https://mise.jdx.dev/) — versions are pinned in `apps/mobile/.mise.toml` (Node `24.11.1`, pnpm `10.34.5`, ruby `4.0.6`). The script installs mise if missing, runs `mise install`, then `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare`.
-
-`ios-release.mjs prepare` detects the Xcode Cloud environment via `CI_XCODE_CLOUD === "TRUE"` and runs `pod install` directly (skipping Bundler); outside Xcode Cloud it falls back to `bundle exec pod install`. This is why ruby is pinned in `.mise.toml` even though Xcode Cloud does not use Bundler — local and Fastlane-driven builds still do.
+See [Mobile Release Pipeline](../mobile/release-pipeline.md) for the full pipeline, including fixture-driven App Store screenshot generation, and `/docs/release/ios-testflight.md` for troubleshooting.
 
 ## Android Support
 
-Android is not currently supported. The Bonjour module has Android equivalents (NSD — Network Service Discovery), but:
+Android is scaffolded but not yet a shipping client:
 
-- A separate APK build is required
-- UI adaptations needed for Android navigation patterns
-- Distribution mechanism undecided (Play Store? APK download?)
-
-Future milestone after pairing and E2EE are implemented.
-
-## Troubleshooting
-
-### Discovery Not Working
-
-- Confirm both devices on same Wi-Fi
-- Disable VPN temporarily
-- Check local network permission in iOS Settings
-- Ensure daemon is running: `herdr-connect service status`
-- Check for client isolation on guest networks
-
-### App Shows "Source Offline"
-
-- Check Herdr is running: `herdr agent list`
-- Verify daemon can reach Herdr CLI
-- Check daemon logs: `herdr-connect service logs`
-
-### Input Not Sending
-
-- Verify agent is in `ready_input` state
-- Check input is under 4000 characters
-- Ensure source is online (not offline)
-- Retry after tapping the agent again
-
-For more issues, see `/docs/release/ios-testflight.md`.
-hen `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare`.
-
-`ios-release.mjs prepare` detects the Xcode Cloud environment via `CI_XCODE_CLOUD === "TRUE"` and runs `pod install` directly (skipping Bundler); outside Xcode Cloud it falls back to `bundle exec pod install`. This is why ruby is pinned in `.mise.toml` even though Xcode Cloud does not use Bundler — local and Fastlane-driven builds still do.
-
-## Android Support
-
-Android is not currently supported. The Bonjour module has Android equivalents (NSD — Network Service Discovery), but:
-
-- A separate APK build is required
-- UI adaptations needed for Android navigation patterns
-- Distribution mechanism undecided (Play Store? APK download?)
-
-Future milestone after pairing and E2EE are implemented.
+- `app.config.ts` declares an `android` section (package `com.tomyail.herdrconnect`, NEARBY_WIFI/ Wi-Fi multicast permissions) and the `withAndroidCleartextTraffic.cjs` config plugin.
+- `connection.tsx` requests the Android 13+ `NEARBY_WIFI_DEVICES` permission before discovery (`ensureAndroidLocalNetworkPermission`, error code `nearby_permission_denied`).
+- A release path exists: `pnpm --filter @herdr-connect/mobile release:android` (`scripts/android-release.sh`, signed-APK build with keystore certificate fingerprint verification) plus a GitHub Actions workflow — but the workflow's signing secrets are not configured, so it is manual-dispatch-only and effectively dormant (see [Mobile Release Pipeline](../mobile/release-pipeline.md)).
+- Critically, `pinned-fetch` and `pinned-stream` remain **iOS-only** native modules (`unsupported_platform` elsewhere), so daemon communication with TLS fingerprint pinning is currently iOS-only.
 
 ## Troubleshooting
 

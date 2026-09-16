@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:77f586e703418bb8ea896f521865aa9ffd6b17d6581b25bc5a5b8420dbac50c9",
+  "pageVersion": "sha256:da24b80b411fca68870dee5ce19d0942c72f899e46516572e491bde9ecd46d34",
   "claims": [
     {
       "id": "claim_ef447e04441c4705a9e195e4051e6d67",
@@ -179,10 +179,82 @@
           "version": "repo-lines-v1:sha256:ffb2d6c3671f307dd2c3bf71362c71902802fb92f9f50d2a58364314fd13f86f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJhNGVlZWI5ZTYxNDM3MzRiMzM4NDQxYmUwODZlMTY5OTc3YWYyNWQ4NjI0Y2Y0ZmM5Yzc2ZWFiYzkxMTVlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWFiMzVkMDdhMzgxZjZiODdhODgwNTM4Y2Y0ZTAwNTA5YTY5MzAxYWM0YTFiM2JjOWFkYjU5YmJlMzU5ZDcyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE0Njc2M2VhZGUwMjliYjI4YTY5ODFmYzEzMjhlZjRlNDMwNjZiYjRlN2M2YzE1Y2ZkYzc3MDU5YTc3NzMyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODFkMjNlYmI3NWI4M2QyNWQzN2Y3MDdjZDk5NWQyODIyNzA1MTRjYjc3MWNjMzBiYzliN2Q5NTNjYTYzMmI0ZCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_4d7572b712824d25a78d45f45c44e198",
+      "statement": "iOS releases use a dedicated `ios-v*` tag prefix that triggers an Xcode Cloud workflow configured in App Store Connect, deliberately separate from the daemon/Android `v*` tag scheme and GitHub Actions, so daemon-only tags never archive an iOS build and a forgotten buildNumber bump on an unrelated tag cannot fail the iOS upload.",
+      "evidence": [
+        {
+          "resource": "repo://docs/release/ios-release-process.md#L7-L13",
+          "version": "repo-lines-v1:sha256:2d3e4e30d377956bb6d5e94b3227a39468702ac232db824e816eceb31d0107d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y4ZmU2NzhjMzBlMzU2NmJhNTI1YzgyMjZiODY0YmIyZjViNzgxNjQ5ZTA2MGY3M2RlM2JkNWNlYjJiNzI2YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ0ODBmOTU2YzIyMjVjYjMwNmE1YjIyOTQ4OWQ3YzRmZjRhOGZjNWJhYTlkNzlkYjA2YzExMTEzODU4MzZlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmYxMTFiMzk2NWQ1Zjk4NGU0MGM4OWM2ZWEyZDE2Mjk5YzIwMmFiOTI4YjFmNmQyMzRhNjFlMDZjZTYxYzNhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg2YzM1OWQwMTczZGQ0ZTU4MTdiYTQwMjM4YzRiZGFhNTY5ZjExMDI0YWEwOWU2NTc2MTVmZWI4OWVmOTBiNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e0a92907dab40c5ba2098812bdd054d",
+      "statement": "Cutting an iOS release means bumping `ios.buildNumber` in apps/mobile/app.config.ts, committing, and pushing a new annotated tag `ios-v<version>-build<buildNumber>`; existing tags must never be moved or re-pushed because Xcode Cloud triggers on tag creation.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L17-L23",
+          "version": "repo-lines-v1:sha256:305fe5b7585395d2da8b0455d6c4c699d4918ffe4ae94bea77dc1f437b279838:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkNTY4NzY1YTk4MWUzMjQ4Mjg5YTJmN2RiNWI4YWZmMzM5NGYzODMyMGJkOWEwMTVhZTUwZmY0MzYzMzBhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
+        },
+        {
+          "resource": "repo://docs/release/ios-release-process.md#L23-L34",
+          "version": "repo-lines-v1:sha256:752c4d119dd96678d8e50573825433dd774417429a7a6d2528ae8bc36c115da3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2RlMjlmYzlkYWVmMDk0ZjI5YzEzZjgwYjc4ZDcwZTM3ZDU0MmMwODQ5MmUyNThhMWI2N2ZlOTIxOTdmNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzZjU3OGUxMzJlMDAwMzliYzkzYjhkODQ1ZDRkZTlmYjQ0MWU4NzcwOGU0ZGJhOWZiMjJmNDJiNGJkNjM0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMmZiOGVmYzdjMDc1OWM4NWY4ZjYxNTQ1NDQ5ZGNkNGQ2ZTdiNDg4NjViOWU1ZjU3NDM3ZWJkOGNjM2IyYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhNmU4N2UwMjkwY2QwMDdlMjQ5NDE5Y2Q2MzNlZDI1MDhlNWNhNDM1ODZkZTc0N2RjMDlkOGYyZDgzOGE5N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4a4d943cac74eabb1147d1b20451947",
+      "statement": "Nothing bumps `ios.buildNumber` automatically: `expo prebuild` on every Xcode Cloud run writes the static value from app.config.ts into Info.plist, so an unbumped retag is rejected by App Store Connect (re-used build number) rather than silently reusing the old build.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L17-L23",
+          "version": "repo-lines-v1:sha256:305fe5b7585395d2da8b0455d6c4c699d4918ffe4ae94bea77dc1f437b279838:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkNTY4NzY1YTk4MWUzMjQ4Mjg5YTJmN2RiNWI4YWZmMzM5NGYzODMyMGJkOWEwMTVhZTUwZmY0MzYzMzBhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
+        },
+        {
+          "resource": "repo://docs/release/ios-release-process.md#L25-L25",
+          "version": "repo-lines-v1:sha256:e1ee3b33d3bf03832d59380b659a261292355cb2ce6d312a13d249ef201f7e7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlZTNiMzNkM2JmMDM4MzJkNTkzODBiNjU5YTI2MTI5MjM1NWNiMmNlNmQzMTJhMTNkMjQ5ZWYyMDFmN2U3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFlZTNiMzNkM2JmMDM4MzJkNTkzODBiNjU5YTI2MTI5MjM1NWNiMmNlNmQzMTJhMTNkMjQ5ZWYyMDFmN2U3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2YmI4YWRiNTExODQ4YjFhZTk4OGNmMWE1MjdmZTk2NjZkODQzYTg2YTFjOTQwMzU2NTA1NjA1OTYyNjU2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGNhNWJiYzQ4NjBjYjBmN2RjY2I1YWFlYjhiMTVhMGNlMjVkMDA0ODUzOTc4OGUzZWI5YzhkMjUxOGIyNjMwYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e3ff3ae997e45a09a3ea12a8e81f5cc",
+      "statement": "The only repository-side Xcode Cloud hook is `apps/mobile/ios/ci_scripts/ci_post_clone.sh`, which installs mise, runs `pnpm install --frozen-lockfile`, and runs `node scripts/ios-release.mjs prepare` (which detects `CI_XCODE_CLOUD=TRUE` and calls plain `pod install` instead of `bundle exec pod install`).",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/ios/ci_scripts/ci_post_clone.sh",
+          "version": "repo-file-v1:sha256:1e0748fba9c3ae9da064be35db6e373948c0ff6c12626a29577b9635b109afc4"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L90",
+          "version": "repo-lines-v1:sha256:3468972123207dc2231f13e31772ed2a7690a8958ae51cc68d7b7aa57d7f404b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5N2VjNDZiMzgxNzkxODRlYjBkMzZlNjgyYjBjNjlhZThlMTE1MTMzZDYzMGViOWJhMmM1NDllMmEyNGEyZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NzlhYjk5YTc1NDQ2M2Q2MWYyYTY3YjIzYTNiN2ZiMjYyYWZjYTk1ZDNiMjY3OWU0Yjk2NTQxNGM4NDE4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_379d76e1886f41df9a046d10d698e4bd",
+      "statement": "The Xcode Cloud workflow is configured entirely in App Store Connect: start condition on tags starting with `ios-v`, Distribution Preparation set to `App Store Connect` (not internal-only), and a post-action `TestFlight (External Testing)` targeting the external group with the public TestFlight link; the first submission to an external group requires Beta App Review and later no-metadata builds are typically automatic.",
+      "evidence": [
+        {
+          "resource": "repo://docs/release/ios-release-process.md#L15-L21",
+          "version": "repo-lines-v1:sha256:e83f637fc4ae9d331ebf0ccab5eca721a36f7a094e65f3d2a2f448e0a82e10f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRhYWE4Yzg1NTc4NDg2NTNmYWM0MDNmMWZlODA1YWY5ODYyZWFlMGE2OWJkN2NkOGYyMGI2OTdkZGQzMjIyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmY3Njc0NGU3N2Q1YTY0NjNmNWEwZGM3ZTQ1YmJmNWI0M2JiMzgzYzg3NmZjM2U3Yjg1NzQzNWYwMzUxZDE3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE1NzFlOTRjNWNkZTJkMTM0NTZjOGZhMGMzYzdjYjVmZDI5MjUzMWViMDQ5ZDhiZDNmZDMxZjY3MzJhZWY5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQ2YmI4YWRiNTExODQ4YjFhZTk4OGNmMWE1MjdmZTk2NjZkODQzYTg2YTFjOTQwMzU2NTA1NjA1OTYyNjU2NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_69265b8819894a17863f6de83388c6ee",
+      "statement": "Daemon/app compatibility is enforced at runtime by the daemon-advertised `api_version` check (`daemon_outdated` / `app_outdated` in apps/mobile/src/i18n/errors.ts), not by aligning `ios-v*` version numbers with the daemon's `v*` tags.",
+      "evidence": [
+        {
+          "resource": "repo://docs/release/ios-release-process.md#L13-L13",
+          "version": "repo-lines-v1:sha256:bd480f956c2225cb306a5b229489d7c4ff4a8fc5baa9d79db06c1111385836e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ0ODBmOTU2YzIyMjVjYjMwNmE1YjIyOTQ4OWQ3YzRmZjRhOGZjNWJhYTlkNzlkYjA2YzExMTEzODU4MzZlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ0ODBmOTU2YzIyMjVjYjMwNmE1YjIyOTQ4OWQ3YzRmZjRhOGZjNWJhYTlkNzlkYjA2YzExMTEzODU4MzZlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwOTQ5NmY1ZjhiYWZjZTQ0NmZjNTJiNjg2YzkyYzMxNzdjOTgxMWIzMTlhMWM1NmYyNzAzZTY2NTliNmYyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg2YzM1OWQwMTczZGQ0ZTU4MTdiYTQwMjM4YzRiZGFhNTY5ZjExMDI0YWEwOWU2NTc2MTVmZWI4OWVmOTBiNiJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-06T20:57:05.446Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }

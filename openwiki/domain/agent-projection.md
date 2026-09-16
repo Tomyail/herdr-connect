@@ -5,8 +5,8 @@ description: Daemon-side agent state projection — snapshot vs incremental sync
 tags: [domain, projection, sqlite, state-management, persistence, permissions]
 resource: /internal/projection
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-435ef4d663e8147156c1b2dc
     resource: repo://internal/daemoncli/cli.go
@@ -30,7 +30,7 @@ sources:
     resource: repo://internal/store/permissions_windows.go
   - id: openwiki-source-4a81fcd95533ed8ba5a77739
     resource: repo://internal/store/store.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
 
 # Agent Projection & Persistence
@@ -47,22 +47,23 @@ The projection layer (`/internal/projection/projection.go`) is the daemon's stat
 
 ## Control flow
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label. -->
-```text
+```mermaid
 flowchart TD
-    Src[herdrsource.Source] -->|Snapshot| Sync[Projector.Sync]
-    Src -->|Changes cursor| AC[Projector.ApplyChanges]
-    Sync --> Norm[normalizeObservation\ncapability-gated validation]
+    Src["herdrsource.Source"] -->|Snapshot| Sync["Projector.Sync"]
+    Src -->|"Changes from cursor"| AC["Projector.ApplyChanges"]
+    Sync --> Norm["normalizeObservation\ncapability-gated validation"]
     AC --> Norm
-    Norm --> Batch[store.ProjectionBatch\nupdates + removals + observed IDs + cursor]
-    Batch --> APB[Store.ApplyProjectionBatch\nsingle SQLite transaction]
-    APB --> SA[source_agents identity + revisions]
-    APB --> CA[current_agents active projection]
-    APB --> OB[outbox event + event_seq bump]
-    APB --> SC[source_cursors cursor]
-    APB --> Build[buildState -> in-memory State]
-    Build --> Cur[Projector.Current]
+    Norm --> Batch["store.ProjectionBatch\nupdates, removals, observed IDs, cursor"]
+    Batch --> APB["Store.ApplyProjectionBatch\nsingle SQLite transaction"]
+    APB --> SA["source_agents identity and revisions"]
+    APB --> CA["current_agents active projection"]
+    APB --> OB["outbox event and event_seq bump"]
+    APB --> SC["source_cursors cursor"]
+    APB --> Build["buildState to in-memory State"]
+    Build --> Cur["Projector.Current"]
 ```
+
+*Snapshot and incremental sync both flow through capability-gated normalization into one atomic projection batch; persistence writes identity, the live projection, outbox events, and the cursor together, then rebuild the in-memory `State`.*
 
 ## Persistence model
 

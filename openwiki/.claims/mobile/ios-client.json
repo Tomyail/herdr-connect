@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:559eb28b24976d338e7df2986af30ffce6c66527effbbb7310e4dbb1764b0a63",
+  "pageVersion": "sha256:9d50c33e9d6fbf70c839a4507e143f0a4b724fd6e0c7b8344bf0ca4bb9416de1",
   "claims": [
     {
       "id": "claim_0c1a682818444f59916c6a05970d3833",
@@ -307,10 +307,92 @@
           "version": "repo-lines-v1:sha256:d017cd9cd40ce4bc264d5ffbd42cb8dff215bbaaba31c1dd492202117d0308b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYjkwMmUxZmY1MzdmZTA2NTFiNWEwNDc0ZTNkNjZkNGUzNTQ2OWRjZmE2OTk3ODUyOTI3YzIwZmQ2MjE4ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ODc3Y2ViZmI0OTA1MmU0OTcwYTllY2NhNzBmOTZlYmFhNmQzMDMzZWQxOTkyZDA2NTI2MDBkNDk5ZDYyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYWE2MjdiYWFiNGI0NTFmYmUzMDRhOTZiZjllYmM0ZjI4YzkxOTNmZGVkNTExZTQxM2MyYjExOWQ5MDA0NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NGZjMGMxNzNkMWVjM2ZjNTAxZDdkZmE5Mjg1NTAxYzUyN2NmYjQ3MTI1ODNkYTNjYzM2MTgwNTY2YjRiZTMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f3d5609ed67543d5b08d3c0a242012ae",
+      "statement": "Bonjour discovery is implemented with @dawidzawada/bonjour-zeroconf: discovery.ts wraps its BonjourScanner to browse _herdr-connect._tcp on the local domain and normalizes results into DiscoveredService, but the library does not surface mDNS TXT records (txt is always an empty object), so daemon identity can only be verified by the pinned TLS probe.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json",
+          "version": "repo-file-v1:sha256:f89a4047f2d572e034ffb9dd39e943625382f25a3517f5e5ff738b42842d96a9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/discovery.ts",
+          "version": "repo-file-v1:sha256:d1a3d37285a43eb2b1da527a74434dd616e812474a8a068012aac3743c87fe29"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1bb30c9650c4707afb9a72c123f5d45",
+      "statement": "The App Store-facing display name is Crozier (ios.infoPlist.CFBundleDisplayName) while the native Xcode project, scheme, and workspace remain Herdr Connect because ios-release.mjs and the build scripts hardcode the HerdrConnect name; the bundle identifier is com.tomyail.herdrconnect and ios.buildNumber must be bumped manually before a release.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L36-L37",
+          "version": "repo-lines-v1:sha256:ba45410b184bd64f019f700fb5ad669116675816cd89c06c629b829d89aefd81:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM0ZDAwZTNjYmIxY2NkNTVmOTJkODg5OGU0NWVkZjlkYWRjNDUxYTgxNzM1MTM2ZmZlMWQ5ZWRkN2JmOTg4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ExNGYxYmE1NDI0ZGUyNDY5NDg0ZTY2MGI0YWM2YTY3ZDA0MGEyYjM0MjBmZjNmNjg5OWUzMTJkMDgwZTNkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzJmMDcxOTU4YzdmMGZlMTNkMTYzZWI4NDlmMTYyZTBkZDQ2NzAyYzQ4ZmU1ZjQ5NjQ5YWY4YWZiMjAwYjlhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNhMzFhZjQ0NTM0YTA3ODhhNzk3NTZjMWM2YzYxYmEwNDdiMjNiNzc3ZWNlZjAxY2M1ZGI5N2FkZWU1YThiYSJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L4-L8",
+          "version": "repo-lines-v1:sha256:5940259229b11a0748766b877029e4bc1e251eb28f2b8d94b6342fe4f208576f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGJmMGFjNjIyYjE3ZDVjNDhiY2Q1YTY5NjI5NmI4M2E4YTg0Zjc5NGRkNDQyZTlmYTE0Mzg0ZmE0NDVkOWViNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzVmYWI0NjdmNDc3MzBhNWZlNjRhZjk3ODNjYzBkZjdhYzRmNjQyNTdiYTNhYmNiNzI2ZTExYzExM2Q1YTE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDA3NmQwMmViOWYwOWU1NmM1ZTE4NjU0OTNiMWRlYTg3ZmFkMzc3MzY0NGZhYTlmYjBhZGJlMmU2YTZlMGRhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU0MjQ1NzAwOWY5YzRiNGYwZTY0NDliZDA5MzNhYWQwMWQwZWRiNTU3ZDhhYTE1ZGQ1NmM1MDQ1ODE4YjY5NCJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L8-L14",
+          "version": "repo-lines-v1:sha256:1e1f61bf3fdf10b6479a15408e17db45eec3b65b9c637a3c65f8a00d22912ae1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTczMjEyOGQyZTg0MTYxY2I3ZDY4MzM4MzQ4YTFmZDE1MDYyNmVmMDc3YzVlNDkxMGEzMmVjMGIwNWMzNWI5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFiMGViMTAzNjliNTg0Yzk2ZDIxYjFlY2JmOGM4YmI4MGJjZjg4OTA1Y2ZmNGQ4OTgxZTQ2OWM3ZjlhMTQzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTU1MTJlMTEyYzZjNjhjMDU1OTVkMDNiYTlkYzQxNWU2ZTQ5NTg3MDZmM2M3Zjc4YzY4NWQyM2EyYWQ1NjQ1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjc2MzliMTAyNWY1YmEzODNlZDVkYWVjNWFjOGE1YjJlMWRmMWIwNWFlODJlNWNjMmQ0ZjEyOWZhZjc2Mjk5YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_18dccfe08c0847c3a22f8d901ae23873",
+      "statement": "iOS releases are cut locally with Xcode plus the App Store Connect CLI (asc) via ios-release.mjs subcommands prepare/build/upload/distribute — not EAS, Fastlane, or an active Xcode Cloud workflow; every subcommand first runs validateConfig, which enforces bundleIdentifier com.tomyail.herdrconnect, a non-empty digit buildNumber, ITSAppUsesNonExemptEncryption false, and a non-empty NSPhotoLibraryUsageDescription before anything touches Xcode.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L9-L12",
+          "version": "repo-lines-v1:sha256:0c77ae0580ec587d397ff0a25f8acd0dcc58f7adb7940963966d4468cae2f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU1OTIyOTZjMTAzZGUyYjM4MDE0ZDQ4ZGFjZTA0YjI4YWI2NzgyMTJlOWFiZDdhMzkyOThjNjI2YWQ5NDNhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI5ODg3M2JiOWI2OTVlOTFhYWMwYzkxZDZmZTVmY2M0MTY3Y2M4YzU4MWVjY2QxMjMzNzYxMTlkZTg1ODBhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI5M2FmMzc4ZjkxNWU1YTZmMGQyNjgzZGZhNzU5ZjZiM2I2OWM2ODcxZjBlN2MwODA1NTQ5OGM4M2U2N2U5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFjNGMwODMzNjQxZTAzNDFhODdjZjNkYTJjZmRlOTIzNzg0YjljNmM4NGU2MmU3NjQ3NzQ5MTQxZTEzNjZhYiJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L47-L90",
+          "version": "repo-lines-v1:sha256:c1292c6ab01b507a4eec3e9360af0a31ce438bbf1b1693700bd5b7697479ffe4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiM2ZkYzAxNTI1NTUyYjk0Y2UyNzg4YzA2YjhhYTgwYzc1ODI4MjgwNWQ2ZWUyZTMxYzYyNWRkY2YyYjdiNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViN2UwMTAwYWNkN2ZhNDkyYWRmNzc2YjYyMjg4NGFmYjBlMWM5NGYyOTk0YjgxODQ2N2ZhZTZmMTQ5OWM3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_017f116059d34f73b1db850be8c6cefd",
+      "statement": "pinned-fetch and pinned-stream are iOS-only native modules: on any non-iOS platform (or when the native module is not linked) pinnedFetch throws unsupported_platform without touching the network, and ConnectionProvider exposes streamSupported only for iOS so other platforms rely on polling alone; Android is scaffolded (android config section, NEARBY_WIFI_DEVICES permission request, android-release.sh signed-APK script) but TLS-pinned daemon communication is currently iOS-only.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/modules/pinned-fetch/index.ts#L55-L72",
+          "version": "repo-lines-v1:sha256:92686ffa6921858bfc533be75c174316290e36bb8f84255e3223203376997fbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjYmNhOTBjNGNjYWUxMjU4ZTgwYzZmNjM3ODAzNzNlOTRhZjc1MDRjNGJmNzhhZjE1MjA1YjA1ZGMzYjI3Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NDU3YTc1MTQwMWQ0ZDAwMWJmNmQ2NzA0NzViMjMyZWUwN2ViOTgyMWQ4ZWFhMDAzOTViMjY3MDRmMzA2OGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYTBhNTFiMGY3Y2UzYTNjODM0ZTEzZTEzZjJlMGQwMTYyNzU4MWExMGM3Yzc5MzhjZGRkYzhlMmJlMWU3NzMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/android-release.sh#L91-L99",
+          "version": "repo-lines-v1:sha256:294e7959a81de6e5effc547a854d05a670634c0250789f596eaae9cb9de867ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYwZTA1OTk2YjFiOWM3NTk3ZGI5MzM5N2YxYzliNmM4OGUzNzVjNGRjNTA0N2UzMzY3MDI5NDk3ODAyYmZhYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ1ZGU1Y2FkMjczOTlkYmQzNzZmNTBiYWEwODc3NjEwODZkMmVjNmRiMDNmMjQzOTE4OGQzODZiOGEzZjhmZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M3MDFmZDc4NWUyNjQ2NzQ3MGUwNjQ2MzdkZTJkMDEyNWI3NWZiYzY4ZWE1MTUxNWU1NmVmMWVkYjUyZjkxMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjJmODM1ZTkwMDZjODM1YTVhZDFhMzA0NjIzNzgzOWRiYTE4NzdlZmQzOTY1MDUwZmViZjQ0ZjE5ZDgwZWZlYSJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/connection.tsx#L155-L162",
+          "version": "repo-lines-v1:sha256:22d3c8fdc7c01e9dbdd0848dd29c80929183f5023cb2a87f8a8a4b086b09dc4f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg1ZWQxMTI0YzMwYjYwZTFiNjY1NjIyYWNiNWI0Y2RmNTM3YjJkOTY2MmFmN2M4ODliODZlYWQ4MWY5YjcyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjJlODgwMzI2Y2FmYjE4NTMyYjEyMjkwOWJkMjAyMDE5MjhjYzllMTY4NDU0N2UxODc3N2QzOWNhYjI3NzIwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjkzMWYxMDQ5ZDQ4MmM3ZWM2ZjZjMmIxMTBjMGEwMTJiMDY4YTM3ODFiMjFhMjIyYzY3OTUwMTQ4ZWRhZGU2NCJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/connection.tsx#L319-L319",
+          "version": "repo-lines-v1:sha256:e82e32c7ab8ca5b558b46e2c743ab5d2ef86ca566a1015e49ca6d43f60343b8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyZTMyYzdhYjhjYTViNTU4YjQ2ZTJjNzQzYWI1ZDJlZjg2Y2E1NjZhMTAxNWU0OWNhNmQ0M2Y2MDM0M2I4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTgyZTMyYzdhYjhjYTViNTU4YjQ2ZTJjNzQzYWI1ZDJlZjg2Y2E1NjZhMTAxNWU0OWNhNmQ0M2Y2MDM0M2I4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzcwYThiNWRkNmEwMTJmOWMxNWUyM2Y4NzE4OTRjMzk1OWY0OWRkNDgxOGJkMzE4MDY5OTE0MzRkYTIzZjcwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmUzNTc1NzlmOTM5NjZkNThlNmQ2MTUyN2RhNWM0NmUzNmQ2ODRmOTJmNmEzMGE0NmI5MGViMDk2OTNjZmM3YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_181f839b3397491eb4a319bc9a5dc9da",
+      "statement": "Locale resolution distinguishes the owner's AppLanguage choice (system/zh-Hans/en) from the concrete ResolvedLocale (en/zh-Hans only): an explicit choice wins; the system choice maps only Simplified Chinese variants (zh-Hans, zh-CN, zh-SG, zh-MY) to zh-Hans, while Traditional Chinese and bare zh fall back to English because no Traditional Chinese bundle ships; both bundles live in i18n/messages.ts with the English object as the MessageKey source of truth, and error text is a separate code-keyed table in i18n/errors.ts.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/i18n/locale.ts#L39-L77",
+          "version": "repo-lines-v1:sha256:1aba00d297601a0445c6be5cf8d369e877d19f1ac56c357f2011aa5d5206f2d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZDAwY2RjYmFmMWJhOTliODMxODcyNTM5OWVhMjU1MjFkYmQ2ZWU4MjY5ODkzZDlkYTZhNWU4ZWU0ZmI3YzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwNmYzZDQzNmI2YTI0NzZlMGRkOWYxNGMyYmM3OGY3NTYwMWJiMmUwZjRmYzg3YTZiZjA4MmJmMjVhOWE5YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5ODU1NTFhYzdiMTRkMTI0ZjA5YzBiNjUzODI2ODliNGM5NmRiNjA0M2ZkOWRkNTNhYWJlZDkyYTBjNWJhZjMifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/i18n/messages.ts#L1-L12",
+          "version": "repo-lines-v1:sha256:53ed2fabc0d8829a103147666bb0b3a6304a19c382b72dfb8c9b059e75fb24c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZjU4OTA2NTNhZjNjZTk1YTg2N2JiNzVkYTY1MjM4NGQ1NjdhOGRhNGM1NDI2Y2U3OGM0YmJiZDNmOTlmZDkifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-03T21:31:01.471Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }

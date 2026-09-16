@@ -5,9 +5,11 @@ description: Complete reference for herdr-connect CLI commands, global options, 
 tags: [cli, commands, service-management, pairing, diagnostics]
 resource: /internal/daemoncli
 verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-01T21:29:42.104Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
+  - id: openwiki-source-698aebbc9a4891b14f7f80b4
+    resource: repo://cmd/protocol-conformance/main.go
   - id: openwiki-source-ed83ad663bbbba548306379d
     resource: repo://herdr-plugin.toml
   - id: openwiki-source-435ef4d663e8147156c1b2dc
@@ -24,7 +26,7 @@ sources:
     resource: repo://internal/demolan/auth.go
   - id: openwiki-source-07d77e7f317cf6efc47a9b12
     resource: repo://internal/demolan/rate_limit.go
-generated: { by: "openwiki/0.5.0", at: "2026-09-01T21:29:42.104Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
 
 # CLI Commands
@@ -311,10 +313,24 @@ The repository root contains a `herdr-plugin.toml` manifest that is the integrat
 
 Each action's `command` field is an argv vector invoking the `herdr-connect` binary, so the owner runs exactly the same code path as the terminal user. Notably, `service-status` maps to `service status`, whose exit codes (`0` healthy, `1` unhealthy/error, `3` not installed) can be surfaced by the Herdr UI as health indicators.
 
+## Protocol Conformance Harness (`protocol-conformance`)
+
+Besides the owner-facing `herdr-connect` binary, the repository ships a second command, `/cmd/protocol-conformance`. It is a development-only JSON-in/JSON-out process that exposes the public `/protocol` package (envelope sealing/opening, pairing-challenge signatures) for cross-language conformance tests — e.g. driving the Go implementation from the mobile app's test suite.
+
+Behavior:
+
+- Reads exactly one JSON request object from stdin with `DisallowUnknownFields` (unknown fields fail), and dispatches on the `operation` field:
+  - `generate_identity` → `protocol.GenerateIdentity`, returning base64url-encoded encryption/signing key pairs
+  - `seal` → `protocol.Seal`, producing an `envelope`; the optional `ephemeral_key_material` field injects deterministic randomness so ciphertexts are reproducible in tests
+  - `sign_pairing_challenge` / `verify_pairing_challenge` → installation-side pairing-challenge signature operations
+  - `open` / `open_replay` → `protocol.Open` with in-memory replay and pairing guards; `open_replay` performs a second open of the same envelope to exercise replay rejection and returns the resulting `error_code`
+- Success results are written to stdout as JSON; failures write `{"error_code": ..., "message": ...}` to stderr and exit with code `1` (`ErrorCodeOf` maps Go errors to stable protocol error codes).
+
 ## Development Commands
 
 - `--source fake` — fake source instead of the real Herdr CLI
 - `trace` — live event stream
 - `daemon --once` — single sync for health checks
+- `go run ./cmd/protocol-conformance` — protocol conformance harness (stdin JSON, stdout JSON)
 
 See [Development Setup](../development/setup.md) for the development workflow.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:92c82053866051c120c911ec786cc6e71585daa730f8f2faafeb661d9f28db14",
+  "pageVersion": "sha256:82738f283824c3fd95537cab8005404f17ced4ff935e10ed8abc4fe118a1bdd3",
   "claims": [
     {
       "id": "claim_c67ae724294b4c849018eebd9f805e39",
@@ -235,10 +235,48 @@
           "version": "repo-lines-v1:sha256:32230c11a6ef5d4367042fa5e1e7656ec4b45a712bd72e32168b5517706a8cba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZTAyNDEzNzY5ODhlZjliYTQ2Y2FjM2I0ZDllZjI2N2FhNGE2YzRhZjM0Zjc2ZWJlMzk3YTQ1ODg5ZjQ4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNmFkOGIyYmFiYzAxNWFiZTExNDEzMWMwOTU2ZWE1MjdmNzhmOTM0YjY2NTE5OGJiYTY0OTA2ZWEyZGRmNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5YzRjMTJjYzM5MTAzNmJjYjY1ZGFmY2I2Mjg3MTYwYWY4M2Y5Yzc5NGI5MmNmYjlhOTlkMzBkNGZkZWM4M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYjMxZjlmOGMzNGFjYjM1MDcwMDkzZjJjNzFlZGVhMmY3ZTEwY2I5ODhhZWM4ZTUyMzY5NzhkMjQ4YWNjNWUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_65405aaf3e78423db3306c1d0e496cfc",
+      "statement": "The repository ships a second command, cmd/protocol-conformance, a development-only JSON-in/JSON-out process that exposes the public /protocol package (identity generation, envelope seal/open, pairing-challenge signature operations) for cross-language conformance tests.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L1-L14",
+          "version": "repo-lines-v1:sha256:790777805525b2bcb3cc7e02428dbf56ca86cdc0ebe98490b30e51965cea642c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYzg4MzkxZTAwNjRhZDY3MTE2NWNmMzc1MDdlZmMxZDI4MWQ0ZjdlNmEyM2IxYzQ3YmZjN2QyNmYzODFhMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZjQ1NDc3MTYyNDA3ZDZmNjY3YjgwZjlhMWVhNzE5YzAyMGM2YWFjZjQyNzQ5M2Y1NTFmOGJhOTdkMDVlZGQifQ"
+        },
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L104-L186",
+          "version": "repo-lines-v1:sha256:30aa62b829259d7cf171cfeac45059e464cf2df97572f3d91a58a28445a06d5f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNWQ2NGY5NzFiMjRmNzAxZDM0Yzc3ZjEyNWFkOTNkNzBiN2I0MGEwMmMwMjM2YjA0NTM5M2UyNGJmNmI1ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMmJmZjhhYjc0OGM3Mjg2NzkzMjM1Mzc1MmU4ZTQxY2Y5MjhiZTFlNTExY2MwZjdlYWYzMzU0NmY1ZDc3MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMTNkMmI3ZjI4OWVmYzMyMzE2MjYwZjUwYThiODZlNmI4NzUzMTM2ZTNmMTRkY2I0ZDE5Zjk4MzFkOTBhY2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd715f8f232549f0999daf0be0e567e9",
+      "statement": "protocol-conformance reads exactly one stdin JSON request with DisallowUnknownFields and dispatches on the operation field: generate_identity, seal (with optional deterministic ephemeral_key_material), sign_pairing_challenge, verify_pairing_challenge, and open/open_replay; open_replay performs a second open of the same envelope to exercise replay rejection and reports the resulting error_code.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L104-L136",
+          "version": "repo-lines-v1:sha256:988d480966426bbcce8f2f1867eb371f4f8ab5822060444a1e3ba1f9ad68838a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNWQ2NGY5NzFiMjRmNzAxZDM0Yzc3ZjEyNWFkOTNkNzBiN2I0MGEwMmMwMjM2YjA0NTM5M2UyNGJmNmI1ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ODY3YjZmZTYyNzhkODQ0MzFhZWVhZDkyZjFkZjY3MzUxNDdkMTYzZjJmNjAyZjQ3NGU1ZjI3MzEyZTk2OGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMmJmZjhhYjc0OGM3Mjg2NzkzMjM1Mzc1MmU4ZTQxY2Y5MjhiZTFlNTExY2MwZjdlYWYzMzU0NmY1ZDc3MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZjM0ZmUxOTYwMDcyZTdjN2I0MGFhYTE1MGYxYmRiMTA5NTk1Njg2YmFkNjk1NTcwZGFiMTc3ODIxYWI3NjIifQ"
+        },
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L148-L181",
+          "version": "repo-lines-v1:sha256:4146fe7d079ef8f188cbec5b3ce78381c2ad4cbd618df247da1f5490f8dcaea0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNmMwNTZmNWE1MWU1N2Y5ZDUxYWMyYjIwYTI3NTgwZGYxM2FhZGU5ZjRkM2NlYjk2ODFiNzk3MTc0MmRhYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZTFjN2VhM2M3MDYyNDk5ZTcyMzQ1N2UzZTA2MzAyMmEzM2MwOWEwMDhlZGU3OGRhMmU4NTBhMGIwOWRjMjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxZTM0YWQ5MGQ0NTMyYTU0ZmI0MzIxNzkwNGFmYTM4Y2NmNGY4NmZmYzVjOThlYzExNmUwZDYxMzg0MjIxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwOWYyODAzYjE5MzYyN2YyNjM0MmIxNmNkZDNlOGQ1NjljNGYwZThmNGQzYmQ2OGQwOGJkZWU4NmIzNTgwZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9df0d1e71ca04a208ab53599e7e8b333",
+      "statement": "protocol-conformance writes success results as JSON on stdout; failures write {error_code, message} to stderr (via protocol.ErrorCodeOf) and exit with code 1.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L244-L256",
+          "version": "repo-lines-v1:sha256:42eb769d07519470c2a1e114b027ce6742b61403e501b67334730c30114a054a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NzE0MjViMzFjZDNlMjJiMzFlNTc0OWFjMzQyNjk5NzFlNWYyZTkwYTQyOGVmZTE2MjM5ZmVjM2Q4MWZjM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZTFlZTI5N2JmNTIxOWIyN2M3YTEyOGMwNmI2OThhNWQ5NzJhN2Y4YTg3NmI3ZGJlMTdiN2U2ZTcwNTc5YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.0",
-    "at": "2026-09-01T21:29:42.104Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }

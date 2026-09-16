@@ -5,8 +5,8 @@ description: High-level architecture of Herdr Connect, covering the Go daemon, m
 tags: [architecture, go-daemon, mobile-client, protocol, data-flow]
 resource: https://github.com/Tomyail/herdr-connect
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-a04d6c803675fbfe778f6010
     resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
@@ -16,6 +16,8 @@ sources:
     resource: repo://apps/mobile/src/App.tsx
   - id: openwiki-source-94682260b831242842408676
     resource: repo://apps/mobile/src/PairingScreen.tsx
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
   - id: openwiki-source-cac1ecbd6712aa5a1db25ecf
     resource: repo://cmd/herdr-connect/main.go
   - id: openwiki-source-8d634e373556e70d59a133fd
@@ -34,7 +36,11 @@ sources:
     resource: repo://internal/demolan/sse.go
   - id: openwiki-source-799493e58df545a814263bad
     resource: repo://internal/lanauth/lanauth.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+  - id: openwiki-source-d7d84306409d5a2bb025542b
+    resource: repo://protocol/protocol_test.go
+  - id: openwiki-source-64700ed4d455b9f464c4ccf2
+    resource: repo://protocol/protocol.go
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
 
 # System Architecture
@@ -117,13 +123,13 @@ The `screenshot-launch-options` Expo module (`/apps/mobile/modules/screenshot-la
 
 ## Protocol Package
 
-The protocol package (`/packages/protocol/`) defines cryptographic primitives for **future end-to-end encryption** over remote relay connections:
+The protocol package (`/protocol/protocol.go`) defines cryptographic primitives for **future end-to-end encryption** over remote relay connections:
 
-- **HPKE hybrid encryption** — X25519 key exchange, HKDF-SHA256, ChaCha20Poly1305
-- **Ed25519 signatures** — For device authentication and message integrity
-- **Message types** — SessionHello, PairingRequest, PairingDecision, LifecycleEvent, StateSnapshot, RemoteCommand, etc.
-- **Replay protection** — Event-based sequencing and TTL enforcement
-- **Error codes** — Well-defined protocol error types
+- **HPKE hybrid encryption** — X25519 key exchange, HKDF-SHA256, ChaCha20Poly1305, declared as the fixed cipher suite `"HPKE-X25519-HKDF-SHA256-CHACHA20POLY1305+Ed25519"` (protocol version 1)
+- **Ed25519 signatures** — For device authentication and message integrity, with domain-separated signature payloads
+- **Message types** — `session_hello`, `pairing_request`, `pairing_decision`, `lifecycle_event`, `state_snapshot`, `output_request`, `output_snapshot`, `remote_command`, `command_result`, `ack`, `error`
+- **Replay protection** — Event-based sequencing and TTL enforcement (`replay`, `ttl_exceeded`, `created_in_future`, `expired` error codes)
+- **Size limits** — `MaxPlaintextSize` of 256 KiB per message
 
 The protocol is **not yet integrated** into the LAN transport. Today's LAN security uses TLS with certificate fingerprint pinning and bearer-token pairing (see [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md)). The HPKE protocol will provide end-to-end encryption for the future relay milestone.
 
@@ -189,6 +195,10 @@ Herdr Connect communicates with Herder through its documented CLI interface only
 ### LAN Security Boundary
 
 All LAN traffic is encrypted with TLS using a self-signed ECDSA P-256 certificate. Mobile devices pin the certificate's SHA-256 fingerprint and authenticate with per-device bearer tokens obtained through [QR-code pairing](../protocol/secure-pairing.md). Tokens are stored only as SHA-256 hashes on the daemon side. The daemon enforces per-device and per-IP rate limits. There is no end-to-end encryption layer yet — TLS terminates at the daemon. The HPKE-based protocol package will add E2EE for the future relay milestone.
+
+## Code Conventions
+
+Per `CLAUDE.md`, all code identifiers, error messages, log output, and test names/assertion messages must be in English; Chinese strings in older code (e.g., the source factory's legacy `未知 Herdr Source` error in `cmd/herdr-connect/main.go`) are legacy and are converted to English when the surrounding code is touched. Code comments may still be written in Chinese, and user-facing mobile copy goes through the i18n system (`apps/mobile/src/i18n/`).
 
 ## Cross-Platform Considerations
 

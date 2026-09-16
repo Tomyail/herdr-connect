@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0223d7c1b07dc21bca840c5c79007ddafc6abc77e61dce491d69a115a1f71d78",
+  "pageVersion": "sha256:2bf42672a28c495e76b1194248873c15f8ae861a56132e3daa9e62f0c930b606",
   "claims": [
     {
       "id": "claim_cb1d1d5fbda14d02ab434584f475f219",
@@ -187,10 +187,38 @@
           "version": "repo-file-v1:sha256:3af2503d9932890534918afdf13496a8948e108eee0363257d234a8989e6f1dd"
         }
       ]
+    },
+    {
+      "id": "claim_3b6d87294a314491b80563af0f8e911f",
+      "statement": "The protocol package lives at repo-root /protocol/protocol.go and defines wire-protocol version 1 with cipher suite HPKE-X25519-HKDF-SHA256-CHACHA20POLY1305+Ed25519, message types session_hello, pairing_request, pairing_decision, lifecycle_event, state_snapshot, output_request, output_snapshot, remote_command, command_result, ack, and error, replay/TTL error codes, and a 256 KiB MaxPlaintextSize; it is not yet integrated into the LAN transport.",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol.go#L22-L70",
+          "version": "repo-lines-v1:sha256:2dbfd26c7e926cd338ee14044ab094d41f658a60e4e00f9f2502be7c9a648387:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNmQ5MjU5ZjYxYThhMmEwZmYyNTNhYzE3ZmM0ODBkZDRmNzdkNWE0MDYxYTI5OWRkZTUxMGMyN2QwNjZkMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4ZDZiOGZjNDAwNmZkMDQ5MjhmMWY4ZjEzNTQ4MmVjZjU0MGQzNGJmZGQ4YWYxOTNmNjI2ZmYyMmNhMzA0ODQifQ"
+        },
+        {
+          "resource": "repo://protocol/protocol_test.go",
+          "version": "repo-file-v1:sha256:f5418bbc1aefc60a40fb4235d94be039dc7b125e0e888b09f95690651e7e3bcf"
+        }
+      ]
+    },
+    {
+      "id": "claim_35c58a3fb9bf4e2992df882b50e6ca05",
+      "statement": "CLAUDE.md requires all code identifiers, error messages, log output, and test names/assertion messages to be in English, with Chinese strings in older code (such as the source factory's legacy 未知 Herdr Source error) treated as legacy to convert on touch; code comments may remain Chinese and mobile UI copy goes through apps/mobile/src/i18n/.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L9-L13",
+          "version": "repo-lines-v1:sha256:ab7cc9f8f70c8d6e09bf8fc26531d231c1ae230d1c7ffae4464c7135d7fc721b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU1NDc2MWM1MTAzZjM2YTlmMTQ2ZjBlNjUwMmJhMmRiYzFhYzdmMDZiOWRmMWQ3N2QwZTc3MTE3YzM2ZTUzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU5NGFhNGZkYTYyMDAwYTAxYjY4ZmYzM2EyM2YxMzBhZWFlMzExYjFlYmNjYjJkMDhiNWQ2MzEwMjhkNzUyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjkzOTEyY2QzYzMzZWRmZDIzZDM3NjRlMTdhYjI5NzQ3YjM3OTM3NDIzNmM2NGE3NmIwYTVmZmU0OGFkMzgwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://cmd/herdr-connect/main.go#L51-L51",
+          "version": "repo-lines-v1:sha256:efc543358b24dfd1f8af8b04ba25e9bb71f935b111339762bbcc7754b1f1f1c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZjNTQzMzU4YjI0ZGZkMWY4YWY4YjA0YmEyNWU5YmI3MWY5MzViMTExMzM5NzYyYmJjYzc3NTRiMWYxZjFjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZjNTQzMzU4YjI0ZGZkMWY4YWY4YjA0YmEyNWU5YmI3MWY5MzViMTExMzM5NzYyYmJjYzc3NTRiMWYxZjFjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU0N2YxY2UyZmI2NjJkYjZiZjVlZjAyOGZkZThkZTg3NWQ1NjdlYzVkM2MwMzUxOGJjY2Q0ZjZhNDQ3NzliNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDAzOTk0NWY3MTNjZWNjYzJhMmJlOTgxYWI1YzVlZWEzN2Y5NWY5NzY5ZTU3NWNkOGVkOWE5ZmNiYWZkZjA2YSJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }

@@ -18,9 +18,11 @@ openwiki:
     no agent-get indirection.
   validation_commands: ["go test ./internal/herdrsource/..."]
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
+  - id: openwiki-source-ed83ad663bbbba548306379d
+    resource: repo://herdr-plugin.toml
   - id: openwiki-source-25242df1a4c24e52950d179b
     resource: repo://internal/herdrsource/fake.go
   - id: openwiki-source-534192c6054468f4777cf5f9
@@ -31,7 +33,7 @@ sources:
     resource: repo://internal/herdrsource/source.go
   - id: openwiki-source-92b2d50b2ed9be1154171648
     resource: repo://internal/herdrsource/tui_chrome.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
 
 # Herdr Source Adapters
@@ -131,21 +133,22 @@ type Capabilities struct {
 
 `HerdrCLIAdapter` (`internal/herdrsource/herdr_cli.go`) is the production implementation. It runs the CLI through an injected `CommandRunner` (`Run(ctx, name, args...) ([]byte, error)`); the default `ExecRunner` uses `exec.CommandContext(...).Output()`. `NewHerdrCLIAdapter` defaults the binary name to `herdr`, while `NewHerdrCLIAdapterWithBinary` allows overriding it — both constructors exist mainly so tests can inject a stub runner.
 
-<!-- openwiki: mermaid parse failed and this diagram was converted to a text fence so it does not break rendering. Fix the diagram source and restore the mermaid fence. Parser error: Heuristic: an unescaped angle bracket inside a label breaks rendering; rephrase the label. -->
-```text
+```mermaid
 sequenceDiagram
     participant D as Daemon handler
     participant A as HerdrCLIAdapter
     participant R as CommandRunner
     participant H as herdr CLI
     D->>A: Snapshot(ctx)
-    A->>R: Run("herdr", "agent", "list")
+    A->>R: Run "herdr agent list"
     R->>H: exec
-    H-->>R: {"result":{"type":"agent_list",...}}
-    A->>R: Run("herdr", "workspace", "list")
-    A->>R: Run("herdr", "tab", "list", "--workspace", <id>) (per workspace)
-    A-->>D: Snapshot{Online, Agents[], Cursor=maxRevision}
+    H-->>R: agent_list JSON
+    A->>R: Run "herdr workspace list"
+    A->>R: Run "herdr tab list --workspace id" per workspace
+    A-->>D: Snapshot with Online, Agents, Cursor as max revision
 ```
+
+*Snapshot flow: one `agent list` call plus fail-soft workspace/tab label enrichment.*
 
 ### Snapshot: pane_id addressing
 
@@ -179,6 +182,10 @@ Because `read` does not report a revision, the adapter makes a second call, `her
 - **ANSI escapes** are stripped first and CRLF normalized to LF.
 
 Two guards keep the heuristic safe: at most 2 otherwise-unclassifiable short lines (≤ 200 runes) may be "rescued" as presumed status lines per capture, so long runs of short prose can never cascade into deleted content; and trailing blank lines are collapsed. `internal/herdrsource/tui_chrome_test.go` covers these cases.
+
+## Herdr Plugin Manifest
+
+`herdr-plugin.toml` declares the plugin identity that hosts the adapter: plugin id `herdr.connect` ("Herdr Connect", version 0.1.0) with `min_herdr_version = "0.7.0"`, targeting `linux` and `macos`. It exposes three workspace-context actions — `doctor` (`herdr-connect doctor`, diagnose the Herdr installation), `pair` (`herdr-connect pair`, pair a device), and `service-status` (`herdr-connect service status`, show daemon service status). The minimum-version floor matches the adapter's snapshot behavior, which relies on `agent list` returning `pane_id` as the addressable identifier.
 
 ## Fakes and Tests
 

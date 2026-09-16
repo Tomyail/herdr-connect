@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d997a5e96ac7650f8b8d97cf3d98f53ec853de2be3ecb33c4f4715f058123924",
+  "pageVersion": "sha256:2f673957c509c7ae3e08d119bace4c3e5e6fec67c96f8bf70f32b711edd1bff0",
   "claims": [
     {
       "id": "claim_32652b7218d44e2fa39dab54f69414bb",
@@ -199,10 +199,80 @@
           "version": "repo-lines-v1:sha256:8e404aa5931ce487c050bf3ad809af768566ea454b59cc7fb65624c3f0f5f075:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZmQxYWY5MTQ0NjhhMjM5ZjJjNDY3YzU3N2FjODg0ZTVmZmM5YmE4MWYzOGU0OWQxN2Y1MWM0ZGQ5Zjc5ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZTAzNDZjNzE0OWM4Yjc3Y2Y5MDA0MGM0YzQ3NjgzNjNjN2E1ZTQ1ZTU3YzdlODFkMGU3MWI0ZWY0ZDNkNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzYzgxZDQ0YWFiZDhmZDAyZDc4MmY5NGExZTNjZjFkYTkzNzM1YmI0MGYzYWNmYTVhMDU3MTU2ZTY5MmRmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZDY0MTY4Njg0N2QyYmNjZjAxZjM3NmY0MzAxM2NlMDE4N2E4MjMxMWY3NTVkYzY0OTk2NmJiZGU0ZTU3NzEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2e737e7506744c5b973be47593a5d0bc",
+      "statement": "protocol.Seal builds an envelope by JSON-marshaling the header into a base64url protected header (max 4 KiB) that embeds the HPKE encapsulated key, sealing the plaintext with ChaCha20Poly1305 using the protected bytes as associated data, and Ed25519-signing the protected bytes plus ciphertext; protocol.Open rejects non-canonical protected headers (re-marshal must be byte-identical) and verifies route IDs (wrong_route), signature (authentication_failed), a 2-minute future clock-skew tolerance (created_in_future), expiry, HPKE open, and mandatory replay guards before returning the plaintext.",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol.go#L328-L386",
+          "version": "repo-lines-v1:sha256:0ab9caf9ed283f37a83de6bef47a3075ae897117d5a3e65b2bba0e2917901e57:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzOWU0MGZhNzkwNzJlZThkZGRiOWYzYjY4ZjMzYzQ1ZmY1NmM5NDhhMmJjMmU4YjIwZGRiN2U5Yjc2YmY2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwNTQ0M2VlOTYzYWQ2YmU3NTM0MzY0ZjE5MTcxZGM1M2EzZGY4NzVkNjIyMTY2ODIzMWI0ZTM2ZDMxNzBmZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNTc2MTIyZTZhZjcxMzk5NTUwNzNjZjI5NjE0MzBlM2JkZjZiOGI4NjBjNmEzM2ZiZThkYmE1MDQ2MTU1YmUifQ"
+        },
+        {
+          "resource": "repo://protocol/protocol.go#L388-L498",
+          "version": "repo-lines-v1:sha256:a297e9699bd0791ba51f7cf0103c3d6a7fb65d33573b70e9b2ff8ccad35fb44b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmZjY1YTRmZmM0Yzk4M2FjZmNmZWVhMDFkNDBmMGFiNTQ4OWMwNDMyOTg2NTNmZmFmODJiYTBiN2MwYWM1NmFlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzZTRlNDJmNzA0MDE3YmZmMTFlYjg2MTg0NWQzMmEwNDI0YTY3ODhiYTFlNzQ0MjhhYjEyNjAyYzhhM2ZhMmYyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4YjcyNTE3Y2QyMDExMTJiYzQzZjk4ZDMzN2Q5ZTkwNThiNzI0ZmU3YzAyMzc5MDAzZWFjYzc0MWZjMWFjYTE0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_46079db2d1fb4c1196c17b8e781cdbdd",
+      "statement": "validateHeader enforces version 1 and the fixed cipher suite, per-message-type field discipline (e.g. lifecycle_event requires event_id/event_seq, remote_command/command_result require command_id, ack requires ack_seq, and each type forbids unrelated correlation fields), identifier pattern ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, 2^53-1 interoperable integer limits, and per-type maximum TTLs ranging from 30 seconds (session_hello, output_*, remote_command) through 5 minutes to 24 hours (lifecycle_event).",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol.go#L500-L589",
+          "version": "repo-lines-v1:sha256:e37cbecbb7bf5ab6344f38d5d6991d7e266747087fe50842468b5580e25c5cb3:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiYWZhMTJjYjViNzY5MTdmNzMzMzMwMzBhMTc5YWIzOGY3MjVmZjBhY2NhNTllNzc3ZDBjOGZlNmM4NDJkODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMGU1NTg5ODY0NWJkYWIwZDY1NWJhYzRhMWE0OTkyYjUyZDBjYTJkZGQzMmZlZjA0ODI3ZGVmM2RjYmVmZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NWFkNDJlNWY3MDY2NTRiOGM4OTQyMzliOTNkOGYxOWMwMTI4MTJiYWQ3MGZhNTU4MzEzYjViYjMxMjkyMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_59554a9f3923403f82411f17e9adeec1",
+      "statement": "Pairing requests are the only message type allowed to embed a sender signing public key in the header; ValidatePairingCandidate decodes the payload with DisallowUnknownFields, requires 32-byte base64url secret/challenge/device keys, compares the secret and embedded signing key in constant time, and bounds device names to 1-128 UTF-8 runes, with a mandatory PairingGuard.AcceptIfNew for single use.",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol.go#L241-L326",
+          "version": "repo-lines-v1:sha256:e1235f09f98c394e2de04a6aa06fcc90ba4705f143f78bf34029dc48f95e4959:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YzgxZjc1ZjRjNzk2YmNiZDBiZmI5OGE5Mzk1OGM0NTdiYzRiOWIwMDEyZWZkZTcyZWE4NzY2NDQxZDYzNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNGU0MmY3MDQwMTdiZmYxMWViODYxODQ1ZDMyYTA0MjRhNjc4OGJhMWU3NDQyOGFiMTI2MDJjOGEzZmEyZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZDNhNzYyNGM2M2NlOTg0M2IxZDQzNjdhZDAzNjZmYWQyYWU4OGNhNmI4ZmI0OWIyZDdmYWYxMmM4MzYyYzcifQ"
+        },
+        {
+          "resource": "repo://protocol/protocol.go#L429-L439",
+          "version": "repo-lines-v1:sha256:bd1da590450464786964b96e6d43ecb9f5857d9f835405b81f356c671144382c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmRhZmI5NzhmNDFiMzEwMTQ1M2UwM2E0ZTQ3NWZhZjE5ODgzYWNiYmM4N2JlOGFiZjA5MmNmYjg4MzgzZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwOTkwODg4YzI0NmMyMDFmYjMyODk3MmU0ZWU0ZGJlZWZjZTE1YWJjMjkxNDcwYzJkMDk4OWNlY2ViOTZkMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2ZThiNjViMDM0MTMxZjg2OGNjMmEyMjBjMTQ3MTAxY2NhMTgwYWM3ZGE1NDI1M2Y1MTJiN2NhZWE4OGU5ODEifQ"
+        },
+        {
+          "resource": "repo://protocol/protocol.go#L471-L495",
+          "version": "repo-lines-v1:sha256:542cf578b830488bb702983cea0c863d9f63e097e35540f361478251b03ca3a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMzIzYWQ0OThlYmM0N2RkNjgyYmRjYmMwMDAxMzgyYmI3OWRiNmRlMDBmZmFlYWZjMGUzMmZjMDVjOWM0MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyOWFmYTExOTA0MjYzOWFjN2YyM2Q5NTZjZmYzZjg4MDUxZWNlYzZiNjNkMDMzZDNjNjdiMzAzNDQ3ZDFhYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViOTRhMThlYmMwNTk2OTlkOTUxNjQ5Nzk2Y2Q5OGYxODMxZDJkMTI4MDhlMDc3NzJkOTgxZGZjZjhmNTcxNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e28b6d12f9244d229dc57f2216b7723e",
+      "statement": "PairingChallengeTranscript builds a length-prefixed, domain-separated transcript over pairing ID, secret, challenge, both device keys, both installation keys, and the accept/reject decision; SignPairingChallenge and VerifyPairingChallenge Ed25519-sign/verify it, giving the device cryptographic proof that the installation accepted exactly these keys and preventing key substitution during the future Protocol v1 pairing.",
+      "evidence": [
+        {
+          "resource": "repo://protocol/protocol.go#L279-L318",
+          "version": "repo-lines-v1:sha256:9815b6b8516da20ddf0b5daa91d41db47a594938152915ce947decb548900060:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3M2I3YTQ3NzdjNDgxZTU4NWNjMjEzNTE1NDBkNWFiOWNiMzFiNzk3NWI1NWM1NTE1MzdlYTk3Yjc3NDNmMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZGQwNWYzMGMzODlkNmRlMTJiNjgxZmUyNTZmYWUwYzAyNjVlYmVkYWI2N2I4OTE4ZDkzNjhmN2EyNDI3YWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNmJjMzdhZDY5MmY1OWNlYzFiMjE0MDg1ZTM5YWE2NzdhZDdjZTc2ZjMyNjg5NTdkNjAyZmVkNDI5Nzk4YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d67d88c0a9044380b345f743ed0a4e85",
+      "statement": "Cross-language conformance is enforced by the JSON-in/JSON-out cmd/protocol-conformance CLI (operations generate_identity, seal, open, open_replay, sign_pairing_challenge, verify_pairing_challenge) and test/conformance.test.mjs, which builds both the Go CLI and the TypeScript packages/protocol CLI and asserts identical envelopes and error codes; protocol/testdata/v1/envelope.json pins a fixed interop vector with deterministic ephemeral key material.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L104-L185",
+          "version": "repo-lines-v1:sha256:ca95a351bae20e71e492e328635ad00c629a09c532f0543296f27110489a3cd7:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNWQ2NGY5NzFiMjRmNzAxZDM0Yzc3ZjEyNWFkOTNkNzBiN2I0MGEwMmMwMjM2YjA0NTM5M2UyNGJmNmI1ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMmJmZjhhYjc0OGM3Mjg2NzkzMjM1Mzc1MmU4ZTQxY2Y5MjhiZTFlNTExY2MwZjdlYWYzMzU0NmY1ZDc3MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MDhjMWIzYWZmMTgwOWJiNTZmOWViYjM4ZDc0YWNkOTU3ZDY3NmZlNGY3YThhMTQ4NTY0ZDMxZGVhMTAyYmMifQ"
+        },
+        {
+          "resource": "repo://protocol/testdata/v1/envelope.json",
+          "version": "repo-file-v1:sha256:2425649a4f3cd16ad1180192cfc2fc33e976dc9cdeb126e735af976e68136229"
+        },
+        {
+          "resource": "repo://test/conformance.test.mjs#L10-L40",
+          "version": "repo-lines-v1:sha256:fae9646992bbabe115b4157b35312f43764555a843dfb7cf230ee67c96d8054c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNjU0ODBkZmJjMTgyMWNlYjVkODU3ODJlNWQwM2NmZjkwYmUzZDFmMDZjMjQ3MzE3NDE0YWYyYzNmZGVkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxOTc5ZDNkZTAyNzhiNjZhMzg0YTczNjM3NTY2ZDI1ZDYxMWE0NjU5ZDkzNzgxOWUyYWJhOTViZDIyMzYyMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMTk5YTY5MDIzYzA0Y2Q2ZTFlNWQwZDc4ZjQwZmExZjIxNjAyYzAyNTcyODEzMTdlNzE4MzJiYmI2NmJjMGMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }

@@ -3,13 +3,14 @@ type: Protocol Specification
 title: Secure Pairing & TLS Protocol
 description: Implemented LAN pairing flow with TLS fingerprint pinning and bearer-token auth, plus future HPKE-based end-to-end encryption design for relay connections
 tags: [protocol, tls, pairing, authentication, cryptography, hpke, encryption]
-resource: /docs/security/lan-tls-pairing.md
 verified:
-  - by: openwiki/0.4.3
-    at: 2026-08-30T21:43:29.677Z
+  - by: openwiki/0.5.2
+    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-889b5718c4709f8aa5a81e18
     resource: repo://apps/mobile/src/agent-contract.ts
+  - id: openwiki-source-698aebbc9a4891b14f7f80b4
+    resource: repo://cmd/protocol-conformance/main.go
   - id: openwiki-source-4d337f0c7fd897a8626e5c73
     resource: repo://docs/security/lan-tls-pairing.md
   - id: openwiki-source-7bd743295a65ffe5a73f2ed4
@@ -22,7 +23,11 @@ sources:
     resource: repo://internal/store/pairing.go
   - id: openwiki-source-64700ed4d455b9f464c4ccf2
     resource: repo://protocol/protocol.go
-generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
+  - id: openwiki-source-e3ffd1d602203e7c87fb853f
+    resource: repo://protocol/testdata/v1/envelope.json
+  - id: openwiki-source-c4b7f012e593903d3c714884
+    resource: repo://test/conformance.test.mjs
+generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
 ---
 
 # Secure Pairing & TLS Protocol
@@ -30,7 +35,7 @@ generated: { by: "openwiki/0.4.3", at: "2026-08-30T21:43:29.677Z" }
 This page documents two security layers:
 
 1. **LAN Security (Implemented)** — TLS with self-signed certificate, fingerprint pinning, QR-code pairing, per-device bearer tokens, and device revocation. This is the active security model for all LAN communication today.
-2. **End-to-End Encryption (Future)** — HPKE-based protocol primitives for future relay connections. Not yet integrated into the transport.
+2. **End-to-End Encryption (Future)** — Protocol v1 HPKE envelope primitives in `/protocol/protocol.go` for future relay connections. Not yet integrated into the transport; trusted remote connection is not a current milestone.
 
 For the authoritative human-readable security model, see `/docs/security/lan-tls-pairing.md` in the repository.
 
@@ -158,357 +163,113 @@ CREATE TABLE pairing_secrets (
 
 These are intentionally separate from the schema v1 `devices`/`device_cursors` tables (which store Ed25519/X25519 keypairs for the future HPKE relay milestone).
 
-## End-to-End Encryption (Future)
+## End-to-End Encryption (Future — Protocol v1)
 
-The protocol package (`/packages/protocol/`) defines cryptographic primitives and message formats for **future end-to-end encryption** over remote relay connections. It is not integrated into the current LAN transport.
+The Go `/protocol` package implements the **Protocol v1** wire primitives: HPKE envelope sealing/opening, Ed25519 signatures, replay protection, and the pairing-challenge flow, for **future end-to-end encryption over remote relay connections**. It is not integrated into the current LAN transport — trusted remote connection is not a current milestone. A parallel TypeScript implementation lives in `/packages/protocol` for the mobile side; the two are held interoperable by cross-language conformance tests.
 
-**Status**: Research and development. Not yet used in production.
+**Status**: Implemented as a library and conformance-tested; not yet wired into any transport, key storage, or pairing UI.
 
-### Overview
+### Cipher Suite
 
-The protocol provides:
-
-- **Hybrid public-key encryption** — HPKE with X25519 key exchange, HKDF-SHA256, ChaCha20Poly1305 AEAD
-- **Digital signatures** — Ed25519 for device authentication and message integrity
-- **Message sequencing** — Event-based replay protection
-- **TTL enforcement** — Automatic expiration of stale messages
-- **Well-defined error codes** — Standardized failure modes
-
-## Cipher Suite
-
-The protocol uses a single cipher suite:
+A single fixed suite (`protocol.CipherSuite`), implemented via cloudflare/circl HPKE:
 
 ```
 HPKE-X25519-HKDF-SHA256-CHACHA20POLY1305+Ed25519
 ```
 
-Components:
-
 - **KEM** — DHKEM-X25519-HKDF-SHA256 (key encapsulation)
-- **KDF** — HKDF-SHA256 (key derivation)
+- **KDF** — HKDF-SHA256 (key derivation, `hpkeInfo` domain separator)
 - **AEAD** — ChaCha20Poly1305 (authenticated encryption)
-- **Signatures** — Ed25519 (authentication)
+- **Signatures** — Ed25519 (sender authentication, `signatureDomain` domain separator)
 
-## Key Types
+`GenerateIdentity` produces both keypairs for an installation or device: an X25519 HPKE encryption pair and an Ed25519 signing pair (private key stored as seed).
 
-### Encryption Keys (HPKE)
+### Message Envelope
 
-Each device maintains:
-
-- **Static keypair** — Long-lived X25519 key pair for receiving messages
-- **Ephemeral keypair** — Per-session key pair for forward secrecy
-- **Remote public keys** — Cached public keys of paired devices
-
-### Signing Keys (Ed25519)
-
-Each device maintains:
-
-- **Static keypair** — Long-lived Ed25519 key pair for signing messages
-- **Remote public keys** — Cached signing keys of paired devices
-
-### Key IDs
-
-Each key has a stable identifier:
-
-- `senderSigningKeyId` — Base64url-encoded Ed25519 public key
-- `recipientEncryptionKeyId` — Base64url-encoded X25519 public key
-
-## Message Envelope
-
-All encrypted messages use the same envelope structure:
-
-### Header
-
-```typescript
-interface Header {
-  version?: number;                    // Protocol version (1)
-  suite?: string;                      // Cipher suite name
-  messageType: MessageType;            // See Message Types
-  installationId: string;              // Installation identifier
-  senderId: string;                   // Device identifier
-  senderSigningKeyId: string;         // Ed25519 public key (base64url)
-  senderSigningPublicKey?: Uint8Array; // Raw Ed25519 public key
-  recipientId: string;                // Recipient device ID
-  recipientEncryptionKeyId: string;   // X25519 public key (base64url)
-  messageId: string;                  // Unique message ID
-  eventId: string;                    // Event ID for replay protection
-  eventSeq: number;                   // Event sequence number
-  throughEventSeq: number;            // Last seen event seq
-  commandId: string;                  // Command ID (for command messages)
-  requestId: string;                  // Request ID (for correlated responses)
-  ackSeq: number;                     // Acknowledged sequence number
-  createdAt: Date;                    // Message creation time
-  expiresAt: Date;                    // Message expiration time
-}
+```mermaid
+flowchart TD
+    H["Header"] -->|JSON marshal| P["protected header (base64url, includes enc key)"]
+    P -->|HPKE Seal AAD| C["ciphertext"]
+    P --> SP["signature input"]
+    C --> SP
+    SP -->|Ed25519 sign| S["signature"]
+    P --> E["Envelope {protected, ciphertext, signature}"]
+    C --> E
+    S --> E
 ```
 
-### Envelope
+How `Seal` builds an envelope: the header is JSON-marshaled (canonical, base64url), used as HPKE associated data, and the protected bytes plus ciphertext are Ed25519-signed.
 
-```typescript
-interface Envelope {
-  protected: string;  // Base64url-encoded header
-  ciphertext: string; // Base64url-encoded ciphertext
-  signature: string;  // Base64url-encoded Ed25519 signature
-}
+Message types (`MessageType`): `session_hello`, `pairing_request`, `pairing_decision`, `lifecycle_event`, `state_snapshot`, `output_request`, `output_snapshot`, `remote_command`, `command_result`, `ack`, `error`.
+
+The protected header (JSON keys `v`, `suite`, `message_type`, `installation_id`, `sender_id`, `sender_signing_key_id`, `sender_signing_public_key`, `recipient_id`, `recipient_encryption_key_id`, `message_id`, `event_id`, `event_seq`, `through_event_seq`, `command_id`, `request_id`, `ack_seq`, `created_at_ms`, `expires_at_ms`, `enc`) carries routing identity, sequence cursors, and the HPKE encapsulated key. `Open` re-marshals the decoded header and requires **byte-identical canonical JSON** — non-canonical encodings are rejected as `invalid_envelope`.
+
+### Header Validation Invariants
+
+`validateHeader` enforces, independently of crypto:
+
+- Version must equal 1 and suite must equal the fixed suite (`unsupported_version` / `unsupported_suite`)
+- Message type must be known; each type has **message-type-specific field discipline**: e.g. `lifecycle_event` requires `event_id` + `event_seq` and forbids `command_id`/`request_id`/`ack_seq`; `remote_command`/`command_result` require `command_id` and forbid event fields; `ack` requires `ack_seq`; other types forbid all optional correlation fields (`invalid_header`)
+- Identifiers must match `^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`
+- Sequence numbers and timestamps must stay within the interoperable 2^53−1 integer range
+- `expires_at` must be after `created_at`, and the lifetime must not exceed a **per-type maximum TTL** (`ttl_exceeded`): 30s for `session_hello`/`output_request`/`output_snapshot`/`remote_command`; 5 min for pairing/`state_snapshot`/`command_result`/`ack`/`error`; 24 h for `lifecycle_event`
+
+### Open Path: Verification Order
+
+`Open` verifies in a deliberate order so failures are non-oracle and stable:
+
+1. Decode + canonical-header check (`invalid_envelope`), header validation
+2. Route binding: installation/sender/recipient IDs must match expectations (`wrong_route`)
+3. Ed25519 signature over protected+ciphertext (`authentication_failed`) — except pairing requests, which bootstrapped the sender signing key from the embedded header field
+4. Time gates: reject `created_in_future` beyond a 2-minute clock-skew tolerance, then reject `expired` at or past `expires_at`
+5. HPKE open (AAD = protected header bytes); failure is `authentication_failed`, not a distinguishing error
+6. Replay: caller-supplied `ReplayGuard.MarkIfNew(messageID, expiresAt)` for normal messages or `PairingGuard.AcceptIfNew` for pairing requests; duplicates yield `replay`, storage errors `replay_store_failed`
+
+A missing replay/pairing guard is itself an error — replay protection is mandatory, not optional. Size limits: 256 KiB max plaintext (`MaxPlaintextSize`), 4 KiB max protected header; violations return `message_too_large`.
+
+Error codes are a stable `ErrorCode` enum (`replay`, `ttl_exceeded`, `authentication_failed`, `unsupported_version`, `unsupported_suite`, `expired`, `unsupported_message_type`, `invalid_envelope`, `invalid_header`, `invalid_key`, `wrong_route`, `created_in_future`, `replay_store_failed`, `message_too_large`) surfaced through `ProtocolError`/`ErrorCodeOf`.
+
+### Future Pairing Flow (Protocol v1)
+
+Unlike today's auto-approved QR pairing, the Protocol v1 design has an interactive, key-bootstrapping pairing:
+
+```mermaid
+sequenceDiagram
+    participant Device as Device
+    participant Installation as Installation
+    Device->>Device: GenerateIdentity (X25519 + Ed25519)
+    Device->>Installation: pairing_request envelope (embedded signing key, secret, challenge, device keys)
+    Installation->>Installation: ValidatePairingCandidate (constant-time checks)
+    Installation->>Installation: PairingGuard.AcceptIfNew (single use)
+    Installation-->>Device: pairing_decision + signed pairing challenge
+    Device->>Device: VerifyPairingChallenge (installation signature over transcript)
 ```
 
-The envelope is:
+The future key-bootstrapping pairing: the device's first message embeds its Ed25519 public key (the only message type allowed to do so), and the installation answers with a signed challenge transcript binding both sides' signing and encryption keys plus the accept/reject decision.
 
-1. **Protected** — Header encoded as JSON and base64url-encoded
-2. **Encrypted** — Header + plaintext encrypted with HPKE
-3. **Signed** — Entire envelope signed with Ed25519
+- `ValidatePairingCandidate` decodes the pairing-request payload with `DisallowUnknownFields`, requires the 32-byte pairing secret, challenge, and both device public keys as base64url, compares the secret and embedded signing key in constant time, and limits device names to 1–128 valid UTF-8 runes.
+- `PairingChallengeTranscript` builds a length-prefixed, domain-separated transcript over `pairing_id`, secret, challenge, both device keys, both installation keys, and the decision; `SignPairingChallenge`/`VerifyPairingChallenge` Ed25519-sign/verify it. This gives the device cryptographic proof that the installation accepted *these* keys, preventing key-substitution during pairing.
 
-## Message Types
+### Conformance & Test Vectors
 
-```typescript
-enum MessageType {
-  SessionHello = "session_hello",
-  PairingRequest = "pairing_request",
-  PairingDecision = "pairing_decision",
-  LifecycleEvent = "lifecycle_event",
-  StateSnapshot = "state_snapshot",
-  OutputRequest = "output_request",
-  OutputSnapshot = "output_snapshot",
-  RemoteCommand = "remote_command",
-  CommandResult = "command_result",
-  Ack = "ack",
-  Error = "error",
-}
-```
+Cross-language interop is enforced by:
 
-### SessionHello
+- **`/cmd/protocol-conformance`** — a JSON-in/JSON-out CLI exposing `generate_identity`, `seal`, `open`, `open_replay`, `sign_pairing_challenge`, and `verify_pairing_challenge` over the Go package.
+- **`/test/conformance.test.mjs`** — builds both the Go CLI and the TypeScript `/packages/protocol` conformance CLI and asserts both produce identical envelopes (deterministic via `ephemeral_key_material`) and identical error codes.
+- **`/protocol/testdata/v1/envelope.json`** — a fixed interop vector (lifecycle event with pinned keys and ephemeral material) any implementation must reproduce byte-for-byte.
+- **`/protocol/protocol_test.go`** — Go unit tests for round trips, replay rejection with a stable code, tampered ciphertext without an oracle, version rejection before crypto, expiry at the exact boundary, 30-second remote-command TTL, size limits, header field discipline, pairing-request key bootstrap, and pairing-challenge validation.
 
-Initial discovery and capability exchange:
+Run the Go tests with `go test ./protocol`; conformance with the repo's JS test runner.
 
-```typescript
-interface SessionHello {
-  installationId: string;
-  deviceId: string;
-  protocolVersion: number;
-  supportedCipherSuites: string[];
-  createdAt: Date;
-  expiresAt: Date;
-}
-```
+### Relationship Between the Two Layers
 
-### PairingRequest
-
-Request to pair devices:
-
-```typescript
-interface PairingRequest {
-  installationId: string;
-  deviceId: string;
-  deviceName: string;
-  deviceType: "ios" | "android" | "desktop";
-  pairingToken: string;  // Random token for display
-  createdAt: Date;
-  expiresAt: Date;
-}
-```
-
-### PairingDecision
-
-Accept or reject pairing:
-
-```typescript
-interface PairingDecision {
-  accepted: boolean;
-  deviceName?: string;
-  rejectionReason?: string;
-  createdAt: Date;
-}
-```
-
-### LifecycleEvent
-
-Agent state change notification:
-
-```typescript
-interface LifecycleEvent {
-  agentId: string;
-  sourceId: string;
-  lifecycleRevision: number;
-  interactionState: InteractionState;
-  turnOutcome?: TurnOutcome;
-  eventSeq: number;
-  createdAt: Date;
-}
-```
-
-### RemoteCommand
-
-Execute command on remote installation:
-
-```typescript
-interface RemoteCommand {
-  commandId: string;
-  commandType: "focus_agent" | "send_message" | "interrupt";
-  parameters: Record<string, unknown>;
-  requestId: string;
-  createdAt: Date;
-  expiresAt: Date;
-}
-```
-
-## Replay Protection
-
-Each message includes:
-
-- **eventId** — Unique identifier for the event
-- **eventSeq** — Monotonically increasing sequence number
-- **throughEventSeq** — Last event seq seen by sender
-
-Recipients:
-
-1. Reject messages with `eventSeq` <= `throughEventSeq`
-2. Reject messages with `createdAt` in the future
-3. Reject messages with `expiresAt` in the past
-4. Track last seen `eventSeq` per sender
-
-This prevents replay attacks even if an attacker captures and re-sends a message.
-
-## Error Codes
-
-```typescript
-enum ProtocolErrorCode {
-  Replay = "replay",
-  TtlExceeded = "ttl_exceeded",
-  AuthenticationFailed = "authentication_failed",
-  UnsupportedVersion = "unsupported_version",
-  UnsupportedSuite = "unsupported_suite",
-  Expired = "expired",
-  UnsupportedMessageType = "unsupported_message_type",
-  InvalidEnvelope = "invalid_envelope",
-  InvalidHeader = "invalid_header",
-  InvalidKey = "invalid_key",
-  WrongRoute = "wrong_route",
-  CreatedInFuture = "created_in_future",
-  ReplayStoreFailed = "replay_store_failed",
-  MessageTooLarge = "message_too_large",
-}
-```
-
-Errors are returned in `Error` messages with human-readable descriptions.
-
-## Size Limits
-
-- **Max plaintext size** — 256 KiB
-- **Max envelope size** — ~300 KiB (after encoding)
-
-Messages exceeding these limits are rejected with `MessageTooLarge`.
-
-## Pairing Flow
-
-### Step 1: Discovery
-
-Device discovers installation via Bonjour (or future relay).
-
-### Step 2: Pairing Request
-
-Device sends `PairingRequest` with:
-
-- Device info (ID, name, type)
-- Random pairing token (6-digit string)
-- Expiration (usually 5 minutes)
-
-### Step 3: User Confirmation
-
-Installation shows pairing token and asks owner to confirm.
-
-### Step 4: Pairing Decision
-
-Installation sends `PairingDecision`:
-
-- `accepted: true` + device name → Pairing succeeds
-- `accepted: false` + rejection reason → Pairing rejected
-
-### Step 5: Key Exchange
-
-Both devices exchange public keys:
-
-- Device sends Ed25519 and X25519 public keys
-- Installation sends Ed25519 and X25519 public keys
-- Both sides store remote keys for future messages
-
-### Step 6: Encrypted Session
-
-All subsequent messages are:
-
-- Encrypted with recipient's X25519 public key
-- Signed with sender's Ed25519 private key
-- Protected with replay detection
-
-## Current Limitations
-
-The protocol package is **not yet integrated**:
-
-- No pairing UI in mobile client or daemon
-- No key storage or persistence layer
-- no integration with HTTP server or client
-- Conformance tests exist but are not run in CI
-
-Future work:
-
-1. Implement key storage (SQLite for daemon, MMKV for mobile)
-2. Add pairing screens to mobile app
-3. Replace HTTP demo endpoints with protocol messages
-4. Implement relay for remote access
-5. Add push notifications for wake-on-demand
-
-## Security Considerations
-
-### Forward Secrecy
-
-The protocol uses ephemeral HPKE keypairs per session. Compromise of long-term keys does not decrypt past sessions.
-
-### Replay Protection
-
-Event-based sequencing prevents replay attacks. Each message includes `eventSeq` and `throughEventSeq`, and recipients reject duplicates or old messages.
-
-### Key Compromise
-
-If Ed25519 signing key is compromised:
-
-- Attacker can impersonate the device
-- Cannot decrypt past messages (ephemeral keys)
-- Remedy: revoke key and re-pair
-
-If X25519 encryption key is compromised:
-
-- Attacker can decrypt future messages
-- Cannot decrypt past messages (ephemeral keys)
-- Remedy: rotate key and re-pair
-
-### Future Post-Quantum
-
-The current cipher suite is **not post-quantum secure**. X25519 and Ed25519 are vulnerable to quantum cryptanalysis. Future versions may add:
-
-- Post-quantum KEM (e.g., Kyber)
-- Post-quantum signatures (e.g., Dilithium, SPHINCS+)
-
-## Testing
-
-Conformance tests verify:
-
-- Envelope encoding/decoding
-- HPKE encryption/decryption
-- Ed25519 signature verification
-- Replay protection
-- TTL enforcement
-- Error handling
-
-Run with:
-
-```sh
-pnpm test:conformance
-```
-
-See `/test/conformance.test.mjs` for test cases.
+Per `/docs/security/lan-tls-pairing.md`, both models reduce to "installation has a stable identity, devices hold revocable credentials granted at pairing time." The LAN transport substitutes a pinned certificate fingerprint for the Ed25519/X25519 identity and a bearer token for the per-device keypair, so a future migration to Protocol v1 reuses the same pairing concept and device/revocation storage shape — though no forward compatibility is promised; devices may need to re-pair.
 
 ## Resources
 
 - **Specification** — `/docs/protocol/v1.md`
-- **Conformance** — `/docs/protocol/conformance.md`
-- **Source** — `/packages/protocol/src/index.ts`
-- **Tests** — `/test/conformance.test.mjs`
+- **Conformance harness doc** — `/docs/protocol/conformance.md`
+- **Go implementation** — `/protocol/protocol.go`
+- **Go tests / vectors** — `/protocol/protocol_test.go`, `/protocol/testdata/v1/envelope.json`
+- **Conformance CLI & tests** — `/cmd/protocol-conformance/main.go`, `/test/conformance.test.mjs`
+- **LAN threat model** — `/docs/security/lan-tls-pairing.md`

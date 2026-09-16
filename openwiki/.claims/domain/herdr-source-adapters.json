@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8094c125e4eaf3604e31b48757b71c6c934486964d302acbd7e48dcb527973af",
+  "pageVersion": "sha256:034c20f2aac978278cb78ffec4e980cdb3d842f973f0b6c0fe6238b1a15bba57",
   "claims": [
     {
       "id": "claim_03a34e42218e4028862c97df298f888a",
@@ -109,10 +109,20 @@
           "version": "repo-file-v1:sha256:b7a9780c73aeac14127df1947df635b286676a73badb9623427570cf8c32b039"
         }
       ]
+    },
+    {
+      "id": "claim_ec8e907350854cddbcd72cfec5a31520",
+      "statement": "herdr-plugin.toml declares the herdr.connect plugin (Herdr Connect v0.1.0, min_herdr_version 0.7.0, linux/macos) exposing workspace actions doctor, pair, and service-status that invoke the herdr-connect CLI.",
+      "evidence": [
+        {
+          "resource": "repo://herdr-plugin.toml",
+          "version": "repo-file-v1:sha256:8b22d8162ceeece9acd78eea4f2e2f5aac4ef34f51133d90ab21d465986fde91"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.4.3",
-    "at": "2026-08-30T21:43:29.677Z"
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T21:47:50.978Z"
   }
 }
