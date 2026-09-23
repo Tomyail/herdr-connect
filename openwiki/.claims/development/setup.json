@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e7698617b87c9c04b75bae57aa01bf652ed8dece749533cb5ee10e426715f7c9",
+  "pageVersion": "sha256:d46a45d89ed6e3f67c6a4efecf84d86731a2340ed5224d67c891a708e19ef834",
   "claims": [
     {
       "id": "claim_a9bc93cd14aa4879921d86b4f1adb25c",
@@ -188,13 +188,23 @@
       "evidence": [
         {
           "resource": "repo://AGENTS.md",
-          "version": "repo-file-v1:sha256:77667e9d1c514a66e1aaa0a104654b401e5a10635e689a380dcdbe18aae81c45"
+          "version": "repo-file-v1:sha256:9d20b93a1a0f189119c78040a7516e3f2d1a15d187ae288b37b3a86d47051b08"
+        }
+      ]
+    },
+    {
+      "id": "claim_58278951ce2c43edacfde59f5027e70b",
+      "statement": "Per AGENTS.md, the generated openwiki/ evidence index is optional just-in-time context: contributors must not preload or search wikis at task start; retrieval (via openwiki_search/openwiki_read, or openwiki/quickstart.md when tools are unavailable) is warranted only on request, when unfamiliar architecture materially affects the task, or when source inspection leaves uncertainty. Source code and tests are authoritative. A scheduled OpenWiki GitHub Actions workflow refreshes the wiki, and hand-editing generated OpenWiki pages is discouraged in favor of updating sources and regenerating.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L24-L38",
+          "version": "repo-lines-v1:sha256:5a99db190588a58887dedd862087182bcc044b1c2e4fa49bd3cc06e8d28e4a33:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMTgwZjljMTI2OTAzYmNjMzMxYWE5NTQ1NmU0OTQ0NGE3ZDRkMDExZThhMmE4M2Y1ZGM4NzAyMzkxODEyZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjMzhjM2RlZjhkNDZkYTYzZWY3NzFkOTRjNGZlYWMxZWMyNGViMDQzMmUyMWEwMGZlZGMxYWJkNjU3NjJjMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5Zjc4NzE0ODkzYWE3Nzk0MmNlYTFjNGEyZTAyMzFkYmI3ZmEyYTQxYTcwYzgxNDYwYTNjNjc1NjJkYTNhYWEifQ"
         }
       ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-15T21:49:26.805Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-23T21:53:33.363Z"
   }
 }

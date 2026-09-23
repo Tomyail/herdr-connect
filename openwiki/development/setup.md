@@ -4,8 +4,8 @@ title: Development Setup
 description: How to build, run, and develop Herdr Connect from source for contributors
 tags: [development, setup, build, dependencies, environment]
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-15T21:49:26.805Z
+  - by: openwiki/0.6.0
+    at: 2026-09-23T21:53:33.363Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -29,7 +29,7 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-40275cb92c3610938f16ade3
     resource: repo://pnpm-workspace.yaml
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T21:49:26.805Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-23T21:53:33.363Z" }
 ---
 
 # Development Setup
@@ -313,6 +313,15 @@ All code identifiers (function/type/variable names), error messages, log output,
 ### Documentation Language Policy (AGENTS.md)
 
 For context on where language rules apply: public-facing user documentation (root README, installation and release notes, privacy and security policies, the contribution guide, and community health files) uses the English version as canonical, with Simplified Chinese translations in `docs/zh-CN/`. When modifying public docs, keep the Chinese translations in sync or explicitly mark them as pending. Internal design documents, domain language, ADRs, specs, plans, reviews, and handover documents may continue in Simplified Chinese. Code identifiers, protocol fields, enum values, commands, and file names may stay in English where there is no accurate Chinese translation.
+
+### OpenWiki Usage (AGENTS.md)
+
+AGENTS.md also defines how contributors should use the generated `openwiki/` evidence index:
+
+- The wiki is optional just-in-time context, not required startup reading. Do not enumerate, preload, or search wikis at task start; retrieve only when the user asks, when unfamiliar architecture materially affects the task, or when source inspection leaves an important uncertainty, and stop once the question is grounded.
+- When OpenWiki retrieval tools are available, use `openwiki_search` for just-in-time context and `openwiki_read` for complete sections; use `openwiki_list_workspaces`/`openwiki_list_wikis` to discover workspace membership. If a search returns `workspace_required`, ask which listed workspace to use and retry with its ID. If the tools are unavailable, read `openwiki/quickstart.md` and follow its links.
+- Source code and tests remain authoritative; a brief's unknowns and review items are verification gaps, not automatic requirements. Prefer the narrowest quiet validation that proves the changed behavior and preserve complete failure output.
+- A scheduled OpenWiki GitHub Actions workflow refreshes the wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked — update source code/docs and let OpenWiki regenerate.
 
 ## IDE Setup
 
