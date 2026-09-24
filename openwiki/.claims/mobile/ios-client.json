@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9d50c33e9d6fbf70c839a4507e143f0a4b724fd6e0c7b8344bf0ca4bb9416de1",
+  "pageVersion": "sha256:9e7be5896f0abdd49f8c3f2053968e6efe081c9dc34ac7fa8715d0af3c762386",
   "claims": [
     {
       "id": "claim_0c1a682818444f59916c6a05970d3833",
@@ -389,10 +389,28 @@
           "version": "repo-lines-v1:sha256:53ed2fabc0d8829a103147666bb0b3a6304a19c382b72dfb8c9b059e75fb24c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZjU4OTA2NTNhZjNjZTk1YTg2N2JiNzVkYTY1MjM4NGQ1NjdhOGRhNGM1NDI2Y2U3OGM0YmJiZDNmOTlmZDkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2b28c422a14448af928a198ee67557f6",
+      "statement": "The Settings screen renders a dev-only KickstartExchangeBanner (from @tomyail/react-native-kickstart-exchange, a mobile dependency) at the bottom of settings content in both the narrow Settings screen and the wide SettingsDetailColumn, guarded by __DEV__ so it never appears in production builds.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/package.json#L28-L28",
+          "version": "repo-lines-v1:sha256:bf0224b9ce1da6270a9ffc65740d7fb6addde8fe1b1430f2e2f26c00ae793772:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYwMjI0YjljZTFkYTYyNzBhOWZmYzY1NzQwZDdmYjZhZGRkZThmZTFiMTQzMGYyZTJmMjZjMDBhZTc5Mzc3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYwMjI0YjljZTFkYTYyNzBhOWZmYzY1NzQwZDdmYjZhZGRkZThmZTFiMTQzMGYyZTJmMjZjMDBhZTc5Mzc3MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzc0YmQ5MjExMGUyMjVhMDQzMTVhNTc3Mzc1NGQxNDk3MWE4MmRmMGY5OWM3YTI1MTJlY2E2YzU4NTY1ZjhlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzFmMTAyZjQ0ZTFhNGI5YThkMTg5MjA1ODA5MmFmOWVjNTE0ZWIxOGRlZjZhNjljMjVmNjQ0ZjdmYzgyMmE3NyJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/Settings.tsx#L430-L430",
+          "version": "repo-lines-v1:sha256:0f25376d5627856f114f4a3a072cc390f219eb9af79ca6ca3107690ce39cab07:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYyNTM3NmQ1NjI3ODU2ZjExNGY0YTNhMDcyY2MzOTBmMjE5ZWI5YWY3OWNhNmNhMzEwNzY5MGNlMzljYWIwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYyNTM3NmQ1NjI3ODU2ZjExNGY0YTNhMDcyY2MzOTBmMjE5ZWI5YWY3OWNhNmNhMzEwNzY5MGNlMzljYWIwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg1ZWY3ZTJmOTViNDYzNmM1MjJmMTQyMzgyYWZlZjUxMTdmZWRkZGU3ODIzNjg4NTI3ZWM2NGIyZGFhYmJmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY3ZjU3NWQ4ZDRlYWQ0NjdhNDM3YjcwM2FhZDY3N2NjZTI0YzM5OWQ0ZDk4NTU5YWM4M2U3ODMxM2E1Y2NiYyJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/src/SplitLayout.tsx#L258-L258",
+          "version": "repo-lines-v1:sha256:a6152f137b4e887f5b334681cffa26e39db59bf930b5eb82b60db87fd108ab74:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxNTJmMTM3YjRlODg3ZjViMzM0NjgxY2ZmYTI2ZTM5ZGI1OWJmOTMwYjVlYjgyYjYwZGI4N2ZkMTA4YWI3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxNTJmMTM3YjRlODg3ZjViMzM0NjgxY2ZmYTI2ZTM5ZGI1OWJmOTMwYjVlYjgyYjYwZGI4N2ZkMTA4YWI3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg4MWQ2MmE4OTQ5MzhmZDFhOGU2NzExOWM5YTI4ZDFlYzNjZGQxZjhlYzY5NGI5NGVjNTY4ZDI0MzJmYWE0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGZjMjNmMGRkNWUwNTM5YTE0NzBlMWVhMzE4NDg3NzE5NTRkNmFmMjkyYzBkZTE3ZTg0NDA1YTA2MmMyOGQwZSJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-16T21:47:50.978Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T21:53:59.537Z"
   }
 }

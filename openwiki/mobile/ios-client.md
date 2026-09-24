@@ -3,9 +3,6 @@ type: "Reference"
 title: "iOS Mobile Client"
 description: The React Native/Expo iOS app (apps/mobile), displayed as "Crozier", that discovers Herdr Connect daemon installations over Bonjour, pairs via QR, and presents agents to their owner.
 tags: [mobile, ios, react-native, expo, pairing, bonjour, agents]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-a6ba9053969a3e00cd971742
     resource: repo://apps/mobile/app.config.ts
@@ -67,7 +64,10 @@ sources:
     resource: repo://apps/mobile/src/Settings.tsx
   - id: openwiki-source-7b5a9165da5d011e9f652a26
     resource: repo://apps/mobile/src/SplitLayout.tsx
-generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-24T21:53:59.537Z
 ---
 
 # iOS Mobile Client
@@ -135,7 +135,7 @@ The app runs at native iPad resolution (`supportsTablet: true` in `app.config.ts
 - **AgentsScreen** (`AgentsScreen.tsx`) — Lists all agents with status pills and brand icons; shows pairing/revoked/error state when not connected. Exports `AgentsScreenContent` for use inside the split-layout list column.
 - **AgentDetail** (`AgentDetail.tsx`) — Shows recent output, focus switcher, unified composer bar (send/interrupt), and voice input with optional continuous mode. Exports `AgentDetailBody`, `AgentDetailTitleBlock`, and `AgentDetailRefreshButton` so the wide layout can render the same content with an inline header.
 - **PairingScreen** (`PairingScreen.tsx`) — Full-screen QR scanner for pairing with the daemon
-- **SettingsScreen** (`SettingsScreen.tsx` → `Settings` in `Settings.tsx`) — Renders the four Settings categories (general/notifications/connection/about) built by `useSettingsCategories`; exports that hook plus `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions.
+- **SettingsScreen** (`SettingsScreen.tsx` → `Settings` in `Settings.tsx`) — Renders the four Settings categories (general/notifications/connection/about) built by `useSettingsCategories`; exports that hook plus `SettingsCategoryKey` so both narrow and wide layouts build from the same category definitions. Both the narrow `Settings` screen and the wide `SettingsDetailColumn` render a dev-only `KickstartExchangeBanner` (`@tomyail/react-native-kickstart-exchange`, guarded by `__DEV__`) at the bottom of the settings content; it never ships in production builds.
 - **LanguageScreen** (`LanguageScreen.tsx`) — English/Chinese selection
 - **AppearanceScreen** (`AppearanceScreen.tsx`) — Light/dark theme selection
 

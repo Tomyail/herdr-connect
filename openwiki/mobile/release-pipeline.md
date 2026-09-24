@@ -3,9 +3,6 @@ type: release-pipeline
 title: Mobile Release Pipeline
 description: How iOS ships to TestFlight via Xcode Cloud (`ios-v*` tags) or a local `asc`-driven flow, plus fixture-driven App Store screenshot generation and the (currently dormant) Android release workflow for the Herdr Connect mobile app.
 tags: [mobile, ios, android, release, testflight, screenshots, xcode-cloud, asc]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-7e2feff63ac717cadd6c55fa
     resource: repo://.github/workflows/android-release.yml
@@ -33,7 +30,10 @@ sources:
     resource: repo://docs/maintainers/releasing.md
   - id: openwiki-source-168e3582b3bc1a21faf6830e
     resource: repo://docs/release/ios-release-process.md
-generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-24T21:53:59.537Z
 ---
 
 # Mobile Release Pipeline
@@ -128,7 +128,6 @@ flowchart TD
     I --> J["Compile composer Swift - swiftc"]
     J --> K["SwiftUI marketing composition with device mockup and localized copy"]
     K --> L["asc screenshots validate - APP_IPHONE_65 or APP_IPAD_PRO_3GEN_129"]
-    L["asc screenshots validate - APP_IPHONE_65 or APP_IPAD_PRO_3GEN_129"]
 ```
 
 End-to-end screenshot capture pipeline.

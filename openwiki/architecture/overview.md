@@ -5,8 +5,8 @@ description: High-level architecture of Herdr Connect, covering the Go daemon, m
 tags: [architecture, go-daemon, mobile-client, protocol, data-flow]
 resource: https://github.com/Tomyail/herdr-connect
 verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-16T21:47:50.978Z
+  - by: openwiki/0.6.0
+    at: 2026-09-24T21:53:59.537Z
 sources:
   - id: openwiki-source-a04d6c803675fbfe778f6010
     resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
@@ -20,6 +20,8 @@ sources:
     resource: repo://CLAUDE.md
   - id: openwiki-source-cac1ecbd6712aa5a1db25ecf
     resource: repo://cmd/herdr-connect/main.go
+  - id: openwiki-source-435ef4d663e8147156c1b2dc
+    resource: repo://internal/daemoncli/cli.go
   - id: openwiki-source-8d634e373556e70d59a133fd
     resource: repo://internal/daemonservice/service.go
   - id: openwiki-source-997c9b12907c5de6125f8b51
@@ -40,12 +42,12 @@ sources:
     resource: repo://protocol/protocol_test.go
   - id: openwiki-source-64700ed4d455b9f464c4ccf2
     resource: repo://protocol/protocol.go
-generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
 ---
 
 # System Architecture
 
-Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw data, the **Go daemon** projects and serves it over HTTPS with bearer-token authentication, and the **mobile client** discovers, pairs with, and consumes the authenticated API. A separate **protocol package** defines cryptographic primitives for future end-to-end encryption over relay connections.
+Herdr Connect follows a three-tier architecture: the **Herdr CLI** provides raw data, the **Go daemon** projects it into SQLite and serves live snapshots over HTTPS with bearer-token authentication, and the **mobile client** discovers, pairs with, and consumes the authenticated API. A separate **protocol package** defines cryptographic primitives for future end-to-end encryption over relay connections.
 
 ## Core Components
 
@@ -77,8 +79,9 @@ The long-lived daemon:
 
 1. **Adapts Herdr CLI output** — The [Herdr Source Adapter](../domain/herdr-source-adapters.md) invokes `herdr agent list` and parses the response into domain types, addressing each agent by its `pane_id`
 2. **Projects agent state** — The [Projection Layer](../domain/agent-projection.md) normalizes source observations and persists them to SQLite
-3. **Serves HTTPS API** — The LAN server (`/internal/demolan/server.go`) serves agent list, output, focus, messages, interrupt, and SSE endpoints over HTTPS with bearer-token auth on TCP port 9808
-4. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service with a `fp` TXT record containing the TLS certificate fingerprint for mobile pairing verification
+3. **Auth & pairing endpoints** — `/v1/pair` exchanges a one-time secret for a per-device bearer token; `/v1/device` supports device self-revocation. All endpoints first check the optional `X-Herdr-Connect-Client-Version` header and reject outdated clients with `426 client_outdated` (a missing header is allowed for curl and liveness probes)
+4. **Serves HTTPS API** — The `demo-lan` command starts the LAN server (`/internal/demolan/server.go`), which serves agent list, output, focus, messages, interrupt, and SSE endpoints over HTTPS with bearer-token auth on TCP port 9808. It serves live source snapshots through the shared 1-second cached snapshot, not the SQLite projection; the projection layer and SQLite store are exercised by the CLI `status`/`agents`/`diagnostics`/`daemon` commands (the `daemon` command runs the projection sync loop, `--once` for a single pass)
+5. **Advertises via mDNS** — The daemon publishes a `_herdr-connect._tcp` Bonjour service with a `fp` TXT record containing the TLS certificate fingerprint for mobile pairing verification
 
 ### Key Daemon Responsibilities
 
@@ -163,11 +166,11 @@ Diagram: QR-code pairing exchange producing per-device bearer credentials pinned
 
 ### State Synchronization Flow
 
-1. Daemon calls `source.Snapshot()` to fetch current agents from Herdr CLI (cached with 1-second TTL and singleflight coalescing; shared by REST handlers and the SSE broadcaster)
-2. Projection layer normalizes observations and applies batch updates to SQLite
-3. Server reads from SQLite on each authenticated HTTP request
-4. If source is offline, server returns last known state with `source_online: false`
-5. Server emits SSE signals (`{cursor, online}`) to connected mobile clients on real state changes; clients then re-fetch `/v1/agents` for full data. SSE polling only runs while at least one subscriber is connected, and per-device concurrent stream connections are capped.
+1. Daemon calls `source.Snapshot()` to fetch current agents from Herdr CLI (cached with 1-second TTL and singleflight coalescing, plus a 5-second per-call timeout; shared by REST handlers and the SSE broadcaster)
+2. The LAN server serves these live snapshots directly on each authenticated HTTP request — it does not read the SQLite projection
+3. If the source is offline or a snapshot call fails, the LAN endpoints return `503 source_unavailable` rather than stale agent data
+4. Separately, the CLI `status`/`agents`/`diagnostics` commands and the `daemon` projection loop normalize observations and persist them to SQLite (with a last-known-state fallback for CLI reads when the source is offline)
+5. Server emits SSE signals (`{cursor, online}`) to connected mobile clients on real state changes; clients then re-fetch `/v1/agents` for full data. SSE polling only runs while at least one subscriber is connected, and per-device concurrent stream connections are capped at 2 with 15-second keepalive comment frames
 
 ### Interaction Flow
 

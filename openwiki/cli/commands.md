@@ -4,12 +4,11 @@ title: CLI Commands
 description: Complete reference for herdr-connect CLI commands, global options, service management, pairing, and device management
 tags: [cli, commands, service-management, pairing, diagnostics]
 resource: /internal/daemoncli
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-16T21:47:50.978Z
 sources:
   - id: openwiki-source-698aebbc9a4891b14f7f80b4
     resource: repo://cmd/protocol-conformance/main.go
+  - id: openwiki-source-c2539a7c0eb2c51204a11197
+    resource: repo://docs/release/daemon.md
   - id: openwiki-source-ed83ad663bbbba548306379d
     resource: repo://herdr-plugin.toml
   - id: openwiki-source-435ef4d663e8147156c1b2dc
@@ -26,7 +25,12 @@ sources:
     resource: repo://internal/demolan/auth.go
   - id: openwiki-source-07d77e7f317cf6efc47a9b12
     resource: repo://internal/demolan/rate_limit.go
-generated: { by: "openwiki/0.5.2", at: "2026-09-16T21:47:50.978Z" }
+  - id: openwiki-source-23775c3de52f3ab95a13cb8b
+    resource: repo://README.md
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-24T21:53:59.537Z
 ---
 
 # CLI Commands
@@ -98,7 +102,7 @@ Text output uses `[OK]` / `[WARN]` / `[FAIL]` lines plus a `Next:` line that ada
 
 ### service
 
-Manage the background service (macOS launchd / Linux systemd user service; `daemonservice.New` errors on other platforms):
+Manage the background service (macOS launchd / Linux systemd user service; `daemonservice.New` errors on other platforms — on Windows, where the README documents zip install instead of Homebrew, service management is not implemented and owners keep a foreground `demo-lan` running; see [Daemon Release](../mobile/release-pipeline.md)):
 
 ```sh
 herdr-connect service install [--herdr ABSOLUTE_PATH]
@@ -263,7 +267,7 @@ Outputs `{"database": "<path>", "schema_version": N}` after opening the database
 
 ### trace
 
-Development command that prints a live stream of source events as they occur. Not for normal use.
+Development command that runs a deterministic lifecycle trace through the fake source (`runTrace` errors out unless `--source fake` is selected). It drives one fake agent through `blocked` → `ready input` → `unknown/succeeded` states via appended `ChangeBatch`es, syncing the projection after each step, and prints all resulting states as JSON. Not for normal use.
 
 ### version
 
@@ -332,5 +336,8 @@ Behavior:
 - `trace` — live event stream
 - `daemon --once` — single sync for health checks
 - `go run ./cmd/protocol-conformance` — protocol conformance harness (stdin JSON, stdout JSON)
+
+See [Development Setup](../development/setup.md) for the development workflow.
+rotocol-conformance` — protocol conformance harness (stdin JSON, stdout JSON)
 
 See [Development Setup](../development/setup.md) for the development workflow.

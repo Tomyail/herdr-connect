@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e0cae3f4cd82ac8b6bddb3f324ee6d7d97b16dc00d7c46589d072e9b429a2b80",
+  "pageVersion": "sha256:ecab5da24a4d73a42181005e6f85721772702d2a14c17bbe7b1d59b4f01ebc19",
   "claims": [
     {
       "id": "claim_564ffed8b4444598bc0086c333d71f74",
@@ -231,10 +231,48 @@
           "version": "repo-lines-v1:sha256:6ef0150ed84f982fce66a8e725655e5e25a9311450b2299c91a79856c198e7a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjM2ZlNTQyYmNmMzYwNmE4ZmYxNTUyNGVkZTcwNzQzZjkyNWIzZmQ2MzlhYzJmNDllYTQ1NjZmYWM0NTBmZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNGEzM2RkYjI1Y2ZiZTEyZjRhMTU2YzEyMWE2YmVjOGZhZGE5ZmE2NTdhM2IzYmUyNzRlMzdlMDczOWE1MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTY0MDc5YzNjNWM4MTUyMGVmMzNhMmI5ZDJlMTVhMWI4NGQ3MjgwZGI4NTkwZGNkNjU3NDdlM2UwMTJhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMTNkOGYzNTdiNzhjZDJiYTgyMzI2ZDdkZDQ3NWZjZjg1NDdiNzk3MDJjZGFjMDE2ZmI3MzgxYzhkYTc5M2YifQ"
         }
       ]
+    },
+    {
+      "id": "claim_92819439b067420a8601ee02e3c2c2d2",
+      "statement": "test/conformance.test.mjs builds two JSON-over-stdin CLIs — the Go binary from ./cmd/protocol-conformance and packages/protocol/dist/src/conformance-cli.js — into a temp dir and asserts identical responses to identical requests; failures exit 1 with a JSON error on stderr.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L1-L14",
+          "version": "repo-lines-v1:sha256:790777805525b2bcb3cc7e02428dbf56ca86cdc0ebe98490b30e51965cea642c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkYzg4MzkxZTAwNjRhZDY3MTE2NWNmMzc1MDdlZmMxZDI4MWQ0ZjdlNmEyM2IxYzQ3YmZjN2QyNmYzODFhMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZjQ1NDc3MTYyNDA3ZDZmNjY3YjgwZjlhMWVhNzE5YzAyMGM2YWFjZjQyNzQ5M2Y1NTFmOGJhOTdkMDVlZGQifQ"
+        },
+        {
+          "resource": "repo://test/conformance.test.mjs#L8-L50",
+          "version": "repo-lines-v1:sha256:886e7dbb3acafa130fd7120930fa506d28e0595cf141717c39ee85603892a67a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3N2VhNjJhNTE3OTYyZjFjNzE2MmE2Mzk5MjhiYmNkMTI0YjNjMTljYzdjNTdjMGNjZDBiNzk4NGUyYmQ2ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0M2VlZWJkYWM3MTQwNDIyMWFlODE3ZWI5YmFiNTQ0OTYwNTQwOTdiYWFiMjJhZGQ1ZTk4OGVlMTE4YjdjMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlYjA1MzFmN2I4NmZkN2QzMzIxNjA3NjM0ZjAyMTY5M2NlNTAwMDE0YTQ2MWUxYmI0Y2NmYThlOWZjMzg3MzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_403609eb2df44ba89449dab00e0f72c7",
+      "statement": "cmd/protocol-conformance is a thin adapter exposing the public protocol package (with in-memory replay/pairing guards and injectable now/ephemeral key material for determinism); all conformance assertions live in test/conformance.test.mjs, which also covers pairing challenge verification.",
+      "evidence": [
+        {
+          "resource": "repo://cmd/protocol-conformance/main.go#L78-L100",
+          "version": "repo-lines-v1:sha256:2d6d8e8a1ad88c7cb683a6c8ada39080d546b55cdf4d156aaad80a09f4a24e17:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5N2Q2YmJiYTljNDk1MDhjN2MzZTQ1YjgxYmRhNjI2MjJmNjRkNmUwMTg5Mzk4NWIxMzQwNGMxZWQyZjEwMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyZDRmMTcxMWZkNDk4YzUyNWViZTY4MGY1NTExMjQ3NDIzMjdiMDQzNmJmODEzODgyNDkwNWUyZmVkMTNmNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMzBhNzkwZGY0NzE0NjY0NDNiZmM1ODJmZGVjYzgxNWJlYzc4ZDg5MWY2MjJkMjMwNTQ1N2NkYjc0ZjAzMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMmJmZjhhYjc0OGM3Mjg2NzkzMjM1Mzc1MmU4ZTQxY2Y5MjhiZTFlNTExY2MwZjdlYWYzMzU0NmY1ZDc3MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c665ee551bc44f44aa67d8d6afc66d8d",
+      "statement": "AGENTS.md directs contributors to prefer the narrowest quiet validation that proves the changed behavior while preserving complete failure output; CONTRIBUTING.md requires PRs to add/update tests when behavior changes and explain verification.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L35-L35",
+          "version": "repo-lines-v1:sha256:bcb305dcb14dcb4153e1a3f259465ceadadc9b044a793da427d2c43d3a09d491:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNiMzA1ZGNiMTRkY2I0MTUzZTFhM2YyNTk0NjVjZWFkYWRjOWIwNDRhNzkzZGE0MjdkMmM0M2QzYTA5ZDQ5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNiMzA1ZGNiMTRkY2I0MTUzZTFhM2YyNTk0NjVjZWFkYWRjOWIwNDRhNzkzZGE0MjdkMmM0M2QzYTA5ZDQ5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhhMTMzOGFlN2QxMWM5NDRlODVjNTU0N2JiNmVmNDRlZTljMmNkZjA4ZDZjOWIwOTI3ZDgzMGIxNzFjYzBlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU1MjQ4YjYyZjU1MmY2Y2I2ZjcxMTA5YzgzY2E0OWZlOTU1MmU5NjYyYTBhZmNjZTdjNjY5YTJiYmEwZWMwYSJ9"
+        },
+        {
+          "resource": "repo://CONTRIBUTING.md#L44-L50",
+          "version": "repo-lines-v1:sha256:cba098831ab8b2dd22e5b6025716b80e4f58a3c1cc003d8e9aaa788a90660f72:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjliOGU1YWMzMjJlMDMzZTAxMDljZjA1MjBjNmVlYjQ5ZmE0NzBmYzg5ZDIzN2Y2YmEzOTgzNjM3ZjhjMGRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMyODdmMGNiOTI3Zjk4YzdmMjFjNTEyMDI4ZmY0N2Y0MTE5NGJlZGRkYzdiYTBlOGRlYmZkMDU0NjBiMmJkMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWNjM2Q0MGFmOGIwMDExYTUxNzgwYjVjZjA4ZGRiNmUxZDQwN2U2YTVmM2MzMTM1ODUzNGNhNTc2YzgyMDAyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQwY2UzZDk2ZTVmYWIyMDlkY2FiOTA2NTAxZDY1Nzc0NGVhY2RkYWU5Y2QxYzRiYTUzMzRjMDAwMWRlMmZkNyJ9"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-15T21:49:26.805Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T21:53:59.537Z"
   }
 }

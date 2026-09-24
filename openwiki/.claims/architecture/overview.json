@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2bf42672a28c495e76b1194248873c15f8ae861a56132e3daa9e62f0c930b606",
+  "pageVersion": "sha256:4739fb350138e7666d62a449a720dc95a67da12957211a76b86e452fc49aed69",
   "claims": [
     {
       "id": "claim_cb1d1d5fbda14d02ab434584f475f219",
@@ -166,11 +166,11 @@
     },
     {
       "id": "claim_e9bc1f1c8f0048b49cd49ac4bbd290ba",
-      "statement": "When the Herdr source is offline the server still serves the last known projected state from SQLite with source_online false in the response.",
+      "statement": "When the Herdr source is offline or a snapshot call fails, the LAN server endpoints return HTTP 503 with code source_unavailable instead of serving stale agent data.",
       "evidence": [
         {
-          "resource": "repo://internal/demolan/server.go#L44-L50",
-          "version": "repo-lines-v1:sha256:cd7f598961089d4fe70c190775600f7cd2f1a0345d512f99479891fe8dd4dbc7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JiYmM1NjFkODVjYWQ4MjM0ODNjNTMwYWIzM2ZmMzVhMDU2MGMyNzQxMmQzMDJkY2I0NTY0NzZjN2VhNTZjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRiNmJlYTA2MGMzODg2YzlkMzE5OWQ4YzllNWFmODU0YjQ3Y2U0NGU2YTJlODQ5ZDRmYmQ1NTlhOTcyNDBiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY5ODRhYTEzYWEyMzExOGQwMTgyODIyODY1ZTg5MmEwOGQwYmVkMjUyYjIzZDZhMTZlNTgxMDQ2MzNjMTc4YyJ9"
+          "resource": "repo://internal/demolan/server.go#L150-L154",
+          "version": "repo-lines-v1:sha256:3cbdf1e9bf56d1888e3b8189b94a8487fc6cb4fdcac02be4bffef8bccf199035:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA1ZDYwYmViYWQ0MjdjMjAyZDBhYTUxYzcwOTM4MTFlYTlhZTE3NmY4MjA3YjQwNDI0ODVkZGU5ODM1NTY2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjZGE4MmRhNjA2MjM4ZTA1ZTYyMzk5NTY5YzVlZTAzOTkzNDE5NjQ4YWU1ZDQzYTJiZjhjZDYzNDdmODI2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc4YmVhOWVkZmZkNTc1ZTM2YjhjZmVlYjEyZGM3YzRmYTA0ZWI1ZTRhYmRmNWYyMjJiODkwY2U5ZDQwMmZiYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMzZGE3Njg1NWIzYjU4MjAyMTNiMzVkOTUxZjVmMDhmNmRiOWY0M2NlZWZiODgwM2MwMTc0ODBkNzdiNWRhZSJ9"
         }
       ]
     },
@@ -215,10 +215,44 @@
           "version": "repo-lines-v1:sha256:efc543358b24dfd1f8af8b04ba25e9bb71f935b111339762bbcc7754b1f1f1c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZjNTQzMzU4YjI0ZGZkMWY4YWY4YjA0YmEyNWU5YmI3MWY5MzViMTExMzM5NzYyYmJjYzc3NTRiMWYxZjFjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZjNTQzMzU4YjI0ZGZkMWY4YWY4YjA0YmEyNWU5YmI3MWY5MzViMTExMzM5NzYyYmJjYzc3NTRiMWYxZjFjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGU0N2YxY2UyZmI2NjJkYjZiZjVlZjAyOGZkZThkZTg3NWQ1NjdlYzVkM2MwMzUxOGJjY2Q0ZjZhNDQ3NzliNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDAzOTk0NWY3MTNjZWNjYzJhMmJlOTgxYWI1YzVlZWEzN2Y5NWY5NzY5ZTU3NWNkOGVkOWE5ZmNiYWZkZjA2YSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_39ce99424cac41ffa36245231a26b064",
+      "statement": "The LAN server (started by the demo-lan command) serves live source snapshots through a shared 1-second cached snapshot function, not from the SQLite store; the projection layer persisting to SQLite is exercised by the CLI status/agents/diagnostics commands and the daemon projection-sync loop (daemon --once for a single pass), which fall back to last known SQLite state for CLI reads when the source is offline.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L114-L158",
+          "version": "repo-lines-v1:sha256:424be3aa9b1af364ffc1762f94262075f5ede0a6b281ded00d80f47f3a9240bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMzIxZDdjMTIzYzUyM2ZiYzUyNDZmNzI2NDRlNzJiN2M2NDNlZmRkNTIxMTc3M2E3YjE3ZmI3N2QyY2ZhZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNDc4MGU4YzRmYjk3YTBiZWNmZGZkMGFmZDQ3MzEyMjYxODk2OWExM2VlMzllYjNmMzI2MDBkYmI2MmI2NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzNDY2NzI3NDQ5OTM5M2M0MDc5MTRiZmZmMjlmZDU5MTE2MWRmMDc5Y2QwY2FkZThlMmZiYzg1YzUzNzFlYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MzkzZTE0MTBjZGZjNzY5Mzc2NzkwMzFjMjQzMDgyZDNkOWU4YWI3ZjdiOGIxYTg5MDc1MDk5YzIxMTMzYTAifQ"
+        },
+        {
+          "resource": "repo://internal/demolan/server.go#L344-L375",
+          "version": "repo-lines-v1:sha256:0d7cb1ce3bb410e9caa23b0cd481677328f9d20a66c761adccc152099e171f04:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMTc5MzhjZDAwODE1OTMwODBjNWNiNGM2ZGRhYzU4NTIzNGYzNzJjNTljMzdlODJlZDNlZDMxMzc3NzczOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlODc1NjZiNDExODk2ZGExMTYyZDI1OGRkYmFjNTM1MDJmZWMxM2Q2Y2FmNTQxNjFhZDYzOWUzYmExOTU5ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNjU5NzA4NjNkNTgxM2JmOTcwYjAyZTM0YjU1YTIxMDIyZmY5MWZiYjM3NjAwYmM5ZjZhNzY2NzkwZWVkMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYjhjMTc4MmQ4NDc1ZGYzMmMwMzAyNWEyNTRkM2NmNGJkM2IxZjc3YTU5MjBmNDVhYTY4NGY5NGIyMGQyYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eef992eea50549169c604985880eb2ac",
+      "statement": "All LAN endpoints first enforce the optional X-Herdr-Connect-Client-Version header, rejecting clients below MinSupportedClientVersion 1 with 426 client_outdated while allowing a missing header; /v1/device provides device self-revocation handled in the secureHandler layer.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/auth.go#L33-L73",
+          "version": "repo-lines-v1:sha256:63327a3e5185867409fa8f11f35dc46a741b5f67425311ca78cc390d9f7b2223:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5MTczMTQwNWMyNWE4MzgxYTE2N2YxZTNiNTJjNDczOTFhMzBkOTA3MGVhNDg0MjJjYjczZmFiNWQ1ZWM4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlMzNlMzY5MTYyNWY0OGUxMWYxYzEyNDFjNWZiMDFmZTI1OTQxZjlmMDg0ZmVlNTljMDMzMmFmN2Q0NGZmNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMjVmYWFiMmFmZjIzMjIzY2IzZWFkYTBjZjkxZTg1NGJiZjgzOTFmZDJmMGE1NTBjODA0YTBhMTM5NDU3ZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwOGU5OGNkODY1ZWRmYTkyZTljZmJiZGYxOGUyMWY5ZTQ3OWQwZTZlNzdhNWJmZGNhNTE4Y2VlZDQ0ODU3MWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_79dd520517264344927b2cfcbabc185a",
+      "statement": "The cached snapshot wrapper applies a 1-second TTL uniformly to success, offline, and error results and a 5-second per-call timeout on the underlying Herdr CLI snapshot, and deliberately implements only Snapshot so capability type assertions (AgentFocuser, AgentInterrupter, etc.) still run against the unwrapped source.",
+      "evidence": [
+        {
+          "resource": "repo://internal/demolan/snapshot_cache.go#L18-L46",
+          "version": "repo-lines-v1:sha256:0b2c1b501d009c363abebeccd1c1c95be91bc8836c96ea412228b73fca9e916b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MTM4YmQ0NDMxMjBmYTkxMWM1ODdjYTJiMjNiNWM5NjQxMmZkMDMzM2UzODc5MzNjN2Q1ZjI3YTBjMDViZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYTBjYTU1Njc0NWFkZjgxMDMyNDg0N2Y2YWViMTAwM2UzNGUwYzVkZDQ4ZWIyZDVjNzlkNGUxZmM5MWY3NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlYjA2M2YxOWJkYmQwMjc1ZmRjNjc0NGNmNzFmZjQwNjVhNTA5MjE5NzdiMDliMGYxZGI5Y2JlMmY1MzA0MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyNGYwYWRmZTdjYTZlYWUyZGMzMDBkMjU4MTUxZDE4NjQ1YTA5Njk2MmQxYWNlYjM1MTBjYzEzM2U3MmVhNTQifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-16T21:47:50.978Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T21:53:59.537Z"
   }
 }

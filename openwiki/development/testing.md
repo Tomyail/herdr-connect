@@ -3,10 +3,9 @@ type: Testing Guide
 title: Development Testing
 description: Test suites across Go internal packages, TypeScript mobile unit tests, protocol conformance tests, and integration scripts, with how to run each suite and what invariants it protects.
 tags: [testing, conformance, unit-tests, integration-tests, mobile, protocol]
-verified:
-  - by: openwiki/0.5.2
-    at: 2026-09-15T21:49:26.805Z
 sources:
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
   - id: openwiki-source-e86fe7b76c693666bc2cb828
     resource: repo://apps/mobile/package.json
   - id: openwiki-source-15c3610f95e73a659cefda30
@@ -33,6 +32,10 @@ sources:
     resource: repo://CLAUDE.md
   - id: openwiki-source-ad2c63ba5cf8daff9d6ca28f
     resource: repo://cmd/herdr-connect/main_test.go
+  - id: openwiki-source-698aebbc9a4891b14f7f80b4
+    resource: repo://cmd/protocol-conformance/main.go
+  - id: openwiki-source-f317ee207e1653d2033c81a4
+    resource: repo://CONTRIBUTING.md
   - id: openwiki-source-e99b28a92903fdb3d538d94a
     resource: repo://internal/daemoncli/cli_test.go
   - id: openwiki-source-e799143838233b0e8981fdbd
@@ -47,12 +50,17 @@ sources:
     resource: repo://package.json
   - id: openwiki-source-d7d84306409d5a2bb025542b
     resource: repo://protocol/protocol_test.go
-generated: { by: "openwiki/0.5.2", at: "2026-09-15T21:49:26.805Z" }
+  - id: openwiki-source-c4b7f012e593903d3c714884
+    resource: repo://test/conformance.test.mjs
+generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+verified:
+  - by: openwiki/0.6.0
+    at: 2026-09-24T21:53:59.537Z
 ---
 
 # Development Testing
 
-This guide explains the testing practices for Herdr Connect: the four main test categories, how to run each suite, and the invariants each suite protects. Most suites are deliberately plain — Go's `testing` package and Node's built-in `node:test` runner with `node:assert/strict` — so no bespoke test framework is required.
+This guide explains the testing practices for Herdr Connect: the four main test categories (Go, protocol, mobile, conformance plus an install-script suite), how to run each suite, and the invariants each suite protects. Most suites are deliberately plain — Go's `testing` package and Node's built-in `node:test` runner with `node:assert/strict` — so no bespoke test framework is required.
 
 ## Test Overview
 
@@ -128,9 +136,11 @@ These verify the cryptographic envelope invariants using in-memory fakes (`memor
 - **TTL limits** — sealing a `MessageTypeRemoteCommand` with a 31-second validity window fails with `ErrorCodeTTLExceeded`; remote commands are capped at 30 seconds.
 - **Tamper resistance** — modified ciphertext fails without leaking an oracle.
 
-### TypeScript conformance
+### TypeScript conformance harness
 
-`pnpm test:conformance` builds `@herdr-connect/protocol` and runs `test/conformance.test.mjs` under `node --test`, pinning cross-implementation compatibility between the Go and TypeScript envelope codecs. Run it whenever the wire format changes; both sides must stay byte-compatible.
+`pnpm test:conformance` builds `@herdr-connect/protocol` and runs `test/conformance.test.mjs` under `node --test`, pinning cross-implementation compatibility between the Go and TypeScript envelope codecs. The harness works by building two JSON-in/JSON-out CLIs into a temp directory — the Go binary from `./cmd/protocol-conformance` and the TypeScript CLI at `packages/protocol/dist/src/conformance-cli.js` — then issuing the **same JSON requests** to both via stdin and asserting identical responses (failures exit with status 1 and a JSON error on stderr). Beyond seal/open it also covers pairing challenge verification, so the two sides must stay byte-compatible on the envelope format *and* the pairing binding signature semantics. Run it whenever the wire format changes.
+
+`cmd/protocol-conformance` itself contains no assertions — it is a thin adapter exposing the public `protocol` package operations (with in-memory replay/pairing guards and injectable "now" and ephemeral key material for determinism), so the assertion logic lives entirely in `test/conformance.test.mjs`.
 
 ## Mobile Unit Tests
 
@@ -150,6 +160,10 @@ Mobile tests live next to their modules and follow a plan/reducer style: most te
 | `screenshot-fixtures.test.ts` | Screenshot launch options accept all deterministic App Store scenes. |
 
 Beyond these, `agent-filter.test.ts` is the largest suite (status-group/workspace/favorites three-dimensional AND filtering and enumeration), and `agent-contract`, `paired-instances`, `history-markdown`, `history-scroll`, i18n (locale/messages — every locale must expose exactly the same UI keys and error-code coverage), notifications (completion chime detection), and theme appearance round out the suite list.
+
+## Validation Strategy
+
+When changing behavior, prefer the **narrowest quiet validation that proves the changed behavior** (AGENTS.md): run the single suite — or a single `go test ./internal/store -run TestName` / `node --import tsx --test src/pairing.test.ts` invocation — that exercises the edit, rather than always running `pnpm test`. Preserve complete failure output when something fails. CONTRIBUTING.md additionally requires pull requests to add or update tests when behavior changes and to explain how the change was verified.
 
 ## Related Pages
 

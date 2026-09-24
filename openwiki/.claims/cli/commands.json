@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:82738f283824c3fd95537cab8005404f17ced4ff935e10ed8abc4fe118a1bdd3",
+  "pageVersion": "sha256:bba8cee912952cd3743f673742eb46016aa8b6765047ebe81193e1137981c9eb",
   "claims": [
     {
       "id": "claim_c67ae724294b4c849018eebd9f805e39",
@@ -273,10 +273,48 @@
           "version": "repo-lines-v1:sha256:42eb769d07519470c2a1e114b027ce6742b61403e501b67334730c30114a054a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NzE0MjViMzFjZDNlMjJiMzFlNTc0OWFjMzQyNjk5NzFlNWYyZTkwYTQyOGVmZTE2MjM5ZmVjM2Q4MWZjM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZTFlZTI5N2JmNTIxOWIyN2M3YTEyOGMwNmI2OThhNWQ5NzJhN2Y4YTg3NmI3ZGJlMTdiN2U2ZTcwNTc5YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_98496cbade5c4871992629a1ee4ee5b2",
+      "statement": "The `daemon` command synchronizes the projection every 2 seconds and prints a summary JSON object (source_online, agent_count, through_event_seq) each cycle; on sync failure it logs `source_unavailable` to stderr and falls back to the persisted database state, and `--once` performs a single sync exiting 1 on failure and 0 on success.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L876-L902",
+          "version": "repo-lines-v1:sha256:395f6810af6c31ad9564a985c07620b8982469896246fc0ef98267641dccea0b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMTA2ZmM2YmMwMTgzMTYxYTQ0YWYyMTU5ZjRlZmIwZGRkNjIxMGZjMWRiNzU1OGM1MGUwZmEyZjA0MjM1NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1YzdiMWE0NjIwYzZiZTIxYjM2YTMyMGY4YzgzMTQ1ODY3NjhmYzAzNjcyMzhhYWVmNzdkMDc1YjRjYTBlZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhYzZiMTQ4ZGFhY2IwYjcyOWFhMGY1MGY5ZDMyZjFmZDM2YzY1ZjAxMDMwNWYwNjYyMmJiNzhjMWM3YWIxMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04b96a203f9f4f96adedae56e21a04b8",
+      "statement": "The `trace` command is a development-only deterministic lifecycle trace that requires `--source fake`; it errors for any other source and drives a fake agent through blocked, ready-input, and succeeded states, printing all projected states as JSON.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L846-L874",
+          "version": "repo-lines-v1:sha256:10fde58cdcd6553168cc4e257d8abf45603a114b60f3f695b70093209fafdb36:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjOGJlN2U4NzlhMmQxZWVjN2Y1ZDAwZGY1MWM3ZDgwN2UzNTUzM2FkYTRmMTZjZGQ4NzgyNDgyZDhlYWM3NGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1YzIwYTczZmM3OGIyYjg0MmY1ZDkyZDE2Njc4NzdjNWQ0NTJmYzgxNDcxMDdkNGM4MzgwMjE5MTk3N2IzNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3OGU5N2E5Y2ZmOGZkZjBmMzdiOWY1ZDkyNTVjY2FkMjI5NGUzNzc0MTEzZDZkZTdjZmU3OWRmMzdmN2JiZGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e341ccff42c042f09732c1f84d09ab08",
+      "statement": "Background service management (launchd/systemd via daemonservice.New) is implemented only on macOS and Linux; Windows owners install from a zip release and run a foreground `demo-lan` process instead.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L40-L46",
+          "version": "repo-lines-v1:sha256:6e3d426be56acf6261df95dadd4dcde5ef3512f0086d63930c71684905836c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTEyYmE3OTAwY2NhNmMzMzA1MzllODg4MGI4NzhlYzNmMjViNTAxYjcyMzk0MTM4NTk5ZmY2N2I4YmJkNmNiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RiNTM1NDQ1ODZiNTk4YzM0NGE2Zjg2ZmM0NzU2YWQxOGMzYmY0OWYxNDhiOGUxNGNhM2E0NTNjMTBlYjQ2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBlMDg0MjQzOWM2YzRkMTJjNDJlYjkzODVlMmQ1NDhhMzVkNDA3NjJjM2QzMzA4OTlkNzM2MmFlMmY0NDRmNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWE3ZjRhYjE4ODI2MzBmOWU4ZGVkOWU1OGU1N2Y3NWMyMDQyYzgxMzYxYjUzNWM3OGEwMmJiMjc3OTI3MWEzYyJ9"
+        },
+        {
+          "resource": "repo://docs/release/daemon.md#L77-L131",
+          "version": "repo-lines-v1:sha256:46317fcc157aef9b928774d5f5a810e6eae28eab000eb9357ada8289f0e4d34b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxOTNmYThmMTM3ZjQ2YWQ4ODU4MjRjNjQwYmM4MTg3ZTYxNjM5YzViY2EzNjI1MmE3YzVlNjViZGI1YjA2M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhYWUwODAwMGY4ZGRiOTlkYjgyNTI4YWE5N2U4MzQzZmE5OWY1NTc0YzE1YjE0YTFlZDhhOWVhZGMwZjY4NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxODM4ODQzMTcxODlmZDBmMDZlNmUzZWQyMWY5MTU4Y2IzNTRjNjNlNGM1NTEyMmE3OGNiNWQ4ZTFjYzUzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExZDg3YzY4NTUxOGRmNWU5YTE3ODlmYzQ2MzBmMDYzZDMwY2Q0YmExZjIwNGNmYjEwMTAzZTAwY2RhOTE1NjkifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/cli.go#L384-L399",
+          "version": "repo-lines-v1:sha256:a34cd1add68cd244b4346e1feba3d0db63bdefcecc93f243fb78fb783c778f06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDc5YmIxZjk4MWZhMzkxZTRmODJkZjFkNzFkMjMzNjBjNGM3ODdlN2Y2NzAzMTA2NjI4ZThmOWU5Y2MzZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MDVmZDE4ODUyZTg4MjdjMDdmNjU1NmRiZDhhNjY3Mzc3ODhlNGFlODlkNzkwMDU0MDZjMzBmYTgxMmI0MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMDI1YjBmNzI2Mjg0ZmZlMzA3NDZiYTM4YjFmY2NkYWZhMmM3NDMzMmU1MzZjZDRkMDhkZmZhZmQwM2JjMTMifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.5.2",
-    "at": "2026-09-16T21:47:50.978Z"
+    "by": "openwiki/0.6.0",
+    "at": "2026-09-24T21:53:59.537Z"
   }
 }
