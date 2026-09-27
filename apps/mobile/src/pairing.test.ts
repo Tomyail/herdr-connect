@@ -169,7 +169,7 @@ test("pairingUrls brackets IPv6 addresses", () => {
 
 test("pairingUrls returns an empty list when hosts is empty (caller falls back to no_address)", () => {
   // parsePairingQRPayload 已拒绝空 hosts，这里验证防御路径。
-  assert.deepEqual(pairingUrls({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s" }), []);
+  assert.deepEqual(pairingUrls({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s", hostOverride: false }), []);
 });
 
 test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
