@@ -117,8 +117,8 @@ test("orderCandidates puts the pinned host first and keeps mDNS candidates as fa
 test("orderCandidates yields the pinned host even when mDNS discovered nothing", () => {
   const candidates = orderCandidates([], "fp-home", {}, { host: "198.51.100.20", port: 9808 });
   assert.equal(candidates.length, 1);
-  assert.deepEqual(candidates[0].addresses, ["198.51.100.20"]);
-  assert.equal(candidates[0].port, 9808);
+  assert.deepEqual(candidates[0]?.addresses, ["198.51.100.20"]);
+  assert.equal(candidates[0]?.port, 9808);
 });
 
 test("pinnedService is stable per host and distinct from discovered services", () => {

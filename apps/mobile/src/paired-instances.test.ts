@@ -323,5 +323,5 @@ test("re-pairing the same fingerprint without a pinnedHost clears the previous o
     instance("fp-a", { pinnedHost: { host: "198.51.100.20", port: 9808 } }),
   );
   const next = upsertInstance(model, instance("fp-a", { token: "tok_new" }));
-  assert.equal(next.instances["fp-a"].pinnedHost, undefined);
+  assert.equal(next.instances["fp-a"]?.pinnedHost, undefined);
 });
