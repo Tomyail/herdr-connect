@@ -813,7 +813,7 @@ func writeCommandHelp(writer io.Writer, command string) {
 		"service":      "service <install|status|logs|restart|uninstall> [options]\n  Manage the owner-level LaunchAgent or systemd user service.\n  Run 'herdr-connect help service install' for action-specific help.",
 		"demo-lan":     "demo-lan\n  Start the LAN server on TCP 9808 (self-signed TLS) and advertise _herdr-connect._tcp.\n  Only paired devices can read output or send input; trusted, controlled LANs only.",
 		"diagnostics":  "diagnostics [--json]\n  Print the established diagnostics JSON shape. --json is accepted explicitly\n  without changing the backward-compatible default.",
-		"pair":         "pair [--host IP_ADDRESS]\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. --host limits the QR to an active local address.\n  Requires a running 'demo-lan' daemon.",
+		"pair":         "pair [--host IP_ADDRESS]\n  Issue a one-time pairing secret, print a scannable QR code, and wait until\n  a device completes pairing. --host limits the QR to an active local address\n  and, on app versions that support it, is remembered as the connection address\n  instead of mDNS-discovered ones.\n  Requires a running 'demo-lan' daemon.",
 		"devices":      "devices <list|revoke <device_id>>\n  List all paired devices or revoke a device by its device_id.\n  Revocation is immediate and persistent; the revoked token is rejected on the next request.",
 		"status":       "status\n  Synchronize and print the complete projected source state as JSON.",
 		"agents":       "agents\n  Synchronize and print the current Agent list as JSON.",

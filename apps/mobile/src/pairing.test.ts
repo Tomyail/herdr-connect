@@ -185,3 +185,13 @@ test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
   const url = pairingUrls(payload);
   assert.deepEqual(url, ["https://10.0.0.1:443/v1/pair"]);
 });
+
+test("parsePairingQRPayload reports hostOverride only when host_override is true", () => {
+  assert.equal(parsePairingQRPayload(validQRPayload).hostOverride, false);
+  const overridden = JSON.stringify({ ...JSON.parse(validQRPayload), hosts: ["198.51.100.20"], host_override: true });
+  const result = parsePairingQRPayload(overridden);
+  assert.equal(result.hostOverride, true);
+  assert.deepEqual(result.hosts, ["198.51.100.20"]);
+  const truthyString = JSON.stringify({ ...JSON.parse(validQRPayload), host_override: "true" });
+  assert.equal(parsePairingQRPayload(truthyString).hostOverride, false);
+});

@@ -47,6 +47,8 @@ Empirically, this system evaluation is lenient for connections iOS classifies as
 
 ATS exceptions can only be scoped by domain (`NSExceptionDomains`), not by IP/CIDR range, so there is no way to except "the Tailscale CGNAT range" specifically. The mobile app therefore sets `NSAllowsArbitraryLoads: true` in `app.config.ts` to disable ATS's system trust evaluation entirely, making `PinnedTrustEvaluator` (see `apps/mobile/modules/pinned-fetch`) the sole trust decision for every request to the daemon, on every network path. This is safe under this document's trust model: ATS's CA-chain/hostname checks were never doing meaningful work against a self-signed, unpinned-by-design certificate in the first place.
 
+A `--host` address is remembered by the app as a connection hint only (`pinnedHost` on the paired record, written when the QR carries `host_override`). It does not change the trust model: every connection to it is still pinned to the installation's certificate fingerprint, so a wrong or hijacked address fails the handshake exactly like a wrong mDNS result.
+
 ## Pairing model
 
 Pairing establishes a per-device token. The flow is:

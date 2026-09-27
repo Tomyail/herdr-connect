@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { DiscoveredService } from "./discovery";
 import { NetworkError } from "./i18n/errors";
-import { classifyProbeFailure, selectCandidates, serviceKey } from "./discovery-match";
+import { classifyProbeFailure, orderCandidates, pinnedService, selectCandidates, serviceKey } from "./discovery-match";
 
 const service = (name: string, overrides: Partial<DiscoveredService> = {}): DiscoveredService => ({
   name,
@@ -94,4 +94,35 @@ test("classifyProbeFailure maps version and protocol errors to terminal", () => 
 test("classifyProbeFailure maps unknown errors to terminal", () => {
   assert.equal(classifyProbeFailure(new Error("boom")), "terminal");
   assert.equal(classifyProbeFailure(undefined), "terminal");
+});
+
+// ---------------------------------------------------------------------------
+// orderCandidates —— `pair --host` 固定地址优先
+// ---------------------------------------------------------------------------
+
+test("orderCandidates equals selectCandidates when there is no pinned host", () => {
+  const services = [service("Herdr on A"), service("Herdr on B")];
+  assert.deepEqual(orderCandidates(services, "fp-home", {}, undefined), selectCandidates(services, "fp-home", {}));
+});
+
+test("orderCandidates puts the pinned host first and keeps mDNS candidates as fallback", () => {
+  const lan = service("Herdr on A", { addresses: ["192.0.2.10"] });
+  const candidates = orderCandidates([lan], "fp-home", {}, { host: "198.51.100.20", port: 9808 });
+  assert.deepEqual(
+    candidates.map((s) => s.addresses[0]),
+    ["198.51.100.20", "192.0.2.10"],
+  );
+});
+
+test("orderCandidates yields the pinned host even when mDNS discovered nothing", () => {
+  const candidates = orderCandidates([], "fp-home", {}, { host: "198.51.100.20", port: 9808 });
+  assert.equal(candidates.length, 1);
+  assert.deepEqual(candidates[0].addresses, ["198.51.100.20"]);
+  assert.equal(candidates[0].port, 9808);
+});
+
+test("pinnedService is stable per host and distinct from discovered services", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  assert.equal(serviceKey(pinnedService(pinned)), serviceKey(pinnedService(pinned)));
+  assert.notEqual(serviceKey(pinnedService(pinned)), serviceKey(service("Herdr on A")));
 });

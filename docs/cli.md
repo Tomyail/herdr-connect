@@ -66,7 +66,7 @@ herdr-connect pair                       # terminal 2
 
 `pair` first probes whether the daemon is listening on `9808`; if it is not, the command exits non-zero and tells you to start `demo-lan` first. While waiting it prints a scannable terminal QR whose payload carries the installation certificate fingerprint (`fp`), candidate LAN host addresses, the fixed port `9808`, and a one-time `secret`. A device that scans the QR submits the secret to `/v1/pair` to complete pairing; the command polls until pairing completes or the secret times out, then prints the paired device name and `device_id`. The plaintext device token is returned only to the pairing device and is never printed on the host.
 
-On a host with multiple network interfaces, use `herdr-connect pair --host IP_ADDRESS` to put only one active local IP address in the QR code. Pass the host's physical-LAN address to force local-network pairing, or its Tailscale address to force the VPN path. The command rejects invalid addresses and addresses that are not assigned to an active local interface.
+On a host with multiple network interfaces, use `herdr-connect pair --host IP_ADDRESS` to put only one active local IP address in the QR code. Pass the host's physical-LAN address to force local-network pairing, or its Tailscale address to force the VPN path. The command rejects invalid addresses and addresses that are not assigned to an active local interface. `--host` is an override, not just a pairing hint: the app remembers that address for the paired installation and connects through it first (mDNS-discovered addresses are only a fallback if it is unreachable). Pair again without `--host` to go back to automatic discovery.
 
 ### Pairing and using the device over Tailscale
 
@@ -78,7 +78,7 @@ herdr-connect pair --host 100.x.y.z
 
 Scan the QR from the phone; this works even while the phone is on cellular data, as long as the phone's Tailscale tunnel is actually up. iOS can suspend Tailscale's network extension while the phone is locked or backgrounded, so if pairing fails right after unlocking, give the tunnel a few seconds to re-establish (opening the Tailscale app briefly is often enough) and try again.
 
-Once paired, the app keeps working over Tailscale for the life of that app session — including across a Wi-Fi/cellular handoff, since Tailscale keeps the daemon reachable at the same address regardless of the phone's underlying network. What is not yet verified is a **cold app launch while off the LAN**: on startup the app only rediscovers the daemon via mDNS (`_herdr-connect._tcp`), which is link-local and does not traverse the Tailscale tunnel, so force-quitting the app away from the daemon's LAN and reopening it is not a guaranteed reconnect path today.
+Once paired with `--host`, the app stores the Tailscale address and uses it on every launch — including a cold start while off the LAN, and while the phone is on the same Wi-Fi as the daemon (it does not switch to the LAN address that mDNS discovers). If the stored address is unreachable (for example the tunnel is down), the app falls back to mDNS discovery, which only works on the daemon's LAN. Re-pairing the same installation replaces the stored address, so pair without `--host` to clear it.
 
 ## Commands and options
 

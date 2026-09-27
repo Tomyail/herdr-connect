@@ -21,7 +21,14 @@
  */
 
 import type { DiscoveredService, DiscoveryFailure } from "./discovery";
-import { classifyProbeFailure, selectCandidates, serviceKey, type ServiceAssociations } from "./discovery-match";
+import {
+  classifyProbeFailure,
+  pinnedService,
+  orderCandidates,
+  selectCandidates,
+  serviceKey,
+  type ServiceAssociations,
+} from "./discovery-match";
 import { discoveryRetryDelay } from "./discovery-lifecycle";
 import type { AgentsResponse } from "./agent-contract";
 import { NativeModules } from "react-native";
@@ -211,14 +218,16 @@ export class ConnectionSession {
     const next = new Map(services.map((service) => [serviceKey(service), service] as const));
     const hadConnection = this.selectedKey !== undefined;
     const inFlightKey = this.connectInFlightKey;
+    // 固定地址服务不在发现集内：已经经它连上就不被发现结果的增减打断。
+    if (this.selectedKey && this.isPinnedKey(this.selectedKey)) return;
     if (this.selectedKey && next.has(this.selectedKey)) return;
-    if (inFlightKey && next.has(inFlightKey)) return;
+    if (inFlightKey && (this.isPinnedKey(inFlightKey) || next.has(inFlightKey))) return;
 
     this.requestController?.abort();
     this.selectedKey = undefined;
     this.connectInFlightKey = undefined;
 
-    const candidates = selectCandidates(services, this.fingerprint, this.associations);
+    const candidates = this.candidatesFor(services);
     if (candidates.length === 0) {
       // 发现集中没有本实例的服务:此前有连接/在途探测才宣告 not_found,
       // 纯 discovering 阶段继续等 not_found 倒计时。
@@ -248,9 +257,19 @@ export class ConnectionSession {
 
   private probeFromServices(): void {
     if (this.stopped) return;
-    const candidates = selectCandidates(this.services, this.fingerprint, this.associations);
+    const candidates = this.candidatesFor(this.services);
     if (candidates.length === 0) return; // 保持 discovering,等 not_found 倒计时
     void this.connect(candidates);
+  }
+
+  /** 探测候选:`pair --host` 固定地址优先,其后是 mDNS 匹配结果(回退)。 */
+  private candidatesFor(services: readonly DiscoveredService[]): DiscoveredService[] {
+    return orderCandidates(services, this.fingerprint, this.associations, this.credentials.pinnedHost);
+  }
+
+  private isPinnedKey(key: string): boolean {
+    const pinned = this.credentials.pinnedHost;
+    return pinned !== undefined && key === serviceKey(pinnedService(pinned));
   }
 
   private clearDiscoveryTimer(): void {

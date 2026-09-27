@@ -33,6 +33,10 @@ type pairingQR struct {
 	Hosts   []string `json:"hosts"`
 	Port    int      `json:"port"`
 	Secret  string   `json:"secret"`
+
+	// HostOverride 仅在显式传入 --host 时为 true：手机端据此把该地址记为
+	// 该实例的固定连接地址（优先于 mDNS 发现结果）。缺省（省略）表示自动发现。
+	HostOverride bool `json:"host_override,omitempty"`
 }
 
 // pairDeps 是 pair 子命令的最小未导出函数依赖注入点。每个字段是一个可替换的
@@ -128,7 +132,12 @@ func runPair(ctx context.Context, deps pairDeps, database *store.Store, tlsDir, 
 		Hosts:   hosts,
 		Port:    pairPort,
 		Secret:  secretPlaintext,
+
+		HostOverride: requestedHost != "",
 	}, stdout)
+	if requestedHost != "" {
+		fmt.Fprintf(stdout, "Host override: the QR carries only %s (port %d); app versions that support host overrides connect via it instead of mDNS-discovered addresses.\n", requestedHost, pairPort)
+	}
 	fmt.Fprintln(stdout, "Waiting for a device to complete pairing...")
 
 	secretHash := sha256.Sum256([]byte(secretPlaintext))

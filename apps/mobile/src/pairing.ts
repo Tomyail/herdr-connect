@@ -28,6 +28,12 @@ export interface PairingQRPayload {
   readonly port: number;
   /** One-time pairing secret. */
   readonly secret: string;
+  /**
+   * True only when the daemon ran `pair --host`: the single entry in `hosts`
+   * is an explicit choice and the app must keep connecting through it
+   * instead of whatever mDNS discovery resolves.
+   */
+  readonly hostOverride: boolean;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -80,6 +86,7 @@ export function parsePairingQRPayload(raw: string): PairingQRPayload {
     hosts: parsed.hosts as string[],
     port: parsed.port,
     secret: parsed.secret,
+    hostOverride: parsed.host_override === true,
   };
 }
 
