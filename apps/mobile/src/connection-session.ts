@@ -234,6 +234,10 @@ export class ConnectionSession {
     const hadConnection = this.selectedKey !== undefined;
     const inFlightKey = this.connectInFlightKey;
 
+    // Live pinned connection: don't let an mDNS snapshot interrupt it — but
+    // only while phase is actually "connected" (tick() leaves selectedKey
+    // set on fingerprint_mismatch/outdated/etc., so this must not trust the
+    // key alone or it can never re-probe once the pinned link goes bad).
     if (
       this.selectedKey &&
       this.state.phase === "connected" &&
@@ -243,6 +247,10 @@ export class ConnectionSession {
     }
     if (this.selectedKey && next.has(this.selectedKey)) return;
 
+    // Pinned probe in flight: restart with the augmented candidate list only
+    // if this snapshot has a candidate the in-flight attempt didn't know
+    // about (e.g. mDNS just resolved after a pinned-only cold start) — a
+    // repeat of already-known candidates keeps the debounce below instead.
     if (inFlightKey && this.isPinnedKey(inFlightKey)) {
       const candidates = this.candidatesFor(services);
       if (!hasUnknownCandidate(candidates, this.inFlightCandidateKeys)) return;
@@ -277,6 +285,9 @@ export class ConnectionSession {
    */
   handleDiscoveryFailure(failure: DiscoveryFailure): void {
     if (this.stopped) return;
+    // Bonjour failing is not a pinned-connection failure — a live or
+    // in-flight pinned session must survive it (same phase-gated check as
+    // handleServices above; a search failure is the expected state off-LAN).
     if (
       this.selectedKey &&
       this.state.phase === "connected" &&
