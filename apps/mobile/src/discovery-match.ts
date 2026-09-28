@@ -93,6 +93,23 @@ export function orderCandidates(
   return pinned ? [pinnedService(pinned), ...discovered] : discovered;
 }
 
+/** 某个 serviceKey 是否是固定地址（pinnedHost）合成服务的 key。 */
+export function isPinnedServiceKey(key: string, pinned: PinnedHost | undefined): boolean {
+  return pinned !== undefined && key === serviceKey(pinnedService(pinned));
+}
+
+/**
+ * 候选列表中是否存在 `knownKeys` 不包含的服务——即一次探测发起之后，新
+ * 发现快照是否带来了真正新的信息。供固定地址探测在途时决定是否要用
+ * 扩充后的候选列表重启探测，而不是对每次快照都重启（避免探测风暴）。
+ */
+export function hasUnknownCandidate(
+  candidates: readonly DiscoveredService[],
+  knownKeys: ReadonlySet<string> | undefined,
+): boolean {
+  return candidates.some((service) => !knownKeys?.has(serviceKey(service)));
+}
+
 export type ProbeFailureKind =
   /** 证书 fingerprint 不匹配——该服务不是目标实例的 daemon，换下一个候选。 */
   | "wrong_daemon"

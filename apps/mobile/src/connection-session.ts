@@ -23,7 +23,8 @@
 import type { DiscoveredService, DiscoveryFailure } from "./discovery";
 import {
   classifyProbeFailure,
-  pinnedService,
+  hasUnknownCandidate,
+  isPinnedServiceKey,
   orderCandidates,
   selectCandidates,
   serviceKey,
@@ -111,6 +112,9 @@ export class ConnectionSession {
   private requestController: AbortController | undefined;
   private discoveryTimer: ReturnType<typeof setTimeout> | undefined;
   private connectInFlightKey: string | undefined;
+  /** 本轮 connect() 探测的完整候选 key 集合;仅在 connectInFlightKey 有值时
+   *  有意义,用于判断新发现快照是否带来了探测发起时还不知道的候选。 */
+  private inFlightCandidateKeys: ReadonlySet<string> | undefined;
   private selectedKey: string | undefined;
 
   /** 快照循环(轮询 + SSE)绑定的服务;断开时清空。 */
@@ -163,6 +167,7 @@ export class ConnectionSession {
     this.requestController?.abort();
     this.requestController = undefined;
     this.connectInFlightKey = undefined;
+    this.inFlightCandidateKeys = undefined;
     this.selectedKey = undefined;
     this.clearDiscoveryTimer();
     this.stopSnapshotLoop();
@@ -211,6 +216,16 @@ export class ConnectionSession {
    * mDNS 发现结果分发(全量快照)。防抖守卫(既有语义,防止发现重放触发
    * 探测风暴):已连接服务仍在发现集 → 不打断;探测中的候选仍在 → 不打断。
    * 其余情况重置匹配:重新按本实例 fingerprint 挑选候选探测。
+   *
+   * 固定地址(pinnedHost)候选不来自发现集,因此上述防抖不能照搬:
+   * - selectedKey 指向固定地址时只有 phase 真是 "connected" 才算"活着"——
+   *   轮询把会话移出 connected(如 fingerprint_mismatch)不会清空
+   *   selectedKey(见 tick()),否则这里会永远拦下重新匹配,固定地址连接
+   *   坏掉后既不会重探也不会考虑 mDNS 回退。
+   * - 固定地址探测仍在进行时,若新快照带来了探测发起时还不知道的候选
+   *   (典型:begin() 时 mDNS 尚无结果,只带固定地址上路),不等固定地址
+   *   超时或退避重试——用扩充后的候选列表立即重启探测(固定地址仍排
+   *   最前);快照只是重复通告已知候选时维持原有防抖。
    */
   handleServices(services: readonly DiscoveredService[]): void {
     if (this.stopped) return;
@@ -218,14 +233,31 @@ export class ConnectionSession {
     const next = new Map(services.map((service) => [serviceKey(service), service] as const));
     const hadConnection = this.selectedKey !== undefined;
     const inFlightKey = this.connectInFlightKey;
-    // 固定地址服务不在发现集内：已经经它连上就不被发现结果的增减打断。
-    if (this.selectedKey && this.isPinnedKey(this.selectedKey)) return;
+
+    if (
+      this.selectedKey &&
+      this.state.phase === "connected" &&
+      this.isPinnedKey(this.selectedKey)
+    ) {
+      return;
+    }
     if (this.selectedKey && next.has(this.selectedKey)) return;
-    if (inFlightKey && (this.isPinnedKey(inFlightKey) || next.has(inFlightKey))) return;
+
+    if (inFlightKey && this.isPinnedKey(inFlightKey)) {
+      const candidates = this.candidatesFor(services);
+      if (!hasUnknownCandidate(candidates, this.inFlightCandidateKeys)) return;
+      this.requestController?.abort();
+      this.selectedKey = undefined;
+      this.connectInFlightKey = undefined;
+      void this.connect(candidates);
+      return;
+    }
+    if (inFlightKey && next.has(inFlightKey)) return;
 
     this.requestController?.abort();
     this.selectedKey = undefined;
     this.connectInFlightKey = undefined;
+    this.inFlightCandidateKeys = undefined;
 
     const candidates = this.candidatesFor(services);
     if (candidates.length === 0) {
@@ -237,9 +269,22 @@ export class ConnectionSession {
     void this.connect(candidates);
   }
 
-  /** mDNS 发现层失败(search/resolve):全部会话各自进入 failed,由 provider 退避重启发现。 */
+  /**
+   * mDNS 发现层失败(search/resolve):全部会话各自进入 failed,由 provider
+   * 退避重启发现。固定地址连接/探测不依赖 mDNS——Bonjour 搜索/解析失败
+   * 不该打断它,这正是 off-LAN 冷启动(mDNS 完全不可用)要依赖固定地址
+   * 工作的场景(与 handleServices 相同的 phase 门槛,理由见其注释)。
+   */
   handleDiscoveryFailure(failure: DiscoveryFailure): void {
     if (this.stopped) return;
+    if (
+      this.selectedKey &&
+      this.state.phase === "connected" &&
+      this.isPinnedKey(this.selectedKey)
+    ) {
+      return;
+    }
+    if (this.connectInFlightKey && this.isPinnedKey(this.connectInFlightKey)) return;
     this.requestController?.abort();
     this.requestController = undefined;
     this.selectedKey = undefined;
@@ -268,8 +313,7 @@ export class ConnectionSession {
   }
 
   private isPinnedKey(key: string): boolean {
-    const pinned = this.credentials.pinnedHost;
-    return pinned !== undefined && key === serviceKey(pinnedService(pinned));
+    return isPinnedServiceKey(key, this.credentials.pinnedHost);
   }
 
   private clearDiscoveryTimer(): void {
@@ -314,6 +358,8 @@ export class ConnectionSession {
     const controller = new AbortController();
     this.requestController = controller;
     this.clearDiscoveryTimer();
+    // 记录本轮完整候选集,供 handleServices 判断新发现快照是否带来了新候选。
+    this.inFlightCandidateKeys = new Set(candidates.map(serviceKey));
 
     const requestCredentials: RequestCredentials = {
       fingerprint: this.credentials.fingerprint,
