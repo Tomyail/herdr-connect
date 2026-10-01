@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9e7be5896f0abdd49f8c3f2053968e6efe081c9dc34ac7fa8715d0af3c762386",
+  "pageVersion": "sha256:090bc3f2e056485ce7cb0dca71972be1b04714211827181c96c859172a585231",
   "claims": [
     {
       "id": "claim_0c1a682818444f59916c6a05970d3833",
@@ -21,7 +21,7 @@
       "statement": "The app runs at native iPad resolution (supportsTablet: true) with requireFullScreen intentionally unset, enabling iPad multitasking and free rotation while the root orientation: portrait field keeps the iPhone (and Android) portrait lock.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/app.config.ts#L20-L31",
+          "resource": "repo://apps/mobile/app.config.ts#L24-L35",
           "version": "repo-lines-v1:sha256:157d8fe10d8dc530e51dcf4c05b9d2d7ace49b869866be2528c76c7c68816cd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiN2Q4MWNiNDRjZTdlMDJlY2NlNjMzNTdmMjcxNTJlZjE1YzU4MDJhMDVkNDc0OTc1ZWIwYTM0YTU4MjBhMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWU2ZDFmNWQ1NWMyYmU2ZjlmNTY2NDRiYjQwZWQ4ZmYzZWFhMGY4YTQzNTgyYjNiMzZkZDFjOTIwMzViM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YjhkNDYwNWJlZTI2MDQwMmYxYWUzYmNmZWQyZmFlODY2YjM2NjEzMWY2YjY5ZTMxMDU2NDgxZDM3NDg2MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1ZGQ1ZDg4MzVjZjQyOGQyNjFhZTk3NTQyMmZhNDU5ZjdkNmM2NWJhYWUyMjVlOGJkZGM2YTMxNGE4MzVkODcifQ"
         }
       ]
@@ -31,7 +31,7 @@
       "statement": "app.config.ts sets NSAllowsArbitraryLoads: true so that PinnedTrustEvaluator (TLS fingerprint pinning) is the sole trust decision on every network path, because ATS's own evaluation rejects the SAN-less self-signed daemon certificate on non-LAN paths like Tailscale.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/app.config.ts#L48-L50",
+          "resource": "repo://apps/mobile/app.config.ts#L53-L55",
           "version": "repo-lines-v1:sha256:caa27d277e7ab0cec84631583e54dca113275244f114554f6560e77598bcccf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0NjY2NGIxNTYyZDcxOTkyMmU0NzBjNzI3NDU3NGQ4YzkxYmRkZTMzYTExYjM0MDAzNjE1NzJjNGMyM2RlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk3OGUyNTAzYjhjZjM3YTA2ZjdkNmYwYTNhNmI2ZmUzNTY5MWZiY2FiNTBiODc3NWNhYjZmYWJjNzFjNTkyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdlYWRjYWMxNjNhZWY2MmY0YmJlMDIzMTA5ZTgxMjJjYmUxMGI0NGQ0MzU1NzlkNDNhOTFiNGZiYzJmMzAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmI3NDQ2ZGU1MzI2NjE3YzkyMzUzZDZiMmU1MzYzNmZiMTNmYjJjZDE2NWQ2OGVhMGFkYTgzOTk5NWYwYTE4OCJ9"
         },
         {
@@ -42,15 +42,15 @@
     },
     {
       "id": "claim_9b14168b70534c198b5cae70d83526bb",
-      "statement": "pairing.ts is pure QR payload parsing plus URL construction: parsePairingQRPayload validates the JSON shape (v, fp, hosts, port, secret) and throws a single unified NetworkError code pairing_qr_invalid for all problems to avoid leaking which field failed; pairingUrls emits one https://host:port/v1/pair URL per QR host (IPv6 bracketed) in payload order for host-fallback iteration.",
+      "statement": "pairing.ts is pure QR payload parsing plus URL construction: parsePairingQRPayload validates the JSON shape (v, fp, hosts, port, secret) and throws a single unified NetworkError code pairing_qr_invalid for all problems to avoid leaking which field failed; it also derives a boolean hostOverride from host_override === true (daemon ran `pair --host`, meaning the single QR host is an explicit address the client must keep using instead of mDNS); pairingUrls emits one https://host:port/v1/pair URL per QR host (IPv6 bracketed) in payload order for host-fallback iteration.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/pairing.ts#L45-L84",
-          "version": "repo-lines-v1:sha256:2fb0e3bd82165395df173db8d4abd8d31a838129be830aad771ec5a36dfce7e4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNjNkMWQ4Yjc0ZjFhMTQ5MzNkMTE4ZTY2MTZhZTU5NTEyNzM3Y2I3NzE4OTk5ZWQwNDExMzYzNzM5MmIxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNmEwODUwYjJlYzkxYzcwMzYzY2NhYThhMjcyNzU5NTk1NDdjNmNlOTY4YzBhZDQ3OTE1NmRkYzcxYzUyYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4Mjg5NWMzNGU5YzVmODlmNzU4YWVhYmRiY2QyM2JjM2M4ZTYwOTRjMGY0OTM4OTMxMTcxNjhkMzU5NmQ1MWUifQ"
+          "resource": "repo://apps/mobile/src/pairing.ts#L103-L108",
+          "version": "repo-lines-v1:sha256:32441c5e32afba2392902ba6a2055a5601c944415545d6fe2dff404bd879d61f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzk4MmQwZmQxODRjMzM2ZGVkNDNmZDMwZjM4YjAxYjE2YmE2MWU0ODE3MmU1N2E1NmE0YjQ1NTVhMzdjMjRlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2MDk5ZDM3Y2Q0ZmJmZGJjN2FjNzVlZWRiNDA3MTQ1NjRlOTg5ZWU5ODVkNWRjZDkxZjZiNzAwYzhiN2EyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://apps/mobile/src/pairing.ts#L96-L100",
-          "version": "repo-lines-v1:sha256:1f2d7447f470bab6a80f43eb5f4a357aa26c5c9a6732c79bf8a04b5bc517c709:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzk4MmQwZmQxODRjMzM2ZGVkNDNmZDMwZjM4YjAxYjE2YmE2MWU0ODE3MmU1N2E1NmE0YjQ1NTVhMzdjMjRlYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2MDk5ZDM3Y2Q0ZmJmZGJjN2FjNzVlZWRiNDA3MTQ1NjRlOTg5ZWU5ODVkNWRjZDkxZjZiNzAwYzhiN2EyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+          "resource": "repo://apps/mobile/src/pairing.ts#L43-L91",
+          "version": "repo-lines-v1:sha256:0a258b610b1092233dae9af8871f284c9b25b4f1cf5b61638472c77690bf5cee:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NzRlMTAwYTEwODQ2M2YwZGVmZWM3N2JlYjZhZjljNmI3YjJmZjkwMmNiMjFkMmI4NzAyYjNkNjE1ZTliOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4Mjg5NWMzNGU5YzVmODlmNzU4YWVhYmRiY2QyM2JjM2M4ZTYwOTRjMGY0OTM4OTMxMTcxNjhkMzU5NmQ1MWUifQ"
         }
       ]
     },
@@ -66,11 +66,15 @@
     },
     {
       "id": "claim_015990ea02094fa1ad7862056c16e3d6",
-      "statement": "Pairing credentials form a multi-instance model keyed by certificate fingerprint with an active-instance pointer; pure rules in paired-instances.ts (record validation, legacy migration merge, active resolution/fallback) while Keychain I/O and migration orchestration live in credentials.ts.",
+      "statement": "Pairing credentials form a multi-instance model keyed by certificate fingerprint with an active-instance pointer; pure rules in paired-instances.ts (record validation, legacy migration merge, active resolution/fallback) while Keychain I/O and migration orchestration live in credentials.ts. Each record may carry an optional pinnedHost ({host, port} from `pair --host`): a malformed pinnedHost shape is dropped (falling back to mDNS) without invalidating the credential, and re-pairing replaces the whole record, so pairing again without --host clears the override.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/paired-instances.ts#L16-L38",
-          "version": "repo-lines-v1:sha256:3eb91b8728f0e30f269c94805e4ad921c92d8446ebb8edec6457dc3c88d9391d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0OGFmZDJkZmQ2MmFhNGVmYTIzYzRjYzY0NDhmZDlkZmE2MWU2ZjgyMmQ3OTY5ZDBjYjQ2ZGE2YzcwNWI5Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2ZTEyNmUxZWUzMTA0YTc5YTg1NzUyNmZmZTM5NmJkNmU3NzI2NTVhOWMzZDNiNjRjNjIwOTU2NjZlNTEyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkY2Q2MDNlOTUzYjhlODYyMWM3ZDQyZmEyMzQ4YjMzM2E5NzNhZGI0NDAyMjc3ZWZmNDUzOWE2OTg5MjZjZjgifQ"
+          "resource": "repo://apps/mobile/src/paired-instances.ts#L27-L48",
+          "version": "repo-lines-v1:sha256:7bf1d3a83e69cb17f552262b25602ce74e02b797d6452a7061dcba86b6450515:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMmEyZjk5NmYwOGU2ODBiZDI5MjEzNWE2ZmE0OTc4YmRhMjZlNjAyZDg0ZjMzY2IxZDU5NDc3NWQ0MzA0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjYjhmY2Y4ZDRlNTI2NTllNmMzNjUzYTFjZTYzMzZjYzQ0MDE1MzBlYjdmMDYyZmE0MDc2NGRkMDJmOWNhOGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0Nzg2YzM3MDdhM2E0NGVhNGJjZjRiNjFjYWZhY2NkZDZmZGI0M2M1YmJkYmQ4NzM5ZDQ0ZDZkZjcyYWM2OTUifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/paired-instances.ts#L65-L94",
+          "version": "repo-lines-v1:sha256:76b72705a9916720d7a7fc77448b97102fa09927fef4433731d5b183d7162dcc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NzRlMTAwYTEwODQ2M2YwZGVmZWM3N2JlYjZhZjljNmI3YjJmZjkwMmNiMjFkMmI4NzAyYjNkNjE1ZTliOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExM2EwOTBkMjIwOGQ3NGY1YWFkMmI4NzkxMmFlY2YxNzdlYjZiODkyMjQ4MzFmY2NmY2EyYWYyZGU4NGQ1NDUifQ"
         }
       ]
     },
@@ -79,7 +83,7 @@
       "statement": "When the active-instance pointer is null or dangling, resolution falls back to the most recently paired instance, tie-broken lexicographically by fingerprint so the fallback is deterministic.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/paired-instances.ts#L91-L99",
+          "resource": "repo://apps/mobile/src/paired-instances.ts#L115-L123",
           "version": "repo-lines-v1:sha256:8306d2aa2b975b74326661350d6767392b548e4a4f225955f82f539f263dc8fb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM1NWUwNDFmNDAzZWI2MDA5YWI3NmYxMWNjMzliNTEzMDk2ZjJiNTI4NzY3Y2M4NjI2ZTk4OWQ0NjBhNTY3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmNiN2QzYzRkMmE2ZDUwNWQyZTYyOGJmMjFlYjk2MTJjZDIwM2YyMTg2Y2VlYTVkZWYzMTg2NjdlZTAzMTQ0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzc5MjllOTFlMGY5OWMzZTgyNWRlNjliNDM1ZmI2NDg0ZDFiMGExZGYyZjQ2NTYxYWJmMWEyOWYwNDE4OGI4OCJ9"
         }
       ]
@@ -103,8 +107,8 @@
       "statement": "One ConnectionSession owns the complete connection lifecycle of exactly one paired installation — discovery match via pinned TLS probes, connect, SSE stream preferred with 3-second polling fallback, exponential backoff reconnect, and foreground/background start/stop — driven by the provider via begin/handleServices/handleDiscoveryFailure/pause/stop, with pause retaining state and stop silencing all callbacks.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/connection-session.ts#L1-L120",
-          "version": "repo-lines-v1:sha256:aa066e095deadb549431ff7ed6c07fac006e01c8f6f1d0abc8d53843f53dd837:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZGMwN2FkZDk4ZTViNjA4ZGNkMTdkOGQ3OTAwZmZhNTVhMzViZTgxZGMyNzAxOTNkMDU3MWI1OTg5M2U2MDUwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1N2VjYTk0ODQxZWM0ZTNkZDE5YTFhOTE2M2M5NmExMGI3YjJhYjdkMzYyM2I5MDIyMDAxYmE1YTBhMzE3NDM5In0"
+          "resource": "repo://apps/mobile/src/connection-session.ts#L1-L131",
+          "version": "repo-lines-v1:sha256:d973f496fdffaafe4bd47129426b8ed4e036b1982946d74423c176da51de95d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZGMwN2FkZDk4ZTViNjA4ZGNkMTdkOGQ3OTAwZmZhNTVhMzViZTgxZGMyNzAxOTNkMDU3MWI1OTg5M2U2MDUwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1N2VjYTk0ODQxZWM0ZTNkZDE5YTFhOTE2M2M5NmExMGI3YjJhYjdkMzYyM2I5MDIyMDAxYmE1YTBhMzE3NDM5In0"
         }
       ]
     },
@@ -113,8 +117,12 @@
       "statement": "Because the Bonjour library does not expose mDNS TXT records, instance identity is verified only by pinned TLS: selectCandidates orders probe candidates deterministically (verified-target services first, unknown services next in discovery order, foreign-verified excluded) and classifyProbeFailure maps failures to wrong_daemon/unreachable (try next candidate) or terminal (TLS pin passed, surface the error).",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/discovery-match.ts#L42-L81",
-          "version": "repo-lines-v1:sha256:8d183beddff9823387e61a9225d9ca53a5a3dc7408e5eca28ff26ae4ab84fa9e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZTg4OWZjYTFiYmZmNzM4Y2RiYTU1NzNlMTljZGZhZTgwMTQ4Yjg2NzEwNDc3MGU0ZTFjNjIzZGMxNjA5ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNjRiYmIwYTEyZDkxZDYyM2U1ZmQ5YzUyYWRhMGNkNTQwMmIwYmU1YWU3NGYxMDRlODViMWQ5YzlkNDk2MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MTIwOTkxOWNiZGY2M2Q1OWQ2OWRmYWQ0ZjdmZDc4MWZjNjY3NWJiMDQyYjYxYjk3MTZjNzg5MzQ0Y2ZkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L113-L134",
+          "version": "repo-lines-v1:sha256:5f50ec324ef6cfdad4490e1a09387a7779c736d74bc0f77e542b169703e7151f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzEyMjlmOGJhZmQzMDY4NDc1M2EwYTAwNjgwZWE0OTM0NTg1ODUwMjkxNTYwZTMxYjYxZTk5NGRiNDgyOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiMjBiNDZmNzgyMTZkMjg3ZWJjYzgwYTY4MDg4YzU1YTU0YmM4OTRjOWI5MWZhNmMzZWE5MDEzY2YyZjRiOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L43-L59",
+          "version": "repo-lines-v1:sha256:0dd6ea525efd14548ecece9461e1f7144dfaf323197d6347c65a609dd27fb848:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZTg4OWZjYTFiYmZmNzM4Y2RiYTU1NzNlMTljZGZhZTgwMTQ4Yjg2NzEwNDc3MGU0ZTFjNjIzZGMxNjA5ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZDFkNDYxMTU2MmVjNWE2MjkzNTEwODNkN2IwYjdiYWZjN2EwODlkMGU5YzRmY2JlNGUyNjA1MDJmMGMzMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5MTIwOTkxOWNiZGY2M2Q1OWQ2OWRmYWQ0ZjdmZDc4MWZjNjY3NWJiMDQyYjYxYjk3MTZjNzg5MzQ0Y2ZkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZGM1N2U3NTMwZTRiN2QzYTU1MGM0NzVlNmEwOTk3NWI4MTBjYzc0NDE5ODc2Y2NiYjcxNjA5OTI3NzQ4NWYifQ"
         }
       ]
     },
@@ -123,11 +131,11 @@
       "statement": "Verified serviceKey→fingerprint associations are held by the provider and shared across sessions for the app session in memory, so one session's verification lets others reuse or exclude candidates and prevents a probe storm under parallel sessions; an auth terminal state (unauthorized/revoked) observed by a session removes only that instance's credentials.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/connection-session.ts#L57-L70",
+          "resource": "repo://apps/mobile/src/connection-session.ts#L65-L78",
           "version": "repo-lines-v1:sha256:be770d3d2eacb04bd9d1b0d90234f1aef70995731e66cca753d05551578bd4b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmFmZmNjOWRiNGM4YmY1NGJlMzhiNzMzN2UxNjBiOWRlMjU2YzQ1Zjk2Y2Y3ODJiZTJjNDk5YWEyZjVjZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlYzdkNTE5M2U3MDc2M2MyYzRmNGI0M2U1N2Q1MzA5ZDRkNGI3YTA5NzliOWYzMTI5MzU2ZTMzZjY2NzNmMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZjViNTFhM2U3Yjg4ZGFmN2MxNDc1ZDI4ODMzNjQzYWVjNzk0YTUzZWY1Y2NkN2EzYjA4MjM5MDJiMmI2NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzOGYyNTI4YzljN2M3ZDcyN2ZkN2Q2ZGRmMzRlNjc3YWUyOWVjOGZlYmVjNGQ2ZTVkY2M4ZjE3ZWM0YWY4NTAifQ"
         },
         {
-          "resource": "repo://apps/mobile/src/discovery-match.ts#L24-L25",
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L25-L26",
           "version": "repo-lines-v1:sha256:023f41fbf61cfe87747fb756a53c27b20a622fdde4a1111f978215eaf7cae5d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhjNmI5YmJmZWVjOTBkNzYyM2Q3YTcxYTgzODFiODdjOTg4MDRlZTI4YzkxN2E1ZDRkZGIyYWVjN2NiZDQyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc1MDQ2ZDk4MTcyZmMxMzRhODc4NDJlNDA1OTk5N2JiYWU1NGM1YjNkZjNmYmRhYzRjNjdjNDc3ZjkyYjExMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjJlNzkzZWU2NGE3YTY4NGUyMGFkNDhjYmY5ODliNTVlNzkxZDkzYjk2MWM4MmIzM2NmNTU2ZTNiMjZmNjFhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTJlMWM3NWE2ZGQyYWYxOWQ0MTczM2MxZjViYjU0MTAwZDE4YzNlYmQwNjUyNDcxODhhNWQyMzk2NTYyYzI0NyJ9"
         }
       ]
@@ -247,7 +255,7 @@
           "version": "repo-file-v1:sha256:907fde7044e0feb4ef24f0857e526b0a3d790fbe5c9d085f49c17324910f6506"
         },
         {
-          "resource": "repo://apps/mobile/src/connection-session.ts#L52-L53",
+          "resource": "repo://apps/mobile/src/connection-session.ts#L60-L61",
           "version": "repo-lines-v1:sha256:a18d953ddff7c651200d06e4552571d30f4dcf9a9570604581311885509090f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQxYTdlODA1OTE5OTk2NGY0MjdkODQ5ZTQ1YjczM2EwYmJiNzg4ZTRmZDczNTRiOGQ4ZmNhNTM3Yzc4NjM5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGZhMTcxNGE5MGQzNTM3ODU5OGEzNTZmYzYzNTZmNDE5OWVkMzI0MTY0ZjBhZWUwNGNlNmM1ODdjYzljOWMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIyNDQxYjVlNDEzMGQyNzQ4MzE4NWQxYmM0YTk3ZTIwNWZhMDljMWM5ZDlkMWY1YTJjMmFjYWU1MTkzZGExOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFmNWI1MWEzZTdiODhkYWY3YzE0NzVkMjg4MzM2NDNhZWM3OTRhNTNlZjVjY2Q3YTNiMDgyMzkwMmIyYjY1NiJ9"
         }
       ]
@@ -349,8 +357,8 @@
           "version": "repo-lines-v1:sha256:0c77ae0580ec587d397ff0a25f8acd0dcc58f7adb7940963966d4468cae2f1e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU1OTIyOTZjMTAzZGUyYjM4MDE0ZDQ4ZGFjZTA0YjI4YWI2NzgyMTJlOWFiZDdhMzkyOThjNjI2YWQ5NDNhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI5ODg3M2JiOWI2OTVlOTFhYWMwYzkxZDZmZTVmY2M0MTY3Y2M4YzU4MWVjY2QxMjMzNzYxMTlkZTg1ODBhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI5M2FmMzc4ZjkxNWU1YTZmMGQyNjgzZGZhNzU5ZjZiM2I2OWM2ODcxZjBlN2MwODA1NTQ5OGM4M2U2N2U5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmFjNGMwODMzNjQxZTAzNDFhODdjZjNkYTJjZmRlOTIzNzg0YjljNmM4NGU2MmU3NjQ3NzQ5MTQxZTEzNjZhYiJ9"
         },
         {
-          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L47-L90",
-          "version": "repo-lines-v1:sha256:c1292c6ab01b507a4eec3e9360af0a31ce438bbf1b1693700bd5b7697479ffe4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiM2ZkYzAxNTI1NTUyYjk0Y2UyNzg4YzA2YjhhYTgwYzc1ODI4MjgwNWQ2ZWUyZTMxYzYyNWRkY2YyYjdiNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViN2UwMTAwYWNkN2ZhNDkyYWRmNzc2YjYyMjg4NGFmYjBlMWM5NGYyOTk0YjgxODQ2N2ZhZTZmMTQ5OWM3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L47-L91",
+          "version": "repo-lines-v1:sha256:25b2b53f1f70ffe23aa2abb849effae8f2cd8926d7491253216068e233ed7e30:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiM2ZkYzAxNTI1NTUyYjk0Y2UyNzg4YzA2YjhhYTgwYzc1ODI4MjgwNWQ2ZWUyZTMxYzYyNWRkY2YyYjdiNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViN2UwMTAwYWNkN2ZhNDkyYWRmNzc2YjYyMjg4NGFmYjBlMWM5NGYyOTk0YjgxODQ2N2ZhZTZmMTQ5OWM3MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
         }
       ]
     },
@@ -407,10 +415,24 @@
           "version": "repo-lines-v1:sha256:a6152f137b4e887f5b334681cffa26e39db59bf930b5eb82b60db87fd108ab74:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxNTJmMTM3YjRlODg3ZjViMzM0NjgxY2ZmYTI2ZTM5ZGI1OWJmOTMwYjVlYjgyYjYwZGI4N2ZkMTA4YWI3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxNTJmMTM3YjRlODg3ZjViMzM0NjgxY2ZmYTI2ZTM5ZGI1OWJmOTMwYjVlYjgyYjYwZGI4N2ZkMTA4YWI3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg4MWQ2MmE4OTQ5MzhmZDFhOGU2NzExOWM5YTI4ZDFlYzNjZGQxZjhlYzY5NGI5NGVjNTY4ZDI0MzJmYWE0YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGZjMjNmMGRkNWUwNTM5YTE0NzBlMWVhMzE4NDg3NzE5NTRkNmFmMjkyYzBkZTE3ZTg0NDA1YTA2MmMyOGQwZSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_8614a68182be4e6c982dd66918db3bdf",
+      "statement": "A pinnedHost from `pair --host` is synthesized into a DiscoveredService (pinnedService, name prefixed `pinned-host:`) so it goes through the same pinned TLS fingerprint probe as mDNS candidates; orderCandidates places it first with mDNS candidates as fallback, and a ConnectionSession's discovery debounce is pinned-aware: a live (phase connected) or in-flight pinned connection survives both mDNS snapshots and Bonjour search/resolve failures, while an in-flight pinned probe restarts with the augmented candidate list only when a snapshot brings a candidate the attempt did not know (hasUnknownCandidate), avoiding probe storms.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/src/connection-session.ts#L230-L328",
+          "version": "repo-lines-v1:sha256:809ce54d6b323e27b798e515a7e294db1b249e60c1011a843084f9952c99d8a9:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NzE3YTJkNzIyZjk4Yjg2MmZmNjkyNDgwNmRlYmFmZmEyZGM1NWU4M2Y2ODFlNmU3OTRkOWY1N2EyNzMwMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxMTdlYTQxMTU3YTliYjdlODI4M2ZlMTcwMzU4NjJiODYyNzkyOGNjODYyNDM0OTg0MzZjODliZGQzY2VlNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MjYwYzJlMGMwZjMyMzYzOWY0OThjMGYzMzc3OGZhY2Y4NDA0ZDg2MWJhNmMxZmQ1ODhiNjZiMGMyM2IzY2QifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/discovery-match.ts#L62-L98",
+          "version": "repo-lines-v1:sha256:eb25fbb0ba9f46ac504d327d692f127551b04d9d86c36fc28b1d6d9ef09047d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwOGMzZWNlYzM4NzU0M2U2ZTI0OTMwZDk1ZGY0MmZhMGMzYjRlMzZkODVkZWI5NTU3NGY2OWE4ZTZlOTI0ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYmJlNzk5MzMzMGMzMzk0YjU4NDdhODlmNjdkMjk1M2YzZGIyODRlMzA2ZjI0NmY2NDBhMGU4M2IxNzU0YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1OTJjZjc5YjNjMTIzNDFmNWE1YzE0NWJjNjAwMGE0OGViOTI2ZWZhOTI5YWUxYjU1NjRmNTZmZWU2NzQ2YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3OTI5ZTkxZTBmOTljM2U4MjVkZTY5YjQzNWZiNjQ4NGQxYjBhMWRmMmY0NjU2MWFiZjFhMjlmMDQxODhiODgifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-24T21:53:59.537Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-01T22:57:17.131Z"
   }
 }

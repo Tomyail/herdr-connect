@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fa672e07dcae329812186ce884305da44ce3ae8aaf55e6e5debce8ab9d82a040",
+  "pageVersion": "sha256:899597a60a63a5e374d3a9f799f8e49976ed98b5eb1e71d2aa141fa1f1765fdc",
   "claims": [
     {
       "id": "claim_ef447e04441c4705a9e195e4051e6d67",
@@ -28,11 +28,11 @@
     },
     {
       "id": "claim_82ba0e25fbeb441ab059c10474a857d6",
-      "statement": "ios-release.mjs provides prepare (expo prebuild + pod install), build (asc xcode archive/export to an App Store Connect IPA, requiring APPLE_DEVELOPMENT_TEAM), upload (asc builds upload --wait), and distribute (TestFlight publish requiring TESTFLIGHT_CHANGELOG and TESTFLIGHT_GROUPS, with optional --notify/--submit flags).",
+      "statement": "ios-release.mjs provides prepare (validateConfig, expo prebuild --no-install, strip-push-entitlement.mjs, then bundle-exec or plain pod install), build (asc xcode archive/export to an App Store Connect IPA, requiring APPLE_DEVELOPMENT_TEAM), upload (asc builds upload --wait), and distribute (asc publish testflight requiring TESTFLIGHT_CHANGELOG and TESTFLIGHT_GROUPS, with TESTFLIGHT_NOTIFY=1 adding --notify and TESTFLIGHT_EXTERNAL=1 adding --submit --confirm).",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L204",
-          "version": "repo-lines-v1:sha256:d7bc2227827b5c864c3b71aac31306a7edf53154cd0dffeffabca0372f3edfc5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzOTdlYzQ2YjM4MTc5MTg0ZWIwZDM2ZTY4MmIwYzY5YWU4ZTExNTEzM2Q2MzBlYjliYTJjNTQ5ZTJhMjRhMmQ1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1YjgwYzBhNGRkOGI1YjY4NjE5NjgzYzMzMGQ4YWE5YTQ5ZTNiODU1M2MwNGY1MjRhZTg4MDNlNGU5ZDRiNThhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNzc5YWI5OWE3NTQ0NjNkNjFmMmE2N2IyM2EzYjdmYjI2MmFmY2E5NWQzYjI2NzllNGI5NjU0MTRjODQxODdmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOTI0NTg1NDAyYWM4Nzg5MjQ3MTM5ZTIwNThmNGRiODNlODhhNDU2ZTAzNmIwMzk4ZGIwZGVmYzdjM2Q3NTIzIn0"
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L203",
+          "version": "repo-lines-v1:sha256:8edddc2e4a66e7c9d35d1a83f431bdeca16b5b1d40830a1ec198dcfb03db6e72:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzOTdlYzQ2YjM4MTc5MTg0ZWIwZDM2ZTY4MmIwYzY5YWU4ZTExNTEzM2Q2MzBlYjliYTJjNTQ5ZTJhMjRhMmQ1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNzc5YWI5OWE3NTQ0NjNkNjFmMmE2N2IyM2EzYjdmYjI2MmFmY2E5NWQzYjI2NzllNGI5NjU0MTRjODQxODdmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNTE5MjZkM2U3Y2UyNDNkZDA2NTM1ZTNmMWE4OTA4MWRiY2E1ZDdiNDZhNzdhYjI4NDE4ODMzMDQ1NTE0NTdjIn0"
         }
       ]
     },
@@ -89,8 +89,8 @@
       "statement": "ios-screenshots.mjs ensures Metro is running, boots iPhone 13 Pro Max and iPad Pro 13-inch (M5) simulators, builds an unsigned Debug app, pins the status bar (9:41, full battery) and locale (with reboot), launches the app with scene/locale args via simctl, waits for the app-store-screenshot-ready accessibility label via AXe, and captures through an asc screenshots run plan containing only wait+screenshot steps so the asc tool does not relaunch the app without the scene arguments.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L189-L366",
-          "version": "repo-lines-v1:sha256:77fb6cc3fa4d7e0cce3d64a6f4a64e8e6becd5c790a9bd12b19e650c2a641076:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YTdmYjc2NTEyMzQxMTBiY2NkMDkzOTg2ZWMxNGVlNThlYTk0N2E0MzJlNWVmZTRhZWFjYjAwMDM3ZmRlM2JhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZGY4NTRlZWI4NTM4ZmYyYWQ1YTM5ZGVhMDI0OWJhYmM4ODE3YTlhM2FiNjc5ZGE1NmNiYzA5ZTM5N2M2ZmY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NTljZjI3MDU2YWE1ZTFhOGExMTY0OGE1NjQwNjEwOGFkNDZiNmY2NGZmZjc3MTlkZTQ5MWJkMDUzMDRjMDQxIn0"
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L204-L387",
+          "version": "repo-lines-v1:sha256:bcae3a896d8f012a6ddd6e7d3531fcf6c83e6eaccbe548fb7bbb41349e4d5661:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5YTdmYjc2NTEyMzQxMTBiY2NkMDkzOTg2ZWMxNGVlNThlYTk0N2E0MzJlNWVmZTRhZWFjYjAwMDM3ZmRlM2JhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZGY4NTRlZWI4NTM4ZmYyYWQ1YTM5ZGVhMDI0OWJhYmM4ODE3YTlhM2FiNjc5ZGE1NmNiYzA5ZTM5N2M2ZmY1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NTljZjI3MDU2YWE1ZTFhOGExMTY0OGE1NjQwNjEwOGFkNDZiNmY2NGZmZjc3MTlkZTQ5MWJkMDUzMDRjMDQxIn0"
         }
       ]
     },
@@ -99,7 +99,7 @@
       "statement": "The default screenshot run produces 2 devices × 2 locales (en-US, zh-Hans) × 3 scenes (agents, detail, settings) = 12 PNGs into build/screenshots/raw, with marketing images in build/screenshots/marketing; --device/--scene/--locale/--skip-build/--raw-only/--compose-only narrow the run.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L398-L437",
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L419-L458",
           "version": "repo-lines-v1:sha256:a5340b3f3f9a6fa6e05c4ae5db43f37485c2720b24b67f57fe2463144d46d723:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlODIwMGViZDE3MDliNmE2NzViZWNiM2JlOWYzOWU1M2JiYWMwMmNjOTI3MjM0NjJjMDU0NjhlYjBkYTZhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiMmQzYTBiMzYwZGVjMDE3NTQ0NzY2NWFjZGE2NTBiMzU2MWVhNzMwZjUwZTcxMjg2NjdjZTZiNDAwYTE2MmEifQ"
         },
         {
@@ -113,7 +113,7 @@
       "statement": "iPhone 13 Pro Max is chosen because its 1284×2778 output fits the APP_IPHONE_65 App Store slot (newer Pro Max simulators produce the separate 6.9-inch slot), and iPad targets APP_IPAD_PRO_3GEN_129.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L21-L32",
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L22-L33",
           "version": "repo-lines-v1:sha256:810c9009d0fa0e4ede25b3211727ddc923ee2c1885a614720ed41f0818896cbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyZWRiMjNhNDI4MzE0YWI1ZjI3NDBhNTVmM2UzMTFlOGU3YWNiYzliODAxOTBiZGMxODRhNmM2MDc5OThjYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MGIzZTE0NzgzNzFmNzExNWY4Mzc0ZWY3MzVkMWQwZTRjYjVhNTRlNGM1NWVmMjY0NjVhNmFlMGZjZjdlMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2ZjkzNjg5YzVhZjM1MDM0MTZkZTZkMWNhMGVkMjFiOGNkZmRjMGNjNzU0MDhkNTQyNzZlOGQzZTg2YjRiMTUifQ"
         }
       ]
@@ -127,7 +127,7 @@
           "version": "repo-lines-v1:sha256:0aa828d959e6a6f2986899613cd2a7e260e3e16f620260332a9b2760e2126c35:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTkzZTU1Mjk5ZDAwYjZmMDk5ODQ1OWQ3YWNlMmU4MjIwMGUzNmU5OTYwMzdjNTAyYWVhN2RlMjMwZGU3YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhZDYwZmNhZmU5YTU4MDc4YzM3YWEzZGZlNTA0YWM3MWVkMGNhMjc3NzJhM2Q0MDVkMTliNDkxZWM4MmM4NzMifQ"
         },
         {
-          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L368-L396",
+          "resource": "repo://apps/mobile/scripts/ios-screenshots.mjs#L389-L417",
           "version": "repo-lines-v1:sha256:ee7094ffde072f975bf9ff8a282074963c893a23d3231428345f5c103321d875:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YTViYWJiOGEzMmI2NjE3MDRhZjE4YWRlY2ZmZGJjMWI0MmI3ZDhlNmY4ZmZlOWYwMWYyYzcyNDlkNzhmZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzZjY5Yjc2M2E1YzgzM2RmZjg1YjE3MWYzM2U2ZjIzZmUyMzZmMjY1YzRkYjQwMjIwMWM0M2I5OGQ0OGZkZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZjQ1MDU2YjkzNGE0YTRkNzAyMjVkMTMxMGJhMjkyNjljMTcwMTU3MjE1NjdjYzMwNjI5NTE2NDIzY2Q0NDkifQ"
         }
       ]
@@ -196,7 +196,7 @@
       "evidence": [
         {
           "resource": "repo://apps/mobile/app.config.ts#L17-L23",
-          "version": "repo-lines-v1:sha256:305fe5b7585395d2da8b0455d6c4c699d4918ffe4ae94bea77dc1f437b279838:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkNTY4NzY1YTk4MWUzMjQ4Mjg5YTJmN2RiNWI4YWZmMzM5NGYzODMyMGJkOWEwMTVhZTUwZmY0MzYzMzBhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
+          "version": "repo-lines-v1:sha256:919f16b5722ca3c230329fd70b42f150ebca327647db5f77a855fc2557b4754c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ3YTUxODc2MDg1ODVmOGE2ZjgxNzU1ODQ4OGJiMTA4ZmY0MDk5ZmJmN2YwYzg2MTMzMzM1ZDQ1NTUwMGY1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
         },
         {
           "resource": "repo://docs/release/ios-release-process.md#L23-L34",
@@ -210,7 +210,7 @@
       "evidence": [
         {
           "resource": "repo://apps/mobile/app.config.ts#L17-L23",
-          "version": "repo-lines-v1:sha256:305fe5b7585395d2da8b0455d6c4c699d4918ffe4ae94bea77dc1f437b279838:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkNTY4NzY1YTk4MWUzMjQ4Mjg5YTJmN2RiNWI4YWZmMzM5NGYzODMyMGJkOWEwMTVhZTUwZmY0MzYzMzBhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
+          "version": "repo-lines-v1:sha256:919f16b5722ca3c230329fd70b42f150ebca327647db5f77a855fc2557b4754c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2VlMGEzMDRhNTU5MTk3NzE5YTI1OWNkZTQxODJlYjUxYTYwYWJmYmQ5M2Y3MTI3MjVhZDk3YmRkNzhjOGM1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ3YTUxODc2MDg1ODVmOGE2ZjgxNzU1ODQ4OGJiMTA4ZmY0MDk5ZmJmN2YwYzg2MTMzMzM1ZDQ1NTUwMGY1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNlOGVjNTM0MWEyNTk0MDUyMjVkM2I0YWQ4YTA0YmM0MjUxYjZlMGUwYzVhNWVhNmFhN2NkNTkxZGUzZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWI2Yzc2ODg1NjkxZmIzNmEyNGQ4ZWEzZDEyNTg4NzJmNGZmODA2NjVhNzYwNWM1YTA4OGJmZGEwNTRiOWJjMCJ9"
         },
         {
           "resource": "repo://docs/release/ios-release-process.md#L25-L25",
@@ -220,15 +220,15 @@
     },
     {
       "id": "claim_7e3ff3ae997e45a09a3ea12a8e81f5cc",
-      "statement": "The only repository-side Xcode Cloud hook is `apps/mobile/ios/ci_scripts/ci_post_clone.sh`, which installs mise, runs `pnpm install --frozen-lockfile`, and runs `node scripts/ios-release.mjs prepare` (which detects `CI_XCODE_CLOUD=TRUE` and calls plain `pod install` instead of `bundle exec pod install`).",
+      "statement": "The only repository-side Xcode Cloud hook is `apps/mobile/ios/ci_scripts/ci_post_clone.sh`, which installs mise, runs `pnpm install --frozen-lockfile` and `node scripts/ios-release.mjs prepare` (which detects `CI_XCODE_CLOUD=TRUE` and calls plain `pod install` instead of `bundle exec pod install`), then applies two grep-guarded CI-only patches that fail the build loudly if they do not apply: it injects `CODE_SIGNING_ALLOWED = NO` into the generated project.pbxproj (Xcode 26+ rejects ad-hoc archives referencing entitlements; Xcode Cloud re-signs itself), and backports `SWIFT_RETURNS_RETAINED` annotations onto expo-modules-jsi@56.0.13's RuntimeScheduler.h (Xcode 27 promotes the #ForeignReferenceType diagnostic to an error).",
       "evidence": [
         {
           "resource": "repo://apps/mobile/ios/ci_scripts/ci_post_clone.sh",
-          "version": "repo-file-v1:sha256:1e0748fba9c3ae9da064be35db6e373948c0ff6c12626a29577b9635b109afc4"
+          "version": "repo-file-v1:sha256:2498117f1fcb7e170158d5d0b398209291218eeed66eb0cb1c4fb983b3185cd2"
         },
         {
-          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L90",
-          "version": "repo-lines-v1:sha256:3468972123207dc2231f13e31772ed2a7690a8958ae51cc68d7b7aa57d7f404b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5N2VjNDZiMzgxNzkxODRlYjBkMzZlNjgyYjBjNjlhZThlMTE1MTMzZDYzMGViOWJhMmM1NDllMmEyNGEyZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NzlhYjk5YTc1NDQ2M2Q2MWYyYTY3YjIzYTNiN2ZiMjYyYWZjYTk1ZDNiMjY3OWU0Yjk2NTQxNGM4NDE4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L73-L91",
+          "version": "repo-lines-v1:sha256:e0c2350769b52de756fc834e42597db658c820f8e531ab87f116c75fdd1c0643:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5N2VjNDZiMzgxNzkxODRlYjBkMzZlNjgyYjBjNjlhZThlMTE1MTMzZDYzMGViOWJhMmM1NDllMmEyNGEyZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3NzlhYjk5YTc1NDQ2M2Q2MWYyYTY3YjIzYTNiN2ZiMjYyYWZjYTk1ZDNiMjY3OWU0Yjk2NTQxNGM4NDE4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzOTRiNDk1YjU2ZDBmOGZlMmFhMDBkODhiYTFmZGQxYTk1MjM3MGVlYzA1MGI0NjQ4MjFlNGUzNTU1ZGUzMjkifQ"
         }
       ]
     },
@@ -251,10 +251,38 @@
           "version": "repo-lines-v1:sha256:bd480f956c2225cb306a5b229489d7c4ff4a8fc5baa9d79db06c1111385836e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ0ODBmOTU2YzIyMjVjYjMwNmE1YjIyOTQ4OWQ3YzRmZjRhOGZjNWJhYTlkNzlkYjA2YzExMTEzODU4MzZlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ0ODBmOTU2YzIyMjVjYjMwNmE1YjIyOTQ4OWQ3YzRmZjRhOGZjNWJhYTlkNzlkYjA2YzExMTEzODU4MzZlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUwOTQ5NmY1ZjhiYWZjZTQ0NmZjNTJiNjg2YzkyYzMxNzdjOTgxMWIzMTlhMWM1NmYyNzAzZTY2NTliNmYyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg2YzM1OWQwMTczZGQ0ZTU4MTdiYTQwMjM4YzRiZGFhNTY5ZjExMDI0YWEwOWU2NTc2MTVmZWI4OWVmOTBiNiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_70ecbf01ac7844d8b40132466690bbd9",
+      "statement": "plugins/withIosDeploymentTarget.cjs is a withDangerousMod Expo config plugin registered in app.config.ts that injects an idempotent post_install snippet into the generated Podfile raising every pod target's IPHONEOS_DEPLOYMENT_TARGET below 15.1 to 15.1 (react-native-svg@15.x podspec declares 12.4, unsupported by newer Xcode SDKs; the Podfile platform is not a floor for pod targets), and it throws when its post_install anchor regex no longer matches so the plugin must be updated rather than silently skipping.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/app.config.ts#L95-L97",
+          "version": "repo-lines-v1:sha256:028f41bef90efc0239aa781d88d615ae68439e1640f2b5019a8b24cab67cb1af:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBmNWZmOWJlMzVlODY5MmE1ZTM0ZWQ5Y2U2OGU4NDMyZDdjNjczYmE5ZDMwOTQ2NjIyNWU2ZTQ2OTY1NWRhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY0ZDhjMDczNDI5ODkzMTAxNTc2ZDg4ZDk5MTI3ZTg5ZDY4OTFkM2IxN2U4OWRmMDJlYzlhZTcwNzA1ZDhiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWEwYjRiMTBlYmM5ZDE1ZmE2NjA1MjczMjEyNGJhYjIwMDE1NjhjNDM0MmRlMzk2NTk4NGQyMTZkN2YzZTgzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODlmOWI2OTI1ODZmNTNhYzQ3ODAxZmQ2ZTRkZjg3MWY2NmRjMjFlMTZjODU0ZDkxNzA1NmQ0MWNiZWI3MjE4MiJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/plugins/withIosDeploymentTarget.cjs",
+          "version": "repo-file-v1:sha256:58b3b8d86c087670333d06ff478c4deae499852118fbfcfc357ec0e12f70fe6d"
+        }
+      ]
+    },
+    {
+      "id": "claim_9557cc5fda744cb6b25a5877ef4685b8",
+      "statement": "scripts/strip-push-entitlement.mjs runs inside ios-release.mjs prepare after expo prebuild: it strips the aps-environment key from all generated .entitlements files (skipping Pods/build) because expo-notifications unconditionally adds the Push Notifications entitlement, which free/personal-team automatic-signing profiles cannot provision and which config-plugin-based removal could not remove reliably; the app only uses foreground local notifications.",
+      "evidence": [
+        {
+          "resource": "repo://apps/mobile/scripts/ios-release.mjs#L80-L86",
+          "version": "repo-lines-v1:sha256:fd1590900f52d7368b6340bffb3543d9766cf08bffb0f7b550cc2ddc0d91863e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdlNDhlYWQxMGExYzU3YTU4MjBiMjliOWM2MDdhNDVjYTE4M2U0MzdmMjZhNzc4YjljZTNiMDQ2YTAzYjVjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA4MjU5ODQzNWFiOGQ2ZWE3NTJlZDI2OTFhZjQzNmY2YjQ1OTZkNjEyNGY0OGE2ZDllYzg1YWMwZTM1N2VmMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjA4ZTI4MjFmMWM1OWE1NWYwNTM1NTYyNmU1NDMwNTNlNDhmZWZjMTJiNGZiMmIzNTdhMzFhM2YzMTZjNWJiYSJ9"
+        },
+        {
+          "resource": "repo://apps/mobile/scripts/strip-push-entitlement.mjs",
+          "version": "repo-file-v1:sha256:a8d848b0c1e56e323e63df6cf88b2ec2044719c7dfc18fe0edd60b551d757716"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-24T21:53:59.537Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-01T22:57:17.131Z"
   }
 }

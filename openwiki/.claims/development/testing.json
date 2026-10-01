@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ecab5da24a4d73a42181005e6f85721772702d2a14c17bbe7b1d59b4f01ebc19",
+  "pageVersion": "sha256:07552fd969f08b68af5a00d86ffb01d9310f0d546683cbfdcbda6fdb28deb572",
   "claims": [
     {
       "id": "claim_564ffed8b4444598bc0086c333d71f74",
@@ -126,11 +126,11 @@
     },
     {
       "id": "claim_54d72ee0cb1a4148b6cbccd06bedcee4",
-      "statement": "pairing.test.ts locks the QR payload contract: parsePairingQRPayload accepts only a well-formed {v, fp, hosts, port, secret} object and throws NetworkError with code pairing_qr_invalid for every malformed shape, while pairingUrls preserves daemon host order, brackets IPv6, and uses the payload's port.",
+      "statement": "pairing.test.ts locks the QR payload contract: parsePairingQRPayload accepts only a well-formed {v, fp, hosts, port, secret} object and throws NetworkError with code pairing_qr_invalid for every malformed shape, while pairingUrls preserves daemon host order, brackets IPv6, and uses the payload's port; it also verifies hostOverride is reported only when host_override is exactly true.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/pairing.test.ts#L15-L175",
-          "version": "repo-lines-v1:sha256:8564bd99549e110927dfa50bb0446d5b98cae2be71ef8150225df0009e3e220c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMjdmY2NmZDZiN2ZmYWIzOTJiMzJlNjUzZmE4ZDYwYTQxZjNjZWFlZDYwYWY3ZThjZjA4ZGEyMmYxMzI1YmI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNDg5OTdhZjFiMGY0ODJmOGU2MjQxYzgxZjA2NzBhZmE0NmUwMWJhZTE4YWZhMzhhMDJiNDVlNDAyYjI5NWFmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjUzNzEzNWM1NWI2Y2I1MTM5YjFhZTc2Y2QxYzY0NTNmZjhiMzc0NGE0YjY0M2JiZDY5YjZjZjg5NjRiODNjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWJhNDc2MzRjOWM2ZGI3MjY3MTM4Yzk3ZWY4ZTk0MjY0NDk2NGU4ZDM0MTc3NDdmOTE1MGE5MmNhNTQ3MDcwIn0"
+          "resource": "repo://apps/mobile/src/pairing.test.ts#L15-L197",
+          "version": "repo-lines-v1:sha256:fb6bb987dc38ce7afec42473299658fcade7232f1564e24ca7ab7d1607b21bf3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMjdmY2NmZDZiN2ZmYWIzOTJiMzJlNjUzZmE4ZDYwYTQxZjNjZWFlZDYwYWY3ZThjZjA4ZGEyMmYxMzI1YmI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjUzNzEzNWM1NWI2Y2I1MTM5YjFhZTc2Y2QxYzY0NTNmZjhiMzc0NGE0YjY0M2JiZDY5YjZjZjg5NjRiODNjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -169,7 +169,7 @@
       "statement": "discovery-match tests verify candidate selection prioritizes the service verified for the active instance, excludes services verified as another instance's daemon, and that classifyProbeFailure maps fingerprint mismatch to wrong_daemon, transport failures to unreachable, and auth/TLS-pin-passed failures to terminal.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/discovery-match.test.ts#L23-L94",
+          "resource": "repo://apps/mobile/src/discovery-match.test.ts#L31-L102",
           "version": "repo-lines-v1:sha256:854a8379e285bda47739538d079f31dc3b801a6f5ff73dd433a0b820e65b1a22:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiY2JkODkyMWFhYWZlOGI2ODQ3MjBhMGYxZDY3MDI0MWM0ODcyNzE1MzY0NmYyOWNiNjg4YmFhMjcyYjdhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YWY0MjU4MzRlMTgwYzc3NGYwNDE1MjVmN2Q2ZjAyZmIwMzY5MGQ4NDBmZGUzODYyZjVlNjhiZGMxMTZkNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyMTZhOTM0ZGU5MTk3OWZjZjA2MmI0OGQ0MTUxYjM5MTAzOGI0ZTNkODFjYWFhZjA0YTU1MzZlZTc5MGNkOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2OTk0NmM0YWNmYzljYzBlNzhiOTY3MjE3NzcwM2IzZGE5ZjkwMjFiYzA2MDcyOWEzMThiYmEyNzE0OTI1NWUifQ"
         }
       ]
@@ -272,7 +272,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-24T21:53:59.537Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-01T22:57:17.131Z"
   }
 }

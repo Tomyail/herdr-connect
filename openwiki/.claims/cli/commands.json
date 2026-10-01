@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bba8cee912952cd3743f673742eb46016aa8b6765047ebe81193e1137981c9eb",
+  "pageVersion": "sha256:862130da6bb94c42acc9dbf69a3d9cf75f647d48bbba7b038c988b17db95cf8e",
   "claims": [
     {
       "id": "claim_c67ae724294b4c849018eebd9f805e39",
@@ -100,15 +100,15 @@
     },
     {
       "id": "claim_abb2377cfc2645c390cb297efb8a46c6",
-      "statement": "The pair command first probes the preview port and exits 1 without opening the database if the daemon is not running, then loads the TLS certificate fingerprint, creates a one-time secret (lanauth.NewPairingSecret, SHA-256 stored, 5-minute TTL), renders a QR containing {v:1, fp, hosts[], port:9808, secret}, and polls the DB every second until the secret is consumed or TTL+10s expires.",
+      "statement": "The pair command first probes the preview port and exits 1 without opening the database if the daemon is not running, then selects hosts (collectLANHosts/selectPairHosts), loads or creates the TLS certificate (lanauth.LoadOrCreateCertificate) for its fingerprint, creates a one-time secret (lanauth.NewPairingSecret, SHA-256 stored, 5-minute TTL), renders a QR containing {v:1, fp, hosts[], port:9808, secret} plus host_override:true only when --host was given, and polls the DB every second until the secret is consumed or TTL+10s expires.",
       "evidence": [
         {
           "resource": "repo://internal/daemoncli/cli.go#L88-L95",
           "version": "repo-lines-v1:sha256:eb8753376eff01e00afeecec8d426cd6a929e29d559705133ee35e93d9ee6fba:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhODI3NzFmZDNjNzYwZmEwNTM5MGRkZjJjYWQ1NGQ2ZjQyNTk2Nzk5NDFhYjYzNjZmYWU0MGE1ZDJiMjZlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjZGE4MmRhNjA2MjM4ZTA1ZTYyMzk5NTY5YzVlZTAzOTkzNDE5NjQ4YWU1ZDQzYTJiZjhjZDYzNDdmODI2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjJmMmZmNWZlZWM2MGY1ODdjOGZhZTRlODdmODA5YTY2MWNmZmVkNmI0N2FhZTVmNmQ2YTI2NTNhYTg5NTJlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQ4ZmEyNTZlNmIzNGFhOGM5YjI5NmUxM2M0ZGE1Njg4ODBiMTg2ZjJhOTRiOWMwZjg4NjA5MDQ5YTkxMTFlOCJ9"
         },
         {
-          "resource": "repo://internal/daemoncli/pair.go#L19-L100",
-          "version": "repo-lines-v1:sha256:1bb66c9f1b0dd1f047749a44ba3265e5ce490d3a17922186deae51cea4516d8b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MDI3Y2Y1YjFmMjVmZDA0MzY4NzM5OGM0Y2Q4OTVlNzYwMzQ3MDcyNWUxOTNkZGRkYTBlOTMzNDYzMDU3YzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwMDk0YzJhNzg0MTM0YTczOWZhMTczMzI5MGYyZDQ4YTg4ZDkxNjE2MDk3MGY2MjY5YWU2Y2VhYjAwMjc3MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYjBhYjU5ZGY2MDQ2MGEzZjJlZTFjN2FlYzQwZDg5ZWQxY2IzMzAyMmM0ZTBkNjhjYjkyYmEzYTM1OTI1NzUifQ"
+          "resource": "repo://internal/daemoncli/pair.go#L113-L155",
+          "version": "repo-lines-v1:sha256:297bd8167a96e979a24bdbfcd748dcb64d2f0d41792594cdc8bb7294a8d24ce7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNmY4M2VlZmM3MWQ0Y2Q0YjhhZGY2ODg3YTExNDIxMzBjYTA3NzU1ZDg3YTJmMjdjODM4MDIzYWY0NTJmZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMWVkMTE5MGZiMTIzMWY1YTlhYjdmZTExZjQ3NzA3Y2QwZTc3N2RlMTRhYjgwZDE5YjQyYTZjNmJmZjFiMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4ODgzYmNjZGNjOTRiMTlhYWY2Yjg2ZTE1ZWU0NjQ2MGFmZTk4ZWQ3ZjE5ZmEwZmFlYzhhOTMwMzJkYWNjZTkifQ"
         }
       ]
     },
@@ -122,7 +122,7 @@
         },
         {
           "resource": "repo://internal/daemoncli/pair_test.go",
-          "version": "repo-file-v1:sha256:cb9ff4defa37eab8ebc4945db28cee53f2ff07987c70a0279b144fcfa1c0c963"
+          "version": "repo-file-v1:sha256:8da67c84846608e332f69daaae78269945992bdc5a85c56072ce31d7c7819763"
         }
       ]
     },
@@ -189,7 +189,7 @@
           "version": "repo-lines-v1:sha256:f231cdb116078cdc2a9d70159760557bc3529de9ec495307ded5414d142ba5ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMDYyNTJjMzQ5NzI4MTI3OTI3Zjc3ODE1YmFkMmQzYWRjZmQ4YjY0Y2I5ZGIwYjY3YzE0YWU0MzBiMjkxZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjNGM2NDdlNmU5MDc2MWNmYjcxNTIwMGRkMGVjODRlMmRlODE2ZDM0ODRkODNjZjNiZDQzMmNmZmNhYzdlZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZTY3NzFjYjU4OGJiNWUzZDY5ZGI4NDNhYzU4ZTdlZmY3NjFlNjM0MmQ3ZjY3NGU3ODE0YWJhOGVkM2ZmNGIifQ"
         },
         {
-          "resource": "repo://internal/daemoncli/pair.go#L38-L70",
+          "resource": "repo://internal/daemoncli/pair.go#L42-L74",
           "version": "repo-lines-v1:sha256:0505d954cdeead23c3af01b113d404fb8a567a9b27f7e4323a79ad7b95f52521:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkM2NiMGZmYTcxZDlmODZhNmYyMzJiNDdmZDM1N2M2NjFiODQ5OWFmM2Q4YmRjZDMxOTkyZDAxYjllY2YxNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NjAyNWViMWE3ZGJhODExNzVmZTE0ZTdjOTEzOGNkYzMzZWI2YWViNzZlOWM1MWQ4ZDgyZTQ1YTYyZGViODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZmVhODU5MWZhNjNiYjdhNjQ2ZTZiNjkxNzkwZDZhYzJiYTk4MjRjYTcxZWI4NjFkNzhjYzY0Mzk4NTRjNWQifQ"
         },
         {
@@ -311,10 +311,28 @@
           "version": "repo-lines-v1:sha256:a34cd1add68cd244b4346e1feba3d0db63bdefcecc93f243fb78fb783c778f06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmNDc5YmIxZjk4MWZhMzkxZTRmODJkZjFkNzFkMjMzNjBjNGM3ODdlN2Y2NzAzMTA2NjI4ZThmOWU5Y2MzZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MDVmZDE4ODUyZTg4MjdjMDdmNjU1NmRiZDhhNjY3Mzc3ODhlNGFlODlkNzkwMDU0MDZjMzBmYTgxMmI0MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhMDI1YjBmNzI2Mjg0ZmZlMzA3NDZiYTM4YjFmY2NkYWZhMmM3NDMzMmU1MzZjZDRkMDhkZmZhZmQwM2JjMTMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1fd2e595bb1840c4a3d112c91e903200",
+      "statement": "pair --host is an override, not a hint: the QR payload carries host_override:true and only the requested address, the CLI prints a 'Host override:' notice, and the app treats the address as the instance's fixed connection address (mDNS discovery becomes a fallback); without --host the field is omitted and all candidate addresses are included.",
+      "evidence": [
+        {
+          "resource": "repo://internal/daemoncli/pair.go#L129-L140",
+          "version": "repo-lines-v1:sha256:cb5c6788116438d5295081d785893ba08f89ba72e34184ba7862705089095644:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0N2M5OGY2YjYxZjc2MzU2NGRhMGQ1MGI0OGZlNGEzMTQyMDFhNmVmODFjZTZlZjQ3ODJjYjU2NTBlYTE4YTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwYWViNjE1NWU2OWE5ZjA1NWM0NTFjZWRlNGYxZmU5MGIxOWE3MmRhMDM0OWJkY2EyZTllNTY3YjkzNmVhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5YTM4MTBlYzQwNWMzMmRjMjIyN2YyYWI0Yzc1NWI2YmRhZjdhNTc2Njc5ZGE2ZDNlNzIxMTdjYzMyMTYyYjAifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/pair.go#L30-L40",
+          "version": "repo-lines-v1:sha256:2b2e92e28be48af2fcb52cd91b06035ae8407c9af6ec47c1a45fbfe15f9d04b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YTEzNjI5Y2EwYjc3NzMxNmQyM2ZiYTQ5N2E5N2IwMzM2NTkwZjNiYWZkZWI0MDkxMWRmZjk4NTNjMGE2ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZTQ5ZWVmZWU2MzlmNjI2YmJlZWJkODE3NzAxMTFkZmNhNDE1OWYxZjI5OTk5OTgwNDg1ZDViM2M0Zjc0MDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNzUxZDcxZTY3MDI2MzRjYmJiYWU2NTc3ZWQwMDljNTQ1YTkzOTQ3ODE3Y2I5OTNlMjU4MmU2ZGYyY2MzZTQifQ"
+        },
+        {
+          "resource": "repo://internal/daemoncli/pair_test.go#L274-L334",
+          "version": "repo-lines-v1:sha256:aff838592e6c3125ce5f77dfbfea4ddc754c19127db4703157bdc9e831847725:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZTcyZmEyMDM0YTM5MzkzNWE5NzNmYmU0ZDA4ODI4YzkwNWUyOTdiOGYyYjBkMDg3MWZkYzg1ZTYwZTQwMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDU4MjkwZWZhNzM2YjIxMzExYmY1MGFjMjAyNmNlMzE1ZjkxNmU4NTFjODhhNzVkNTJlYTViMTdjNGJkODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-24T21:53:59.537Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-01T22:57:17.131Z"
   }
 }

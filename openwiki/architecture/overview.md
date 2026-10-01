@@ -5,8 +5,8 @@ description: High-level architecture of Herdr Connect, covering the Go daemon, m
 tags: [architecture, go-daemon, mobile-client, protocol, data-flow]
 resource: https://github.com/Tomyail/herdr-connect
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-24T21:53:59.537Z
+  - by: openwiki/0.6.1
+    at: 2026-10-01T22:57:17.131Z
 sources:
   - id: openwiki-source-a04d6c803675fbfe778f6010
     resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
@@ -14,6 +14,12 @@ sources:
     resource: repo://apps/mobile/modules/screenshot-launch-options/ios/ScreenshotLaunchOptionsModule.swift
   - id: openwiki-source-499f916017f3cb05929bdb42
     resource: repo://apps/mobile/src/App.tsx
+  - id: openwiki-source-73bcd9523bd31ff199d48ce0
+    resource: repo://apps/mobile/src/credentials.ts
+  - id: openwiki-source-70cc1620c79d3f36cfeaf608
+    resource: repo://apps/mobile/src/network.ts
+  - id: openwiki-source-7207eb989e1e3e7ccc0ce4dc
+    resource: repo://apps/mobile/src/pairing.ts
   - id: openwiki-source-94682260b831242842408676
     resource: repo://apps/mobile/src/PairingScreen.tsx
   - id: openwiki-source-a2371d6362e5db4bc834ad03
@@ -42,7 +48,7 @@ sources:
     resource: repo://protocol/protocol_test.go
   - id: openwiki-source-64700ed4d455b9f464c4ccf2
     resource: repo://protocol/protocol.go
-generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-01T22:57:17.131Z" }
 ---
 
 # System Architecture
@@ -105,8 +111,10 @@ The service resolves absolute paths to both Herdr Connect and Herdr binaries at 
 
 The iOS app (`/apps/mobile/`) is a React Native application that:
 
-1. **Pairs with the daemon** — Scans a QR code rendered by `herdr-connect pair` to exchange a one-time secret for per-device bearer credentials, stored in iOS Keychain
-2. **Discovers the daemon** — Uses `@inthepocket/react-native-service-discovery` to browse `_herdr-connect._tcp` services
+1. **Pairs with the daemon** — Scans the QR code rendered by `herdr-connect pair` (via `expo-camera`), parses the JSON payload (protocol version, `fp` fingerprint, `hosts`, `port`, one-time `secret`, and `hostOverride`), and POSTs the secret + device name to `POST /v1/pair` through the pinned-fetch module with host-by-host fallback. Credentials are stored per instance in the iOS Keychain via `expo-secure-store` — one record per certificate fingerprint (`herdr-connect.instance.<fingerprint>`) plus an index and active-instance key, with automatic idempotent migration from the legacy single-credential key
+2. **Supports multiple daemons** — Pairing is keyed by fingerprint; re-pairing an existing instance first snapshots the old credentials, stores the new token, then best-effort revokes the old device token server-side (failure shows a warning but does not block pairing). If the daemon was paired with `pair --host`, the QR's single host is pinned as the instance's fixed connection address (`pinnedHost`) instead of mDNS-resolved addresses
+3. **Completes a naming step** — After success, the pairing screen pre-fills an alias (existing alias preserved for known instances; otherwise mDNS service name → hostname → QR host → fingerprint tail) and the alias is written client-side only
+4. **Discovers the daemon** — Browses `_herdr-connect._tcp` services over Bonjour; connection sessions probe candidates with pinned TLS until one matches the stored fingerprint, sharing fingerprint validation across sessions
 3. **Fetches agent state** — Calls `GET /v1/agents` over HTTPS using a pinned-fetch native module that validates the server's TLS certificate fingerprint; a companion pinned-stream native module consumes SSE signals for real-time updates
 4. **Displays status** — Shows agents with interaction state, outcome, and brand icons
 5. **Interacts with agents** — Calls `/history`, `/focus`, `/messages`, and `/interrupt` endpoints for control
@@ -153,16 +161,17 @@ sequenceDiagram
     Daemon->>Daemon: consume secret, store SHA-256 token hash
     Daemon-->>App: per-device bearer token (returned once)
     App->>App: store fingerprint, token, device ID in iOS Keychain
+    App->>Daemon: revoke previous token for same instance (best effort)
 ```
 
 Diagram: QR-code pairing exchange producing per-device bearer credentials pinned to the advertised certificate fingerprint.
 
-1. Owner runs `herdr-connect pair` → generates one-time secret, renders QR with secret + cert fingerprint + host addresses + port
-2. Mobile app scans QR, POSTs secret + device name to `POST /v1/pair` via pinned-fetch (validates cert fingerprint)
+1. Owner runs `herdr-connect pair` → generates one-time secret, renders QR with secret + cert fingerprint + host addresses + port (+ `hostOverride` when run with `pair --host`)
+2. Mobile app scans QR, POSTs secret + device name to `POST /v1/pair` via pinned-fetch, trying each advertised host in turn (multi-homed daemons may list unreachable addresses); the QR fingerprint is trusted as out-of-band confirmation of physical proximity
 3. Server consumes secret, issues per-device bearer token, returns it exactly once
-4. Mobile stores credentials (fingerprint, token, device ID) in iOS Keychain
+4. Mobile stores credentials in the iOS Keychain, keyed per instance by certificate fingerprint; if this replaces a previous pairing of the same instance, the old token is revoked server-side after the new credentials are stored (best-effort, non-blocking)
 5. Daemon advertises `_herdr-connect._tcp` with `fp` TXT record containing cert fingerprint
-6. Mobile discovers daemon via Bonjour, connects using stored credentials
+6. Mobile discovers daemon via Bonjour (or uses the pinned host from `pair --host`), probes candidates with pinned TLS until the certificate matches the stored fingerprint, then authenticates with the bearer token
 
 ### State Synchronization Flow
 

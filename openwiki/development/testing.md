@@ -52,10 +52,10 @@ sources:
     resource: repo://protocol/protocol_test.go
   - id: openwiki-source-c4b7f012e593903d3c714884
     resource: repo://test/conformance.test.mjs
-generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-01T22:57:17.131Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-24T21:53:59.537Z
+  - by: openwiki/0.6.1
+    at: 2026-10-01T22:57:17.131Z
 ---
 
 # Development Testing
@@ -167,5 +167,7 @@ When changing behavior, prefer the **narrowest quiet validation that proves the 
 
 ## Related Pages
 
+<!-- openwiki: broken internal link [/openwiki/development/setup.md] link "/openwiki/development/setup.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 - [/openwiki/development/setup.md](/openwiki/development/setup.md) — environment setup before running tests.
+<!-- openwiki: broken internal link [/openwiki/mobile/ios-client.md] link "/openwiki/mobile/ios-client.md" is root-absolute, which no real consumer resolves against the repository root (not a coding agent reading the page, not GitHub's Markdown renderer, not a local viewer); use a path relative to this file instead. Fix the href or restore the target, then delete this comment. -->
 - [/openwiki/mobile/ios-client.md](/openwiki/mobile/ios-client.md) — the iOS client whose logic modules these tests cover.

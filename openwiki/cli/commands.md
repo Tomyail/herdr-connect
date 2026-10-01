@@ -27,10 +27,10 @@ sources:
     resource: repo://internal/demolan/rate_limit.go
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-01T22:57:17.131Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-24T21:53:59.537Z
+  - by: openwiki/0.6.1
+    at: 2026-10-01T22:57:17.131Z
 ---
 
 # CLI Commands
@@ -178,16 +178,19 @@ Before opening the database, the CLI probes the preview port; if the LAN daemon 
 
 Then the command (`/internal/daemoncli/pair.go`):
 
-1. Loads the self-signed TLS certificate and its SHA-256 fingerprint
-2. Generates a one-time secret (`lanauth.NewPairingSecret`), stored as SHA-256 hash with a 5-minute TTL
-3. Renders a terminal QR code containing `{v:1, fp, hosts[], port:9808, secret}`
-4. Polls the database every second until the secret is consumed or the TTL plus a 10-second margin expires
+1. Selects the candidate host addresses (`collectLANHosts` / `selectPairHosts`)
+2. Loads or creates the self-signed TLS certificate (`lanauth.LoadOrCreateCertificate`) and takes its SHA-256 fingerprint
+3. Generates a one-time secret (`lanauth.NewPairingSecret`), stored as SHA-256 hash with a 5-minute TTL
+4. Renders a terminal QR code containing `{v:1, fp, hosts[], port:9808, secret}` (plus `host_override: true` when `--host` was given)
+5. Polls the database every second until the secret is consumed or the TTL plus a 10-second margin expires
+
+`collectLANHosts` enumerates non-loopback, non-link-local IPv4/IPv6 addresses, sorted ascending within each family with IPv4 always before IPv6.
 
 The mobile device scans the QR, POSTs the secret to `/v1/pair`, and receives a per-device bearer token. The CLI prints the paired device name on success. Exit code 1 on timeout. Pairing is auto-approved — physical access to the terminal screen is the out-of-band confirmation (see [Secure Pairing](../protocol/secure-pairing.md)).
 
 #### pair --host
 
-`--host IP_ADDRESS` limits the QR to a single address instead of all active local addresses. Use it on multi-interface hosts to force one pairing path — the physical-LAN address for local pairing, or the host's Tailscale/VPN address to pair from outside the physical LAN.
+`--host IP_ADDRESS` limits the QR to a single address instead of all active local addresses. Use it on multi-interface hosts to force one pairing path — the physical-LAN address for local pairing, or the host's Tailscale/VPN address to pair from outside the physical LAN. It is an override, not just a pairing hint: the QR payload sets `host_override: true`, and the app stores that address as the instance's fixed connection address (mDNS-discovered addresses become only a fallback); re-pairing without `--host` restores automatic discovery. With `--host`, the CLI also prints a `Host override:` notice naming the pinned address.
 
 Validation (`parsePairHost` in `/internal/daemoncli/cli.go`, `selectPairHosts` in `/internal/daemoncli/pair.go`):
 
@@ -195,7 +198,7 @@ Validation (`parsePairHost` in `/internal/daemoncli/cli.go`, `selectPairHosts` i
 - The value must parse as an IP address (`net.ParseIP`)
 - The address must be assigned to an active local interface (compared canonically, so compressed and expanded IPv6 spellings match); otherwise the command errors out
 
-When pairing over Tailscale, both the daemon host and phone must be on the same tailnet; find the host address with `tailscale ip -4`. Cold-launch reconnect off-LAN is not yet supported: startup rediscovery is mDNS-only, which does not traverse the tunnel. Focused tests: `TestParsePairHost`, `TestSelectPairHostsLimitsQRAddresses`, `TestContainsHostComparesCanonicalIPValues` in `/internal/daemoncli/pair_test.go` (`go test ./internal/daemoncli/ -run 'PairHost|SelectPairHosts|ContainsHost'`).
+When pairing over Tailscale, both the daemon host and phone must be on the same tailnet; find the host address with `tailscale ip -4`. Cold-launch reconnect off-LAN is not yet supported: startup rediscovery is mDNS-only, which does not traverse the tunnel. Focused tests: `TestParsePairHost`, `TestSelectPairHostsLimitsQRAddresses`, `TestContainsHostComparesCanonicalIPValues`, `TestPairQRMarksHostOverrideOnlyWhenHostIsRequested` in `/internal/daemoncli/pair_test.go` (`go test ./internal/daemoncli/ -run 'PairHost|SelectPairHosts|ContainsHost|HostOverride'`).
 
 ### devices
 
@@ -336,8 +339,5 @@ Behavior:
 - `trace` — live event stream
 - `daemon --once` — single sync for health checks
 - `go run ./cmd/protocol-conformance` — protocol conformance harness (stdin JSON, stdout JSON)
-
-See [Development Setup](../development/setup.md) for the development workflow.
-rotocol-conformance` — protocol conformance harness (stdin JSON, stdout JSON)
 
 See [Development Setup](../development/setup.md) for the development workflow.

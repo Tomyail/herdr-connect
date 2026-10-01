@@ -14,12 +14,16 @@ sources:
     resource: repo://apps/mobile/modules/screenshot-launch-options/index.ts
   - id: openwiki-source-9b6b7257d69ddb1a6db124bf
     resource: repo://apps/mobile/modules/screenshot-launch-options/ios/ScreenshotLaunchOptionsModule.swift
+  - id: openwiki-source-0a20a90b5ca597abfc81cc89
+    resource: repo://apps/mobile/plugins/withIosDeploymentTarget.cjs
   - id: openwiki-source-69ab7d637186dbfa16339249
     resource: repo://apps/mobile/scripts/compose_app_store_screenshots.swift
   - id: openwiki-source-be755051e7015fe6b4486c30
     resource: repo://apps/mobile/scripts/ios-release.mjs
   - id: openwiki-source-0bf167f008fbaba0f95ffc7f
     resource: repo://apps/mobile/scripts/ios-screenshots.mjs
+  - id: openwiki-source-d101869aa1e7dab4b8bceb2a
+    resource: repo://apps/mobile/scripts/strip-push-entitlement.mjs
   - id: openwiki-source-499f916017f3cb05929bdb42
     resource: repo://apps/mobile/src/App.tsx
   - id: openwiki-source-41b2fe1ccdd93d7e6e0cbee0
@@ -30,10 +34,10 @@ sources:
     resource: repo://docs/maintainers/releasing.md
   - id: openwiki-source-168e3582b3bc1a21faf6830e
     resource: repo://docs/release/ios-release-process.md
-generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-01T22:57:17.131Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-24T21:53:59.537Z
+  - by: openwiki/0.6.1
+    at: 2026-10-01T22:57:17.131Z
 ---
 
 # Mobile Release Pipeline
@@ -51,7 +55,7 @@ flowchart TD
     A["Bump ios.buildNumber in app.config.ts"] --> B["Commit and push"]
     B --> C["git tag -a ios-v0.1.0-buildN and push tag"]
     C --> D["Xcode Cloud starts - tag starts with ios-v"]
-    D --> E["ci_post_clone.sh - mise install, pnpm install, ios-release.mjs prepare"]
+    D --> E["ci_post_clone.sh - mise, pnpm install, prepare, pbxproj + JSI patches"]
     E --> F["Xcode Cloud archives HerdrConnect scheme"]
     F --> G["Distribution preparation - App Store Connect"]
     G --> H["TestFlight external group post-action"]
@@ -59,7 +63,22 @@ flowchart TD
 
 The Xcode Cloud release track from a buildNumber bump to the external TestFlight group.
 
-The Xcode Cloud path: a maintainer bumps `ios.buildNumber` (nothing bumps it automatically — `expo prebuild` in every Xcode Cloud run writes the static value into `Info.plist`, so an unbumped retag fails the upload rather than silently reusing the old build), commits, then pushes a new annotated tag `ios-v<version>-build<buildNumber>`. **Never move or re-push an existing tag** — Xcode Cloud triggers on tag creation, and a force-moved tag may not re-trigger. The Xcode Cloud workflow itself is configured entirely in App Store Connect (Start Condition: tag starts with `ios-v`; Distribution Preparation: `App Store Connect`, not internal-only; post-action `TestFlight (External Testing)` targeting the external group with the public TestFlight link) — the only repo-side piece is `apps/mobile/ios/ci_scripts/ci_post_clone.sh`, which installs mise, runs `pnpm install --frozen-lockfile`, and runs `node scripts/ios-release.mjs prepare`.
+The Xcode Cloud path: a maintainer bumps `ios.buildNumber` (nothing bumps it automatically — `expo prebuild` in every Xcode Cloud run writes the static value into `Info.plist`, so an unbumped retag fails the upload rather than silently reusing the old build), commits, then pushes a new annotated tag `ios-v<version>-build<buildNumber>`. **Never move or re-push an existing tag** — Xcode Cloud triggers on tag creation, and a force-moved tag may not re-trigger. The Xcode Cloud workflow itself is configured entirely in App Store Connect (Start Condition: tag starts with `ios-v`; Distribution Preparation: `App Store Connect`, not internal-only; post-action `TestFlight (External Testing)` targeting the external group with the public TestFlight link) — the only repo-side piece is `apps/mobile/ios/ci_scripts/ci_post_clone.sh`.
+
+`ci_post_clone.sh` does four things in order:
+
+1. Installs mise (via Homebrew if missing), `cd`s into the repo root (or `CI_PRIMARY_REPOSITORY_PATH`), then `apps/mobile`, and runs `mise install` with `MISE_DISABLE_TOOLS=ruby`.
+2. Runs `mise exec -- pnpm install --frozen-lockfile`, then `mise exec -- node scripts/ios-release.mjs prepare` (which detects `CI_XCODE_CLOUD=TRUE` and calls plain `pod install` instead of `bundle exec pod install`).
+3. **Signing patch**: Xcode Cloud archives with `CODE_SIGN_IDENTITY=-` (ad-hoc) and re-signs itself, but Xcode 26+ rejects ad-hoc builds of device app targets that reference an entitlements file even when the entitlements are empty. The script `sed`-injects `CODE_SIGNING_ALLOWED = NO` next to `IPHONEOS_DEPLOYMENT_TARGET = 16.4` in the generated `project.pbxproj` (CI-only; the on-disk pbxproj stays as prebuild generated it for local builds) and **fails the build loudly** via a `grep` guard if the injection did not match — a template change degrades to a hard error, never a silently broken archive.
+4. **JSI header backport**: Xcode 27 promotes the Swift `#ForeignReferenceType` diagnostic to an error, which breaks the archive because `expo-modules-jsi@56`'s nested xcodebuild compiles `RuntimeScheduler.h` with unannotated C++ constructors. The script backports just the `SWIFT_RETURNS_RETAINED` annotations onto the installed 56.0.13 headers (annotation-only, no runtime change), again with a `grep` guard that fails the build if the header can't be found or the patch didn't apply.
+
+### Config plugin: `plugins/withIosDeploymentTarget.cjs`
+
+`app.config.ts` registers `./plugins/withIosDeploymentTarget.cjs`, a `withDangerousMod` Expo config plugin that runs during `expo prebuild` and injects a `post_install` snippet into the generated iOS `Podfile`. `react-native-svg@15.x`'s podspec declares deployment target 12.4 while newer Xcode SDKs require ≥ 15.0, and the Podfile's `platform :ios` is **not** a floor for individual pod targets (podspec values win) — so the snippet raises `IPHONEOS_DEPLOYMENT_TARGET` to 15.1 for every pod target below it. The plugin is idempotent (skips when the `# deployment-target-floor` marker is present) and throws if its expected `post_install` anchor regex disappears, forcing the plugin to be updated rather than silently skipping the bump. This is what keeps `pod install` + the Pods build working on current Xcode versions in both the local and Xcode Cloud tracks.
+
+### Post-prebuild entitlement strip: `scripts/strip-push-entitlement.mjs`
+
+`expo-notifications`' config plugin unconditionally adds the `aps-environment` entitlement to every iOS build, but this app only uses foreground local notifications — and the entitlement requires the App ID to have Push Notifications capability, which free/personal-team automatic-signing profiles cannot have (builds fail provisioning before reaching a device). Removing it via a config plugin proved unreliable (one handler per mod name, ordering issues), so this script runs as a plain deterministic step after `expo prebuild`: it recursively finds `.entitlements` files under `ios/` (skipping `Pods`/`build`) and regex-strips the `<key>aps-environment</key>` entry and its value. Removing remote push entirely is deliberate until the future relay milestone.
 
 The first submission to a given external group required Beta App Review; the public external test group has already passed it (invite link `https://testflight.apple.com/join/ZkRzJ6rm`). Later builds to the same group with no metadata changes are typically automatic.
 
@@ -90,7 +109,7 @@ A Node CLI with four subcommands, all of which first run `validateConfig()` — 
 - `ios.infoPlist.ITSAppUsesNonExemptEncryption` must be explicitly `false` (export-compliance)
 - `ios.infoPlist.NSPhotoLibraryUsageDescription` must be a non-empty string
 
-- **prepare** — runs `expo prebuild --platform ios --no-install` (with `--clean` if `EXPO_PREBUILD_CLEAN` is truthy), then `pod install` (via `bundle exec` locally, plain `pod` when `CI_XCODE_CLOUD=TRUE`), and fails if `ios/HerdrConnect.xcworkspace` is still missing afterwards.
+- **prepare** — runs `expo prebuild --platform ios --no-install` (with `--clean` if `EXPO_PREBUILD_CLEAN` is truthy), then `node scripts/strip-push-entitlement.mjs` (see below), then `pod install` (via `bundle exec` locally, plain `pod` when `CI_XCODE_CLOUD=TRUE`), and fails if `ios/HerdrConnect.xcworkspace` is still missing afterwards.
 - **build** — requires `APPLE_DEVELOPMENT_TEAM`; archives the `HerdrConnect` scheme (Release configuration) and exports an App Store Connect IPA via `asc xcode archive` / `asc xcode export --method app-store-connect`, passing `-allowProvisioningUpdates` and an optional `DEVELOPMENT_TEAM=` xcodebuild flag. Artifacts land in `apps/mobile/build/ios/` (`HerdrConnect.xcarchive`, `HerdrConnect.ipa`).
 - **upload** — uploads the IPA with `asc builds upload --wait`; `IPA_PATH` can override the default path.
 - **distribute** — publishes to TestFlight groups. Requires `TESTFLIGHT_CHANGELOG` and a comma-separated `TESTFLIGHT_GROUPS`; uses `ios.buildNumber` (or `TESTFLIGHT_BUILD_NUMBER`) as the build number. `TESTFLIGHT_NOTIFY=1` adds `--notify`, and `TESTFLIGHT_EXTERNAL=1` adds `--submit --confirm` to submit for Beta App Review. (In the Xcode Cloud track this step's role is covered by the workflow's `TestFlight (External Testing)` post-action instead.)

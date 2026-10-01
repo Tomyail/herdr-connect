@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4739fb350138e7666d62a449a720dc95a67da12957211a76b86e452fc49aed69",
+  "pageVersion": "sha256:ddb3b3bac3ee3f564ad5dda51ac473ac37d9efda356205274a1f207a18bf4b1b",
   "claims": [
     {
       "id": "claim_cb1d1d5fbda14d02ab434584f475f219",
@@ -152,15 +152,23 @@
     },
     {
       "id": "claim_d01bed9687984c7d8cb7e7d37319ac9c",
-      "statement": "The iOS client pairs via QR (POST /v1/pair through pinned-fetch), stores fingerprint, token, and device ID in the iOS Keychain, discovers the daemon via Bonjour browsing of _herdr-connect._tcp, and consumes /v1/agents plus SSE via TLS-fingerprint-pinned native modules; it requires an Expo development build.",
+      "statement": "The iOS client pairs by scanning the daemon QR payload (fingerprint, hosts, port, one-time secret, hostOverride flag) and POSTing to /v1/pair through the pinned-fetch module with host-by-host fallback; credentials (fingerprint, token, device ID) are stored per instance in the iOS Keychain via expo-secure-store, keyed by certificate fingerprint with an index and active-instance key plus idempotent migration from a legacy single-credential key. Re-pairing an instance stores the new token first and then best-effort revokes the old device token (failures warn but do not block), followed by a client-side alias naming step. The client discovers daemons via Bonjour browsing of _herdr-connect._tcp (probing candidates with pinned TLS, honoring a pinned host from pair --host), consumes /v1/agents plus SSE via TLS-fingerprint-pinned native modules, and requires an Expo development build.",
       "evidence": [
         {
-          "resource": "repo://apps/mobile/src/PairingScreen.tsx",
-          "version": "repo-file-v1:sha256:67627ebab001e206b622b4d7f837bf1f4e077aa4bd661aae959514e441c68137"
+          "resource": "repo://apps/mobile/src/PairingScreen.tsx#L77-L134",
+          "version": "repo-lines-v1:sha256:4b8099e25117c09493d7dc0305fe93ac2626d9a7ce40a31e44ffccad7474eb65:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNDNhZjQxMzBmZDk0YzI1MzU0ODkyN2IwODhhYTU1MTZiNjY4MzY1ZGUyYTFiMzk5Y2Q2ZDRjYjdkYjAzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1ZWYwMWJjMDhkYmMzYjYzZTRlNzVlYTNkMjZhNWI5NDE4OTE4NzdlMjdhZDg5MTMyOWM4NDExZDdkOGRjNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiN2RiODFmMWZkMDZhMGQxYWY4OTE0OGU3ZjhjNDRiNzI5MDYwNmI2YThkZmRhZWUxNmEwMGIyNDg3Njc5MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4OTdkOTcxZDU1YTUzM2U1OWE1ODE1MWNhN2VkNDhlMDQ1ZjcxM2ZlNGRiYjUxOTRmMjRkOWYwZDlhNzVlZmIifQ"
         },
         {
-          "resource": "repo://internal/demolan/server.go#L20-L31",
-          "version": "repo-lines-v1:sha256:09a9a8822a05f53ca310de21e18ecd1664c3dc6d79e75df94970062c6de9679c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwZDk4NmIwZGY3ZTljNDdhYTc4MmIwNjYwOTQ2OWJjOGVlY2E0NzYxMmI4MzhjZjgyOWRkYTRiY2RkZDMzMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmZTRlZGFlNjYwNzBiNTdlMjdlYTU2ZjBlMjYwMTllZTVkNmZjNDhlYWVlNzM0NWNlNmU4M2ZmNzc0MTE0MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhNjI1MzVjYjI1MDczY2I1NDUyNDRjMmYxZjRlYWY0YjIzMjM1OWQwNWY1OTE5ODZiZGQzODQ2MjlmMjRmMWIifQ"
+          "resource": "repo://apps/mobile/src/credentials.ts#L24-L50",
+          "version": "repo-lines-v1:sha256:2bca8170e025a093166f879c4fe80aa967bfe46b2f456d2dafbb02aadb21c772:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MTFkNDI2YmRkNTlhNWRlMzJiOGViYmYyNGVhNDc1ZTFiODUwMzA1YTlmNmQyMDY5ZDM3OTA5MmRhODI0ZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGVlOGE4ZDFhYTg0NTM5MWJjNjc5ZWI3MGNlN2Y0NmEzY2Q2ZmIyZDE2ZmNjYTY3ZmExNzhmNGY4YzFlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4MmU2NDZjNWE4NGEyNTVhNzc2NWQ3ZTc3ZTFhOTFiMTIyNjY4Mzc0M2MwY2JhMzc2NzAyNzhhYzNlNTA2ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMDBhYjI1ZTE4YTc4ODcxZjVlYmZmNjhjN2Q0YzE4Y2ViZDVhOWE2NTAxOGMzMTE1YTljYmIyZTdkOThmYTQifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/network.ts#L397-L440",
+          "version": "repo-lines-v1:sha256:2138df56d7331760b7c6d9b2ea71391c0dc677ae9813ae673c818282d04450f0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZDhiYjQyMzJmOWEyYzdlOGQ5NDk3ZWQ1ZGFmMTM4Y2Q4Y2Y2Y2Q5MmRhNzhlNjg4ODQ0YmM3YmJmNGY1MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4Y2UyZmNhYWM5NGYwMGMzZGZhYzNjNmRkMWY1ZjhiNWE4MDg2YzYyMTIwMmI0ZjBkMzIwOTQ3MjJhMzc4YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkZmI4YTkwODI5MjIyZjFkZDFkYmY4NDE3ODdiOWQ2M2ZkYTFhZDkwMDdjN2NmYWUwNmY4YmQ3MGYzYjMyOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYmMxZTQ2ZDc4ZjIxOWUwODFmOTY4NGRjYWU4N2Y5ZjdlNmQyNTczYWJmOWVlMDQwNDRiMGQ2YjBkODNlNjEifQ"
+        },
+        {
+          "resource": "repo://apps/mobile/src/pairing.ts#L20-L37",
+          "version": "repo-lines-v1:sha256:b755864a7757ac56bbc0f7cb248c874b34c5810767e593877cf031fbd87b093e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMzVlNmQ1MjRkNTM4MWMwMWYyYzE2ZjI1OWFhYTkxNWQ3YTFjNmY5ZTM5YThiYTgxNmU0ZGZiOWQ5YmJkZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxN2M1ZDUxMDljMTc2MzcwOTJhOGU4ZDg1OTQwMDAxMDgyYTAyNGVmMDNjMzBhNjIzODQxNWNhYmQxNWJkNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkY2Q2MDNlOTUzYjhlODYyMWM3ZDQyZmEyMzQ4YjMzM2E5NzNhZGI0NDAyMjc3ZWZmNDUzOWE2OTg5MjZjZjgifQ"
         }
       ]
     },
@@ -252,7 +260,7 @@
     }
   ],
   "verification": {
-    "by": "openwiki/0.6.0",
-    "at": "2026-09-24T21:53:59.537Z"
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-01T22:57:17.131Z"
   }
 }

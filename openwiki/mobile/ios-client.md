@@ -64,10 +64,10 @@ sources:
     resource: repo://apps/mobile/src/Settings.tsx
   - id: openwiki-source-7b5a9165da5d011e9f652a26
     resource: repo://apps/mobile/src/SplitLayout.tsx
-generated: { by: "openwiki/0.6.0", at: "2026-09-24T21:53:59.537Z" }
+generated: { by: "openwiki/0.6.1", at: "2026-10-01T22:57:17.131Z" }
 verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-24T21:53:59.537Z
+  - by: openwiki/0.6.1
+    at: 2026-10-01T22:57:17.131Z
 ---
 
 # iOS Mobile Client
@@ -167,7 +167,7 @@ Key characteristics:
 
 The app no longer stores a single pairing credential. Credentials are a set keyed by the daemon installation's certificate fingerprint: one Keychain record per instance (`herdr-connect.instance.<fingerprint>`), plus an index key listing all fingerprints and an active-instance pointer key. The split keeps each SecureStore value small (single-value ~2KB advisory limit) regardless of instance count.
 
-- **`paired-instances.ts`** — pure model logic (`Seam B`, node:test covered): record validation (`parseInstanceRecord` rejects missing/empty `fingerprint`/`token`), and `resolveActiveInstance`'s fallback rule — when the active pointer is null or dangling, the most recently paired instance wins (`mostRecentInstance`, tie-broken lexicographically by fingerprint for determinism).
+- **`paired-instances.ts`** — pure model logic (`Seam B`, node:test covered): record validation (`parseInstanceRecord` rejects missing/empty `fingerprint`/`token`), and `resolveActiveInstance`'s fallback rule — when the active pointer is null or dangling, the most recently paired instance wins (`mostRecentInstance`, tie-broken lexicographically by fingerprint for determinism). Each record carries an optional `pinnedHost` (`{host, port}` written when pairing with `pair --host`): a malformed `pinnedHost` shape is silently dropped (falling back to mDNS) without invalidating the credential itself, and re-pairing the same instance replaces the whole record — so pairing again without `--host` clears the override.
 - **`credentials.ts`** — Keychain I/O and migration orchestration only. The legacy single-credential key `herdr-connect.paired-device` is migrated on read (read old → merge → write → delete old), idempotently: a crash mid-migration replays the same rules next launch without duplicates. Records are stored with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. Plaintext tokens appear only in the pairing response, this model, and Keychain — never logged, never in MMKV (MMKV is reserved for non-sensitive settings).
 - **`keychain-write-plan.ts`** — pure write-ordering plan that makes every interruption window converge to an existing self-healing path: (1) delete instance keys removed from the model (index still references them → "index references missing entry" self-heals on next write), (2) write the index, (3) write each instance key, (4) sync the active pointer last (a stale pointer self-heals via the most-recently-paired fallback). This ordering never leaves orphan instance keys outside the index, which have no cleanup path.
 
@@ -178,8 +178,9 @@ The app no longer stores a single pairing credential. Credentials are a set keye
 One `ConnectionSession` owns the complete connection lifecycle of exactly one paired installation: discovery match (pinned TLS probe of candidates) → connect → SSE event stream (preferred) → 3-second polling fallback → exponential backoff reconnect → AppState foreground/background start/stop. It is a React-free orchestration object driven by the provider:
 
 - `begin()` — (re)start probing; idempotent, cleans up old probe/snapshot loops first.
-- `handleServices()` / `handleDiscoveryFailure()` — mDNS discovery events dispatched by the provider.
+- `handleServices()` / `handleDiscoveryFailure()` — mDNS discovery events dispatched by the provider. Because pinned-host candidates do not come from the discovery set, the debounce guards are pinned-aware: a live or in-flight pinned connection survives both discovery snapshots and Bonjour search/resolve failures (phase-gated on `connected`, since polling can move the session out of `connected` while leaving the selected key set); an in-flight pinned probe is restarted with the augmented candidate list only when a snapshot brings a candidate the attempt didn't know about.
 - `pause()` — app backgrounded: stop polling/SSE/reconnect; connection state and data are retained and resume on foreground.
+- `refreshSnapshot()` — manual refresh: when connected, force one snapshot fetch without touching the SSE/polling loop; otherwise degrades to `begin()`.
 - `stop()` — terminate (instance removed); all callbacks go silent afterwards.
 
 When probing or polling observes an auth terminal state (`unauthorized`/`revoked`), the session reports it via `onAuthInvalid`; the provider removes that instance's credentials without affecting other instances' sessions.
@@ -187,6 +188,8 @@ When probing or polling observes an auth terminal state (`unauthorized`/`revoked
 ### Discovery Match (`discovery-match.ts`)
 
 The daemon advertises `fp=<fingerprint>` in mDNS TXT records, but the Bonjour library does not expose TXT, so instance identity can only be verified by a pinned TLS connection: a candidate whose certificate fingerprint mismatches fails during the handshake. `selectCandidates` orders probe candidates deterministically — services already verified as the target instance first, unknown services in discovery order next, services verified as foreign instances excluded. `classifyProbeFailure` maps a probe error to `wrong_daemon` (fingerprint mismatch → next candidate), `unreachable` (transport-level failure → next candidate), or `terminal` (TLS pin passed, error came from the target daemon → stop probing and surface it).
+
+When an instance has a `pinnedHost` (`pair --host`), `pinnedService` synthesizes it into a `DiscoveredService` (name prefixed `pinned-host:`) so the fixed address travels the exact same pinned TLS probe path — the fingerprint remains the only trust decision. `orderCandidates` places the pinned service first, with mDNS candidates as fallback behind it (so a Tailscale/LAN address going unreachable can still fall through to the local network); without a `pinnedHost` it is identical to `selectCandidates`. `hasUnknownCandidate` lets the session restart an in-flight pinned probe immediately when a discovery snapshot brings genuinely new candidates, instead of restarting on every snapshot (probe-storm guard).
 
 Verified `serviceKey → fingerprint` associations (`ServiceAssociations`) are held by the provider and shared across all sessions, in memory for the app session only: once one session verifies a service, others reuse the hit or exclude it as foreign, preventing a probe storm after parallelization.
 
@@ -227,7 +230,7 @@ Daemons are multi-homed (Docker bridges, VPNs, internet sharing put unreachable 
 
 ### QR Pairing Payload (`pairing.ts`)
 
-Pure parsing and URL building — no network requests. `parsePairingQRPayload` validates the JSON shape (`v`, `fp`, `hosts`, `port`, `secret`) and throws a single unified `NetworkError("pairing_qr_invalid")` for any structural or semantic problem, deliberately not revealing which field failed to an attacker crafting QR payloads. The actual pairing request lives in `network.ts` (`pairDaemon`); the QR fingerprint is trusted because physical proximity to the terminal screen is out-of-band confirmation (see [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md)).
+Pure parsing and URL building — no network requests. `parsePairingQRPayload` validates the JSON shape (`v`, `fp`, `hosts`, `port`, `secret`) and throws a single unified `NetworkError("pairing_qr_invalid")` for any structural or semantic problem, deliberately not revealing which field failed to an attacker crafting QR payloads. The payload also carries a boolean `hostOverride` (`host_override === true` in the QR JSON): true only when the daemon ran `herdr-connect pair --host`, meaning the single entry in `hosts` is an explicit address choice that the client must keep connecting through instead of whatever mDNS resolves. The actual pairing request lives in `network.ts` (`pairDaemon`); the QR fingerprint is trusted because physical proximity to the terminal screen is out-of-band confirmation (see [Secure Pairing & TLS Protocol](../protocol/secure-pairing.md)).
 
 ### Instance Aliases (`instance-alias.ts`)
 
@@ -268,10 +271,33 @@ Device credentials are stored in iOS Keychain via `expo-secure-store` (`/apps/mo
 1. User starts pairing from the home screen's connection status bar → Pairing screen (stack push in narrow mode, full-app overlay in wide mode)
 2. Camera permission requested; QR scanner activates
 3. User scans the QR displayed by `herdr-connect pair` on the host terminal
-4. `parsePairingQRPayload` validates QR structure (`v`, `fp`, `hosts`, `port`, `secret`)
+4. `parsePairingQRPayload` validates QR structure (`v`, `fp`, `hosts`, `port`, `secret`, `hostOverride`)
 5. `pairDaemon` POSTs `{device_name, secret}` to `/v1/pair` via pinned-fetch with the QR fingerprint (trying each QR host in turn via `withHostFallback`)
-6. On success, credentials are saved to Keychain and `connection.refresh()` restarts discovery
+6. On success, credentials are saved to Keychain — including a `pinnedHost` when `hostOverride` was set (`hosts[0]` + port) — and `connection.refresh()` restarts discovery
 7. On failure, a localized error alert is shown
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant PS as PairingScreen
+    participant P as pairing.ts (pure)
+    participant N as pairDaemon (pinned-fetch)
+    participant CP as ConnectionProvider
+    U->>PS: scan QR from `herdr-connect pair`
+    PS->>P: parsePairingQRPayload(raw)
+    alt invalid payload
+        P-->>PS: NetworkError("pairing_qr_invalid")
+    else valid
+        PS->>N: POST /v1/pair (withHostFallback over QR hosts)
+        N-->>PS: deviceId + token
+        PS->>PS: save credentials (Keychain); pinnedHost if hostOverride
+        opt re-pairing with a changed token
+            PS->>N: DELETE /v1/device (revoke old token, best-effort)
+        end
+        PS->>CP: refresh() → planSessionSet → new ConnectionSession
+        CP->>CP: probe candidates (pinnedHost first, then mDNS) → SSE/polling
+    end
+```
 
 ### Connection Context
 
