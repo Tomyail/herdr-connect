@@ -43,7 +43,7 @@ echo "[ci_post_clone] disabled app-target code signing for the Xcode Cloud archi
 # did not return a nonzero exit code"). expo-modules-jsi 58 annotates them
 # SWIFT_RETURNS_RETAINED; backport just that annotation onto the installed
 # 56.0.13 headers. Annotation-only, no runtime change.
-JSI_HEADER=$(find node_modules/.pnpm -path "*expo-modules-jsi@56.0.13*include/RuntimeScheduler.h" | head -1)
+JSI_HEADER=$(find ../.. -path "*expo-modules-jsi@56.0.13*include/RuntimeScheduler.h" -print -quit)
 if [ -z "$JSI_HEADER" ]; then
   echo "[ci_post_clone] ERROR: expo-modules-jsi RuntimeScheduler.h not found" >&2
   exit 1
