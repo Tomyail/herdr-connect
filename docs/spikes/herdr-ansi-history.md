@@ -100,3 +100,32 @@ mobile: 按样式 run 渲染（RN <Text> 嵌套 span）
 3. mobile 样式渲染（期 1）。
 4. 用样式信号重写 chrome 剥离（期 2），删除旧启发式。
 5. 视需要做交互提示（期 3）。
+
+## 真实样本结论（pi / claude 空闲 / claude 权限弹窗）
+
+- 三份样本都**只有 SGR**（含 `38;5;n`、`38;2;r;g;b`、`48;2;…`、`1`、`7`），没有光标移动或 OSC；每行以 `ESC[0m` 开头，样式不跨行。
+- 两个 agent 的正文都已被 TUI 硬折行，`recent-unwrapped` 在 alt-screen 的 agent 上与 `recent` 等价。
+- 选中项在 claude 弹窗里不是反显，而是强调色加 `❯` 标记；text 里 `❯ 1. Yes` 同样可识别，菜单识别不依赖 ANSI。
+- 规则线颜色不稳定（pi 紫色；claude 空闲灰色、弹窗强调色），chrome 识别必须用结构，不能用颜色。弹窗态只有上方一条规则线，没有下方那条。
+- ANSI 多出来的信号：用户消息的背景块、`⏺` 颜色对应工具状态（绿完成 / 灰等待）、行内强调色、diff 红绿。
+
+## Collie（AltanS/collie，MIT）调研
+
+结论：**Collie 同样以 ANSI 为主数据**，我之前"它主要用 text"的判断是错的（其 `ARCHITECTURE.md` 里"服务端剥 ANSI"的描述已过时，代码为准）。
+
+- 镜像读取用 `pane.read(source=recent, format=ansi)`，客户端 `parseAnsi → splitLines → StyledLine[] → buildBlocks`，只解析 SGR（`web/src/lib/ansi.ts`），不做终端模拟；其 ADR 0008 明确拒绝 xterm.js / 桥接侧模拟器，理由是 herdr 已经渲染好网格。
+- 语义识别（对话框、输入框）几乎全靠文本模式匹配；全部 grammar 里只有一处读样式（`wizard.ts` 用背景色找当前 stepper 项）。样式用于渲染，语义来自文本。
+- 按 harness 分适配器（claude 一套约 9.7k 行：prompt-select、wizard、multi-select、preview-select、menu、autocomplete），无法识别时回落到原始镜像，这是安全方向。配套 34+ 份字节级抓取作为测试夹具。
+- ADR 0048：输入框靠"自身边框"定位（最低的整行规则线、框线与 `❯` 行位于第 0 列、草稿续行缩进），因为按行数向上走的做法已经坏了三次。与我们样本的结构一致。
+- **scroll 采集问题**：`recent` / `recent_unwrapped` 加 `format=text` 且 `lines > viewport_rows` 时，herdr 会驱动 agent 自己的滚动接口，操作者的终端会上翻再回弹（0.85s 到 13.8s）；`ansi` 格式从未观察到，`visible` 天然免疫。
+- alt-screen 的 agent 没有终端回滚，`pane.read` 只返回视口。Collie 的"历史"从 agent 自己的会话日志（如 `~/.claude/projects/<cwd>/<session>.jsonl`，会话 id 来自 herdr 的 `agent_session`）读取，得到真正的轮次、时间戳和工具调用。
+- `revision` 在 herdr 0.7.x 上恒为 0，不可作变更检测依据。
+- 光标位置是 Collie 向上游提的需求，不自行模拟。
+
+### 对我们的影响
+
+1. **待验证的潜在 bug**：`ReadAgentHistory` 用 `agent read --source recent-unwrapped --lines 120`（默认 text）。claude 的 `viewport_rows` 通常小于 120，可能触发上述滚动采集，手机每 2 秒轮询一次。需要在有 herdr 的机器上对比 `--format text` 与 `--format ansi` 的耗时，并观察终端是否抖动。若成立，改 ansi 本身就是修复。
+2. `recent-unwrapped` 对 alt-screen agent 是 no-op，可以不再依赖其"反折行"语义。
+3. 长历史应来自 agent 会话日志而不是屏幕；这是独立的、更大的方向。
+4. 手机端暗/亮主题：真彩色占绝大多数且无法按调色板换色，Collie 选择整体反相（ADR 0002），我们需要同样的决策。
+5. 分层方式可借鉴：ANSI 解析 → 行 + 样式 run → 按 agent 的文本 grammar 识别块 → 渲染，grammar 与夹具一起演进，未识别则回落原始行。
