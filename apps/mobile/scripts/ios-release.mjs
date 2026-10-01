@@ -78,6 +78,7 @@ function prepare() {
   }
 
   run("pnpm", args);
+  run("node", ["scripts/strip-push-entitlement.mjs"]);
   if (process.env.CI_XCODE_CLOUD === "TRUE") {
     run("pod", ["install", "--project-directory=ios"]);
   } else {
