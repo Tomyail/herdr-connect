@@ -35,3 +35,25 @@ if ! grep -q "CODE_SIGNING_ALLOWED = NO" "$PBXPROJ"; then
   exit 1
 fi
 echo "[ci_post_clone] disabled app-target code signing for the Xcode Cloud archive phase"
+
+# Xcode 27 promotes the Swift #ForeignReferenceType diagnostic to an error.
+# expo-modules-jsi@56 builds its xcframework with a nested xcodebuild that
+# compiles RuntimeScheduler.h; the unannotated C++ constructors trip the
+# diagnostic and fail the archive ("PhaseScriptExecution emitted errors but
+# did not return a nonzero exit code"). expo-modules-jsi 58 annotates them
+# SWIFT_RETURNS_RETAINED; backport just that annotation onto the installed
+# 56.0.13 headers. Annotation-only, no runtime change.
+JSI_HEADER=$(find node_modules/.pnpm -path "*expo-modules-jsi@56.0.13*include/RuntimeScheduler.h" | head -1)
+if [ -z "$JSI_HEADER" ]; then
+  echo "[ci_post_clone] ERROR: expo-modules-jsi RuntimeScheduler.h not found" >&2
+  exit 1
+fi
+sed -i '' \
+  -e 's/^  RuntimeScheduler() {}$/  SWIFT_RETURNS_RETAINED RuntimeScheduler() {}/' \
+  -e 's/^  RuntimeScheduler(void \*scheduler, ScheduleFn fn) noexcept$/  SWIFT_RETURNS_RETAINED RuntimeScheduler(void *scheduler, ScheduleFn fn) noexcept/' \
+  "$JSI_HEADER"
+grep -q "SWIFT_RETURNS_RETAINED RuntimeScheduler()" "$JSI_HEADER" || {
+  echo "[ci_post_clone] ERROR: failed to annotate RuntimeScheduler.h" >&2
+  exit 1
+}
+echo "[ci_post_clone] annotated RuntimeScheduler.h for Xcode 27 ($JSI_HEADER)"
