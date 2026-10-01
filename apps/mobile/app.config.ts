@@ -20,7 +20,7 @@ const config: ExpoConfig = {
     // writes this static value straight into Info.plist on every Xcode Cloud
     // run (see apps/mobile/ios/ci_scripts/ci_post_clone.sh), so an unbumped
     // retag fails the upload rather than silently reusing the old build.
-    buildNumber: "59",
+    buildNumber: "60",
     // Run at native iPad resolution instead of iPhone compatibility scaling.
     supportsTablet: true,
     // `requireFullScreen` is intentionally left unset (defaults to false).
@@ -93,6 +93,7 @@ const config: ExpoConfig = {
       },
     ],
     "./plugins/withAndroidCleartextTraffic.cjs",
+    "./plugins/withIosDeploymentTarget.cjs",
   ],
 };
 
