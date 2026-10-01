@@ -39,7 +39,7 @@
     "pinned-fetch": "file:./modules/pinned-fetch",
     "pinned-stream": "file:./modules/pinned-stream",
     "react": "19.2.3",
-    "react-native": "0.85.3",
+    "react-native": "0.87.1",
     "react-native-mmkv": "^4.3.2",
     "react-native-nitro-modules": "^0.36.1",
     "react-native-safe-area-context": "~5.9.0",
