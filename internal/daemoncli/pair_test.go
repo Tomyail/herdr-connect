@@ -270,3 +270,65 @@ func allIPv4BeforeIPv6(before, after []string) bool {
 	}
 	return len(before) > 0 && len(after) > 0
 }
+
+func TestPairQRMarksHostOverrideOnlyWhenHostIsRequested(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name          string
+		requestedHost string
+		wantHosts     []string
+		wantOverride  bool
+	}{
+		{name: "explicit host is an override", requestedHost: "192.0.2.10", wantHosts: []string{"192.0.2.10"}, wantOverride: true},
+		{name: "no host keeps auto-discovery", requestedHost: "", wantHosts: []string{"192.0.2.10", "198.51.100.20"}, wantOverride: false},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			database, dir := openTempStore(t)
+			known := seedKnownPair(t, database)
+
+			var captured pairingQR
+			deps := pairDeps{
+				newSecret: func(ctx context.Context, db *store.Store) (string, time.Time, error) {
+					return known.secret, time.Now().Add(5 * time.Minute), nil
+				},
+				pollStatus: func(ctx context.Context, db *store.Store, hash []byte) (bool, string, error) {
+					return true, known.deviceID, nil
+				},
+				addresses: func() []string { return []string{"192.0.2.10", "198.51.100.20"} },
+				renderQR: func(payload pairingQR, writer io.Writer) {
+					captured = payload
+					// 断言 JSON 线格式：未覆盖时省略 host_override 字段。
+					encoded, _ := json.Marshal(payload)
+					if got := strings.Contains(string(encoded), "host_override"); got != tc.wantOverride {
+						t.Errorf("host_override present in QR JSON = %v, want %v: %s", got, tc.wantOverride, encoded)
+					}
+				},
+				now:          time.Now,
+				sleep:        func(context.Context, time.Duration) error { return nil },
+				pollInterval: time.Millisecond,
+			}
+
+			var stdout, stderr bytes.Buffer
+			if code := runPair(context.Background(), deps, database, dir, tc.requestedHost, &stdout, &stderr); code != 0 {
+				t.Fatalf("runPair exit %d, stderr=%q", code, stderr.String())
+			}
+			if got := strings.Contains(stdout.String(), "Host override:"); got != tc.wantOverride {
+				t.Fatalf("override notice printed = %v, want %v: %q", got, tc.wantOverride, stdout.String())
+			}
+			if tc.wantOverride && !strings.Contains(stdout.String(), tc.requestedHost) {
+				t.Fatalf("override notice must name %s: %q", tc.requestedHost, stdout.String())
+			}
+			if captured.HostOverride != tc.wantOverride {
+				t.Fatalf("HostOverride = %v, want %v", captured.HostOverride, tc.wantOverride)
+			}
+			if strings.Join(captured.Hosts, ",") != strings.Join(tc.wantHosts, ",") {
+				t.Fatalf("Hosts = %v, want %v", captured.Hosts, tc.wantHosts)
+			}
+		})
+	}
+}

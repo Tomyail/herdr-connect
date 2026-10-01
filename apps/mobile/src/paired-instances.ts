@@ -24,6 +24,27 @@ export interface DeviceCredentials {
   readonly deviceName: string;
   /** ISO timestamp of pairing. */
   readonly pairedAt: string;
+  /**
+   * 配对时由 `pair --host` 显式指定的连接地址（覆盖 mDNS 发现结果）。
+   * 缺省 = 走 mDNS 自动发现。重新配对同一实例会整条替换凭据，因此再次
+   * 不带 --host 配对即清除该覆盖。
+   */
+  readonly pinnedHost?: PinnedHost;
+}
+
+/** `pair --host` 指定的固定地址（IP 字面量）与端口。 */
+export interface PinnedHost {
+  readonly host: string;
+  readonly port: number;
+}
+
+function parsePinnedHost(value: unknown): PinnedHost | undefined {
+  if (!isRecord(value)) return undefined;
+  if (typeof value.host !== "string" || value.host.length === 0) return undefined;
+  if (typeof value.port !== "number" || !Number.isInteger(value.port) || value.port <= 0) {
+    return undefined;
+  }
+  return { host: value.host, port: value.port };
 }
 
 /** 多实例凭据模型：instances 以 fingerprint 为键，activeFingerprint 指向活动实例。 */
@@ -60,12 +81,15 @@ export function parseInstanceRecord(value: unknown): DeviceCredentials | null {
     return null;
   }
   if (value.fingerprint.length === 0 || value.token.length === 0) return null;
+  // 可选字段：形状非法时丢弃覆盖（回退到 mDNS），不连累凭据本身。
+  const pinnedHost = parsePinnedHost(value.pinnedHost);
   return {
     fingerprint: value.fingerprint,
     deviceId: value.deviceId,
     token: value.token,
     deviceName: value.deviceName,
     pairedAt: value.pairedAt,
+    ...(pinnedHost ? { pinnedHost } : {}),
   };
 }
 

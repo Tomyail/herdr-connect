@@ -3,7 +3,15 @@ import test from "node:test";
 
 import type { DiscoveredService } from "./discovery";
 import { NetworkError } from "./i18n/errors";
-import { classifyProbeFailure, selectCandidates, serviceKey } from "./discovery-match";
+import {
+  classifyProbeFailure,
+  hasUnknownCandidate,
+  isPinnedServiceKey,
+  orderCandidates,
+  pinnedService,
+  selectCandidates,
+  serviceKey,
+} from "./discovery-match";
 
 const service = (name: string, overrides: Partial<DiscoveredService> = {}): DiscoveredService => ({
   name,
@@ -94,4 +102,74 @@ test("classifyProbeFailure maps version and protocol errors to terminal", () => 
 test("classifyProbeFailure maps unknown errors to terminal", () => {
   assert.equal(classifyProbeFailure(new Error("boom")), "terminal");
   assert.equal(classifyProbeFailure(undefined), "terminal");
+});
+
+// ---------------------------------------------------------------------------
+// orderCandidates —— `pair --host` 固定地址优先
+// ---------------------------------------------------------------------------
+
+test("orderCandidates equals selectCandidates when there is no pinned host", () => {
+  const services = [service("Herdr on A"), service("Herdr on B")];
+  assert.deepEqual(orderCandidates(services, "fp-home", {}, undefined), selectCandidates(services, "fp-home", {}));
+});
+
+test("orderCandidates puts the pinned host first and keeps mDNS candidates as fallback", () => {
+  const lan = service("Herdr on A", { addresses: ["192.0.2.10"] });
+  const candidates = orderCandidates([lan], "fp-home", {}, { host: "198.51.100.20", port: 9808 });
+  assert.deepEqual(
+    candidates.map((s) => s.addresses[0]),
+    ["198.51.100.20", "192.0.2.10"],
+  );
+});
+
+test("orderCandidates yields the pinned host even when mDNS discovered nothing", () => {
+  const candidates = orderCandidates([], "fp-home", {}, { host: "198.51.100.20", port: 9808 });
+  assert.equal(candidates.length, 1);
+  assert.deepEqual(candidates[0]?.addresses, ["198.51.100.20"]);
+  assert.equal(candidates[0]?.port, 9808);
+});
+
+test("pinnedService is stable per host and distinct from discovered services", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  assert.equal(serviceKey(pinnedService(pinned)), serviceKey(pinnedService(pinned)));
+  assert.notEqual(serviceKey(pinnedService(pinned)), serviceKey(service("Herdr on A")));
+});
+
+// ---------------------------------------------------------------------------
+// isPinnedServiceKey / hasUnknownCandidate —— 固定地址探测在途/已连时的守卫
+// ---------------------------------------------------------------------------
+
+test("isPinnedServiceKey is true only for the key of the pinned service", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  assert.equal(isPinnedServiceKey(serviceKey(pinnedService(pinned)), pinned), true);
+  assert.equal(isPinnedServiceKey(serviceKey(service("Herdr on A")), pinned), false);
+});
+
+test("isPinnedServiceKey is false when there is no pinned host", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  assert.equal(isPinnedServiceKey(serviceKey(pinnedService(pinned)), undefined), false);
+});
+
+test("hasUnknownCandidate is false when every candidate key is already known", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  const known = new Set([serviceKey(pinnedService(pinned))]);
+  assert.equal(hasUnknownCandidate([pinnedService(pinned)], known), false);
+});
+
+test("hasUnknownCandidate is true when a candidate's key is not in the known set", () => {
+  const pinned = { host: "198.51.100.20", port: 9808 };
+  const lan = service("Herdr on A");
+  const known = new Set([serviceKey(pinnedService(pinned))]);
+  // A fresh mDNS snapshot arriving while a pinned-only probe is in flight
+  // must be treated as new information so the session can fall back to it
+  // immediately instead of waiting out the pinned attempt's own timeout.
+  assert.equal(hasUnknownCandidate(orderCandidates([lan], "fp-home", {}, pinned), known), true);
+});
+
+test("hasUnknownCandidate is true for any candidate when nothing was known yet", () => {
+  assert.equal(hasUnknownCandidate([service("Herdr on A")], undefined), true);
+});
+
+test("hasUnknownCandidate is false for an empty candidate list", () => {
+  assert.equal(hasUnknownCandidate([], undefined), false);
 });

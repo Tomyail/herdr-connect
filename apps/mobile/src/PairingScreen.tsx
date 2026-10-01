@@ -93,6 +93,11 @@ export function PairingScreen({ onSuccess }: { onSuccess?: () => void } = {}) {
           token: result.token,
           deviceName: result.deviceName,
           pairedAt: new Date().toISOString(),
+          // `pair --host` 时 QR 只含用户指定的那一个地址：记为该实例的固定
+          // 连接地址；不带 --host 配对则不写，重新配对即清除旧覆盖。
+          ...(payload.hostOverride && payload.hosts[0]
+            ? { pinnedHost: { host: payload.hosts[0], port: payload.port } }
+            : {}),
         };
         await saveCredentials(credentials);
         // 旧 token 主动自吊销(服务端设备表不残留僵尸条目)。失败不阻断

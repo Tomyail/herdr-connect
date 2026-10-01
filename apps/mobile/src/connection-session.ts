@@ -21,7 +21,15 @@
  */
 
 import type { DiscoveredService, DiscoveryFailure } from "./discovery";
-import { classifyProbeFailure, selectCandidates, serviceKey, type ServiceAssociations } from "./discovery-match";
+import {
+  classifyProbeFailure,
+  hasUnknownCandidate,
+  isPinnedServiceKey,
+  orderCandidates,
+  selectCandidates,
+  serviceKey,
+  type ServiceAssociations,
+} from "./discovery-match";
 import { discoveryRetryDelay } from "./discovery-lifecycle";
 import type { AgentsResponse } from "./agent-contract";
 import { NativeModules } from "react-native";
@@ -104,6 +112,9 @@ export class ConnectionSession {
   private requestController: AbortController | undefined;
   private discoveryTimer: ReturnType<typeof setTimeout> | undefined;
   private connectInFlightKey: string | undefined;
+  /** 本轮 connect() 探测的完整候选 key 集合;仅在 connectInFlightKey 有值时
+   *  有意义,用于判断新发现快照是否带来了探测发起时还不知道的候选。 */
+  private inFlightCandidateKeys: ReadonlySet<string> | undefined;
   private selectedKey: string | undefined;
 
   /** 快照循环(轮询 + SSE)绑定的服务;断开时清空。 */
@@ -156,6 +167,7 @@ export class ConnectionSession {
     this.requestController?.abort();
     this.requestController = undefined;
     this.connectInFlightKey = undefined;
+    this.inFlightCandidateKeys = undefined;
     this.selectedKey = undefined;
     this.clearDiscoveryTimer();
     this.stopSnapshotLoop();
@@ -204,6 +216,16 @@ export class ConnectionSession {
    * mDNS 发现结果分发(全量快照)。防抖守卫(既有语义,防止发现重放触发
    * 探测风暴):已连接服务仍在发现集 → 不打断;探测中的候选仍在 → 不打断。
    * 其余情况重置匹配:重新按本实例 fingerprint 挑选候选探测。
+   *
+   * 固定地址(pinnedHost)候选不来自发现集,因此上述防抖不能照搬:
+   * - selectedKey 指向固定地址时只有 phase 真是 "connected" 才算"活着"——
+   *   轮询把会话移出 connected(如 fingerprint_mismatch)不会清空
+   *   selectedKey(见 tick()),否则这里会永远拦下重新匹配,固定地址连接
+   *   坏掉后既不会重探也不会考虑 mDNS 回退。
+   * - 固定地址探测仍在进行时,若新快照带来了探测发起时还不知道的候选
+   *   (典型:begin() 时 mDNS 尚无结果,只带固定地址上路),不等固定地址
+   *   超时或退避重试——用扩充后的候选列表立即重启探测(固定地址仍排
+   *   最前);快照只是重复通告已知候选时维持原有防抖。
    */
   handleServices(services: readonly DiscoveredService[]): void {
     if (this.stopped) return;
@@ -211,14 +233,41 @@ export class ConnectionSession {
     const next = new Map(services.map((service) => [serviceKey(service), service] as const));
     const hadConnection = this.selectedKey !== undefined;
     const inFlightKey = this.connectInFlightKey;
+
+    // Live pinned connection: don't let an mDNS snapshot interrupt it — but
+    // only while phase is actually "connected" (tick() leaves selectedKey
+    // set on fingerprint_mismatch/outdated/etc., so this must not trust the
+    // key alone or it can never re-probe once the pinned link goes bad).
+    if (
+      this.selectedKey &&
+      this.state.phase === "connected" &&
+      this.isPinnedKey(this.selectedKey)
+    ) {
+      return;
+    }
     if (this.selectedKey && next.has(this.selectedKey)) return;
+
+    // Pinned probe in flight: restart with the augmented candidate list only
+    // if this snapshot has a candidate the in-flight attempt didn't know
+    // about (e.g. mDNS just resolved after a pinned-only cold start) — a
+    // repeat of already-known candidates keeps the debounce below instead.
+    if (inFlightKey && this.isPinnedKey(inFlightKey)) {
+      const candidates = this.candidatesFor(services);
+      if (!hasUnknownCandidate(candidates, this.inFlightCandidateKeys)) return;
+      this.requestController?.abort();
+      this.selectedKey = undefined;
+      this.connectInFlightKey = undefined;
+      void this.connect(candidates);
+      return;
+    }
     if (inFlightKey && next.has(inFlightKey)) return;
 
     this.requestController?.abort();
     this.selectedKey = undefined;
     this.connectInFlightKey = undefined;
+    this.inFlightCandidateKeys = undefined;
 
-    const candidates = selectCandidates(services, this.fingerprint, this.associations);
+    const candidates = this.candidatesFor(services);
     if (candidates.length === 0) {
       // 发现集中没有本实例的服务:此前有连接/在途探测才宣告 not_found,
       // 纯 discovering 阶段继续等 not_found 倒计时。
@@ -228,9 +277,25 @@ export class ConnectionSession {
     void this.connect(candidates);
   }
 
-  /** mDNS 发现层失败(search/resolve):全部会话各自进入 failed,由 provider 退避重启发现。 */
+  /**
+   * mDNS 发现层失败(search/resolve):全部会话各自进入 failed,由 provider
+   * 退避重启发现。固定地址连接/探测不依赖 mDNS——Bonjour 搜索/解析失败
+   * 不该打断它,这正是 off-LAN 冷启动(mDNS 完全不可用)要依赖固定地址
+   * 工作的场景(与 handleServices 相同的 phase 门槛,理由见其注释)。
+   */
   handleDiscoveryFailure(failure: DiscoveryFailure): void {
     if (this.stopped) return;
+    // Bonjour failing is not a pinned-connection failure — a live or
+    // in-flight pinned session must survive it (same phase-gated check as
+    // handleServices above; a search failure is the expected state off-LAN).
+    if (
+      this.selectedKey &&
+      this.state.phase === "connected" &&
+      this.isPinnedKey(this.selectedKey)
+    ) {
+      return;
+    }
+    if (this.connectInFlightKey && this.isPinnedKey(this.connectInFlightKey)) return;
     this.requestController?.abort();
     this.requestController = undefined;
     this.selectedKey = undefined;
@@ -248,9 +313,18 @@ export class ConnectionSession {
 
   private probeFromServices(): void {
     if (this.stopped) return;
-    const candidates = selectCandidates(this.services, this.fingerprint, this.associations);
+    const candidates = this.candidatesFor(this.services);
     if (candidates.length === 0) return; // 保持 discovering,等 not_found 倒计时
     void this.connect(candidates);
+  }
+
+  /** 探测候选:`pair --host` 固定地址优先,其后是 mDNS 匹配结果(回退)。 */
+  private candidatesFor(services: readonly DiscoveredService[]): DiscoveredService[] {
+    return orderCandidates(services, this.fingerprint, this.associations, this.credentials.pinnedHost);
+  }
+
+  private isPinnedKey(key: string): boolean {
+    return isPinnedServiceKey(key, this.credentials.pinnedHost);
   }
 
   private clearDiscoveryTimer(): void {
@@ -295,6 +369,8 @@ export class ConnectionSession {
     const controller = new AbortController();
     this.requestController = controller;
     this.clearDiscoveryTimer();
+    // 记录本轮完整候选集,供 handleServices 判断新发现快照是否带来了新候选。
+    this.inFlightCandidateKeys = new Set(candidates.map(serviceKey));
 
     const requestCredentials: RequestCredentials = {
       fingerprint: this.credentials.fingerprint,

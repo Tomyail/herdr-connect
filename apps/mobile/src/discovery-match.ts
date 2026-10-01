@@ -20,6 +20,7 @@
 
 import type { DiscoveredService } from "./discovery";
 import { NetworkError, type NetworkErrorCode } from "./i18n/errors";
+import type { PinnedHost } from "./paired-instances";
 
 /** 已通过 pinned TLS 连接验证的 serviceKey → fingerprint 关联（会话内缓存）。 */
 export type ServiceAssociations = Record<string, string>;
@@ -56,6 +57,57 @@ export function selectCandidates(
     // 关联到其他 fingerprint：已验证的外来实例，排除。
   }
   return [...associated, ...unknown];
+}
+
+/** 固定地址合成服务的 name 前缀；与真实 mDNS 服务名（daemon 主机名）不会冲突。 */
+const PINNED_SERVICE_PREFIX = "pinned-host:";
+
+/**
+ * 把 `pair --host` 指定的地址合成为一个 {@link DiscoveredService}，让它
+ * 走与 mDNS 候选完全相同的 pinned TLS 探测路径（指纹仍是唯一信任决策）。
+ */
+export function pinnedService(pinned: PinnedHost): DiscoveredService {
+  return {
+    name: `${PINNED_SERVICE_PREFIX}${pinned.host}`,
+    type: "_herdr-connect._tcp.",
+    domain: "local.",
+    hostName: pinned.host,
+    addresses: [pinned.host],
+    port: pinned.port,
+    txt: {},
+  };
+}
+
+/**
+ * 探测候选顺序：有固定地址时它排第一（`--host` 是显式覆盖），mDNS 候选
+ * 作为其后的回退——固定地址不可达（如 Tailscale 断开）时仍能经局域网连上。
+ * 没有固定地址时与 {@link selectCandidates} 完全一致。
+ */
+export function orderCandidates(
+  services: readonly DiscoveredService[],
+  activeFingerprint: string,
+  associations: ServiceAssociations,
+  pinned: PinnedHost | undefined,
+): DiscoveredService[] {
+  const discovered = selectCandidates(services, activeFingerprint, associations);
+  return pinned ? [pinnedService(pinned), ...discovered] : discovered;
+}
+
+/** 某个 serviceKey 是否是固定地址（pinnedHost）合成服务的 key。 */
+export function isPinnedServiceKey(key: string, pinned: PinnedHost | undefined): boolean {
+  return pinned !== undefined && key === serviceKey(pinnedService(pinned));
+}
+
+/**
+ * 候选列表中是否存在 `knownKeys` 不包含的服务——即一次探测发起之后，新
+ * 发现快照是否带来了真正新的信息。供固定地址探测在途时决定是否要用
+ * 扩充后的候选列表重启探测，而不是对每次快照都重启（避免探测风暴）。
+ */
+export function hasUnknownCandidate(
+  candidates: readonly DiscoveredService[],
+  knownKeys: ReadonlySet<string> | undefined,
+): boolean {
+  return candidates.some((service) => !knownKeys?.has(serviceKey(service)));
 }
 
 export type ProbeFailureKind =

@@ -293,3 +293,35 @@ test("migrateLegacyCredentials into a model without an active pointer activates 
   const model = migrateLegacyCredentials(existing, legacy);
   assert.equal(model.activeFingerprint, "fp-legacy");
 });
+
+// ---------------------------------------------------------------------------
+// pinnedHost —— `pair --host` 固定地址（可选字段）
+// ---------------------------------------------------------------------------
+
+test("parseInstanceRecord round-trips a valid pinnedHost", () => {
+  const record = instance("fp-a", { pinnedHost: { host: "198.51.100.20", port: 9808 } });
+  assert.deepEqual(parseInstanceRecordJson(JSON.stringify(record)), record);
+});
+
+test("parseInstanceRecord keeps legacy records without pinnedHost unchanged", () => {
+  const parsed = parseInstanceRecord(instance("fp-a"));
+  assert.ok(parsed);
+  assert.equal("pinnedHost" in parsed, false);
+});
+
+test("parseInstanceRecord drops a malformed pinnedHost but keeps the credentials", () => {
+  for (const bad of [{ host: "", port: 9808 }, { host: "198.51.100.7", port: 0 }, { host: 1, port: 9808 }, "198.51.100.7"]) {
+    const parsed = parseInstanceRecord({ ...instance("fp-a"), pinnedHost: bad });
+    assert.ok(parsed, `credentials must survive pinnedHost=${JSON.stringify(bad)}`);
+    assert.equal(parsed.pinnedHost, undefined);
+  }
+});
+
+test("re-pairing the same fingerprint without a pinnedHost clears the previous override", () => {
+  const model = upsertInstance(
+    withInstances({}),
+    instance("fp-a", { pinnedHost: { host: "198.51.100.20", port: 9808 } }),
+  );
+  const next = upsertInstance(model, instance("fp-a", { token: "tok_new" }));
+  assert.equal(next.instances["fp-a"]?.pinnedHost, undefined);
+});

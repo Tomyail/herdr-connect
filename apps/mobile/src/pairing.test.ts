@@ -169,7 +169,7 @@ test("pairingUrls brackets IPv6 addresses", () => {
 
 test("pairingUrls returns an empty list when hosts is empty (caller falls back to no_address)", () => {
   // parsePairingQRPayload 已拒绝空 hosts，这里验证防御路径。
-  assert.deepEqual(pairingUrls({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s" }), []);
+  assert.deepEqual(pairingUrls({ v: 1, fp: "a", hosts: [], port: 9808, secret: "s", hostOverride: false }), []);
 });
 
 test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
@@ -184,4 +184,14 @@ test("pairingUrl uses the port from the payload, not a hardcoded value", () => {
   );
   const url = pairingUrls(payload);
   assert.deepEqual(url, ["https://10.0.0.1:443/v1/pair"]);
+});
+
+test("parsePairingQRPayload reports hostOverride only when host_override is true", () => {
+  assert.equal(parsePairingQRPayload(validQRPayload).hostOverride, false);
+  const overridden = JSON.stringify({ ...JSON.parse(validQRPayload), hosts: ["198.51.100.20"], host_override: true });
+  const result = parsePairingQRPayload(overridden);
+  assert.equal(result.hostOverride, true);
+  assert.deepEqual(result.hosts, ["198.51.100.20"]);
+  const truthyString = JSON.stringify({ ...JSON.parse(validQRPayload), host_override: "true" });
+  assert.equal(parsePairingQRPayload(truthyString).hostOverride, false);
 });
