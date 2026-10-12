@@ -102,11 +102,9 @@ App 与 daemon 会协商版本，不匹配时会提示升级。详见 [daemon �
 | 安装与配对 | [快速开始](#快速开始)、[daemon 指南](release/daemon.md)、[TestFlight 故障排查](release/ios-testflight.md) |
 | CLI 参考 | [CLI 指南](cli.md) |
 | 安全模型 | [LAN TLS 与配对](../security/lan-tls-pairing.md) |
-| 架构与贡献者文档 | [OpenWiki](../../openwiki/quickstart.md)（英文） |
 
 ## 从源码开发
 
-环境搭建、仓库布局和完整流程见 OpenWiki：[development setup](../../openwiki/development/setup.md)、[testing guide](../../openwiki/development/testing.md)（英文）。
 
 ```sh
 corepack enable

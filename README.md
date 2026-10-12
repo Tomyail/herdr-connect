@@ -102,11 +102,10 @@ The app and daemon negotiate versions and will prompt you to upgrade when they d
 | Install and pair | [Quick start](#quick-start), [daemon guide](docs/release/daemon.md), [TestFlight troubleshooting](docs/release/ios-testflight.md) |
 | CLI reference | [CLI guide](docs/cli.md) |
 | Security model | [LAN TLS and pairing](docs/security/lan-tls-pairing.md) |
-| Architecture and contributor docs | [OpenWiki](openwiki/quickstart.md) |
 
 ## Develop from source
 
-Setup, repository layout, and the full workflow live in OpenWiki: [development setup](openwiki/development/setup.md), [testing guide](openwiki/development/testing.md).
+
 
 ```sh
 corepack enable
