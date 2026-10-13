@@ -20,6 +20,10 @@ daemon 和 Android 发布共用 `v*` tag，并共享同一个 GitHub Release（�
 - **归档 - iOS 操作 → 分发准备**：选 `App Store Connect`（不要选"TestFlight（仅限内部测试）"——仅内部测试永远到不了公开的外部测试组）。
 - **后续操作**：加一个 `TestFlight（外部测试）`，选中已经开了公开链接的那个外部测试组。第一次提交到某个外部测试组需要过一次 Beta App Review；之后同一个组、没改元数据的新 build 通常会自动通过。
 
+## iOS 27 scene 生命周期
+
+使用 iOS 27 SDK 构建的应用必须采用 UIScene 生命周期；Expo SDK 56 的 legacy AppDelegate-only 模板可能在应用启动前触发 trap。`apps/mobile/plugins/withIosSceneLifecycle.cjs` 在 prebuild 时添加 scene manifest，并在 AppDelegate.swift 内生成 SceneDelegate，将 window 创建移到 scene，同时向 Expo 转发链接和生命周期事件。Expo 官方提供等效 scene 支持后，在验证 iOS 27 启动与链接行为后可移除该 plugin 及 app.config.ts 中的注册。
+
 ## 打一次发布
 
 1. 把 `apps/mobile/app.config.ts` 里的 `ios.buildNumber` 提一位。没有任何东西会自动做这件事：`ci_post_clone.sh` 每次 Xcode Cloud 运行时都会跑 `expo prebuild`，把这个写死的值直接写进 `Info.plist`。忘了提的话不会被静默复用——App Store Connect 会直接拒绝这次上传。

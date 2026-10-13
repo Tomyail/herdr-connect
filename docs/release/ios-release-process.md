@@ -20,6 +20,10 @@ Configured entirely in App Store Connect, not in this repo:
 - **Archive - iOS action → Distribution Preparation:** `App Store Connect` (not `TestFlight (Internal Testing Only)` — internal-only never reaches the public external testing group).
 - **Post-Actions:** add `TestFlight (External Testing)`, targeting the external group with the public TestFlight link enabled. The first submission to a given external group requires Beta App Review; later builds to the same group with no metadata changes are typically automatic.
 
+## iOS 27 scene lifecycle
+
+Apps built with the iOS 27 SDK must adopt the UIScene lifecycle; the legacy Expo SDK 56 AppDelegate-only template can trap at launch before application startup. `apps/mobile/plugins/withIosSceneLifecycle.cjs` adds the scene manifest and generates a SceneDelegate in AppDelegate.swift during prebuild, moving window creation into the scene and forwarding linking and lifecycle events to Expo. Once Expo officially supplies equivalent scene support, remove this plugin and its registration in app.config.ts after verifying startup and linking on iOS 27.
+
 ## Cutting a release
 
 1. Bump `apps/mobile/app.config.ts`'s `ios.buildNumber`. Nothing does this automatically: `ci_post_clone.sh` runs `expo prebuild` on every Xcode Cloud run, which writes this static value straight into `Info.plist`. An unbumped `buildNumber` is not silently reused — App Store Connect just rejects the upload.

@@ -94,6 +94,7 @@ const config: ExpoConfig = {
     ],
     "./plugins/withAndroidCleartextTraffic.cjs",
     "./plugins/withIosDeploymentTarget.cjs",
+    "./plugins/withIosSceneLifecycle.cjs",
   ],
 };
 
