@@ -18,7 +18,7 @@ daemon 和 Android 发布共用 `v*` tag，并共享同一个 GitHub Release（�
 
 - **开始条件（Start Condition）**：Tag Changes → 以...开头（Starts With）→ `ios-v`。
 - **归档 - iOS 操作 → 分发准备**：选 `App Store Connect`（不要选"TestFlight（仅限内部测试）"——仅内部测试永远到不了公开的外部测试组）。
-- **后续操作**：加一个 `TestFlight（外部测试）`，选中已经开了公开链接的那个外部测试组。第一次提交到某个外部测试组需要过一次 Beta App Review；之后同一个组、没改元数据的新 build 通常会自动通过。
+- **后续操作**：目前没有配置任何后续操作——workflow 只有 `Archive - iOS` 一个动作（2026-10-14 实测：`asc xcode-cloud workflows list --app <APP_ID>` 只返回一个 `ARCHIVE` 动作，没有 `postActions`）。所以上传完成后，对外部测试者而言 build 停在 `READY_FOR_BETA_SUBMISSION`，每次都要手动提交，见「打一次发布」第 4 步。如果加上一个 `TestFlight（外部测试）` 后续操作，这个手动步骤就可以去掉；第一次提交到某个外部测试组需要过一次 Beta App Review，之后同一个组、没改元数据的新 build 通常会自动通过。
 
 ## iOS 27 scene 生命周期
 
@@ -26,14 +26,27 @@ daemon 和 Android 发布共用 `v*` tag，并共享同一个 GitHub Release（�
 
 ## 打一次发布
 
-1. 把 `apps/mobile/app.config.ts` 里的 `ios.buildNumber` 提一位。没有任何东西会自动做这件事：`ci_post_clone.sh` 每次 Xcode Cloud 运行时都会跑 `expo prebuild`，把这个写死的值直接写进 `Info.plist`。忘了提的话不会被静默复用——App Store Connect 会直接拒绝这次上传。
-2. 把这次 bump 提交成一个 commit（比如 `release(ios): bump buildNumber to <N>`）。
-3. push 之后再打 tag、push tag。**永远不要移动或者重新 push 一个已存在的 tag**——Xcode Cloud 认的是"tag 被创建"这个事件，强行移动一个 tag 既可能不会重新触发，也会让已经拉取过这个 tag 的人本地记录和远端对不上。每次都打一个全新的 tag：
+1. build 号由 Xcode Cloud 自己分配：上传的 `CFBundleVersion` 是 workflow 的 build run number，不是 `apps/mobile/app.config.ts` 里的 `ios.buildNumber`。2026-10-13 实测——run #114 上传后 build 号是 `114`，而当时 `ios.buildNumber` 写的是 `101`。**发版不需要再去 bump `ios.buildNumber`**：它对上传结果没有影响，App Store Connect 也不会因为它是旧值而拒绝上传。该值仍会进入 `expo prebuild` 生成的 `Info.plist`，也是本地 `release:ios:upload` 路径使用的值，所以保留数字即可。
+2. 打 tag 并 push。tag 里的数字随便取一个没用过的就行——它只需要唯一，不必等于 Xcode Cloud 将要分配的 build 号。**永远不要移动或者重新 push 一个已存在的 tag**——Xcode Cloud 认的是"tag 被创建"这个事件，强行移动一个 tag 既可能不会重新触发，也会让已经拉取过这个 tag 的人本地记录和远端对不上：
 
    ```sh
-   git tag -a ios-v<version>-build<buildNumber> -m "ios-v<version>-build<buildNumber>"
-   git push origin ios-v<version>-build<buildNumber>
+   git tag -a ios-v<version>-build<N> -m "ios-v<version>-build<N>"
+   git push origin ios-v<version>-build<N>
    ```
 
-   比如把 `buildNumber` 提到 `"8"`、`version` 还是 `"0.1.0"` 没变，就打 `ios-v0.1.0-build8`；如果 `version` 本身也变了，就一起编进 tag，比如 `ios-v0.1.1-build9`。
-4. 去 App Store Connect 的 Xcode Cloud 页面看这个 workflow 的运行记录，确认构建真的跑起来了；跑完之后去 TestFlight 确认新 build 已经处理完成。
+   比如 `version` 还是 `"0.1.0"`，就打 `ios-v0.1.0-build102`；如果 `version` 本身也变了，就一起编进 tag，比如 `ios-v0.1.1-build103`。
+3. 不打开浏览器也能盯构建：
+
+   ```sh
+   asc xcode-cloud build-runs list --workflow-id <WORKFLOW_ID>   # 用 asc xcode-cloud workflows list --app <APP_ID> 查 id
+   asc xcode-cloud status --run-id <RUN_ID>
+   ```
+
+4. **必须手动把 build 提交到外部测试组。** workflow 里只有 `Archive - iOS` 一个动作，所以构建完成后 build 到达 App Store Connect 时是 `internalBuildState: READY_FOR_BETA_TESTING`、`externalBuildState: READY_FOR_BETA_SUBMISSION`——不提交的话，外部测试者（公开 TestFlight 链接）装不到：
+
+   ```sh
+   asc builds list --app <APP_ID>                                    # 取最新 build id，processingState 为 VALID
+   asc testflight review submit --build-id <BUILD_ID> --confirm
+   ```
+
+   之后会走 Beta App Review（元数据没变时通常是自动通过），`externalBuildState` 变成 `BETA_APPROVED`。

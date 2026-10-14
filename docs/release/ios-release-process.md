@@ -18,7 +18,7 @@ Configured entirely in App Store Connect, not in this repo:
 
 - **Start Condition:** Tag Changes → Starts With → `ios-v`.
 - **Archive - iOS action → Distribution Preparation:** `App Store Connect` (not `TestFlight (Internal Testing Only)` — internal-only never reaches the public external testing group).
-- **Post-Actions:** add `TestFlight (External Testing)`, targeting the external group with the public TestFlight link enabled. The first submission to a given external group requires Beta App Review; later builds to the same group with no metadata changes are typically automatic.
+- **Post-Actions:** none are configured today — the workflow exposes only the `Archive - iOS` action (verified 2026-10-14: `asc xcode-cloud workflows list --app <APP_ID>` returns a single `ARCHIVE` action and no `postActions`). An upload therefore stops at `READY_FOR_BETA_SUBMISSION` for external testers, so each build must be submitted manually — see step 4 under "Cutting a release". Adding a `TestFlight (External Testing)` post-action would remove that manual step; the first submission to a given external group requires Beta App Review, and later builds to the same group with no metadata changes are typically automatic.
 
 ## iOS 27 scene lifecycle
 
@@ -26,14 +26,27 @@ Apps built with the iOS 27 SDK must adopt the UIScene lifecycle; the legacy Expo
 
 ## Cutting a release
 
-1. Bump `apps/mobile/app.config.ts`'s `ios.buildNumber`. Nothing does this automatically: `ci_post_clone.sh` runs `expo prebuild` on every Xcode Cloud run, which writes this static value straight into `Info.plist`. An unbumped `buildNumber` is not silently reused — App Store Connect just rejects the upload.
-2. Commit that bump (e.g. `release(ios): bump buildNumber to <N>`).
-3. Push, then tag and push the tag. **Never move or re-push an existing tag** — Xcode Cloud triggers on tag creation, and a force-moved tag both may not re-trigger and leaves anyone who already fetched it with a stale ref. Always cut a new tag:
+1. Xcode Cloud assigns the build number itself: the uploaded `CFBundleVersion` is the workflow's build run number, not `apps/mobile/app.config.ts`'s `ios.buildNumber`. Verified on the 2026-10-13 release — run #114 was uploaded as build `114` while `ios.buildNumber` said `101`. **Do not bump `ios.buildNumber` to cut a release**: it has no effect on the upload, and App Store Connect does not reject an upload because that value is stale. It still feeds `expo prebuild`'s `Info.plist` and the local `release:ios:upload` path, so keep it numeric.
+2. Tag and push the tag. Pick any unused number for the tag; it only needs to be unique, not equal to the build number Xcode Cloud will assign. **Never move or re-push an existing tag** — Xcode Cloud triggers on tag creation, and a force-moved tag both may not re-trigger and leaves anyone who already fetched it with a stale ref:
 
    ```sh
-   git tag -a ios-v<version>-build<buildNumber> -m "ios-v<version>-build<buildNumber>"
-   git push origin ios-v<version>-build<buildNumber>
+   git tag -a ios-v<version>-build<N> -m "ios-v<version>-build<N>"
+   git push origin ios-v<version>-build<N>
    ```
 
-   For example, bumping to `buildNumber: "8"` with `version: "0.1.0"` unchanged tags `ios-v0.1.0-build8`. If `version` itself changes, fold that into the tag too (`ios-v0.1.1-build9`).
-4. Check the workflow's run history in App Store Connect's Xcode Cloud tab to confirm the build started, and TestFlight for the processed build once it finishes.
+   For example, with `version: "0.1.0"` unchanged, tag `ios-v0.1.0-build102`. If `version` itself changes, fold that into the tag too (`ios-v0.1.1-build103`).
+3. Watch the run without opening a browser:
+
+   ```sh
+   asc xcode-cloud build-runs list --workflow-id <WORKFLOW_ID>   # find the id with: asc xcode-cloud workflows list --app <APP_ID>
+   asc xcode-cloud status --run-id <RUN_ID>
+   ```
+
+4. **Submit the build to the external test group manually.** The workflow only has the `Archive - iOS` action, so a finished build reaches App Store Connect with `internalBuildState: READY_FOR_BETA_TESTING` and `externalBuildState: READY_FOR_BETA_SUBMISSION` — external testers (the public TestFlight link) cannot install it until it is submitted:
+
+   ```sh
+   asc builds list --app <APP_ID>                                    # newest build id, processingState VALID
+   asc testflight review submit --build-id <BUILD_ID> --confirm
+   ```
+
+   Beta App Review then runs (typically automatic when metadata is unchanged) and `externalBuildState` moves to `BETA_APPROVED`.

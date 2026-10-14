@@ -28,7 +28,7 @@ macOS（darwin arm64/amd64）在 macOS runner 上原生构建，并执行 Apple 
 
 ## iOS TestFlight
 
-iOS 使用 Xcode 和 App Store Connect CLI (`asc`) 上传，不依赖 EAS 云构建或 Fastlane。发布前递增 `apps/mobile/app.config.ts` 中的 `ios.buildNumber`，并在本机安全配置 Apple Team ID 与 App Store Connect API key。`.p8` 文件不得提交到仓库。
+iOS 使用 Xcode 和 App Store Connect CLI (`asc`) 上传，不依赖 EAS 云构建或 Fastlane。build 号由 Xcode Cloud 自己分配（上传的 `CFBundleVersion` 等于该 workflow 的 build run number），`ios.buildNumber` 不影响上传结果，因此发版不必再 bump 它；构建完成后还要用 `asc testflight review submit` 手动把 build 提交到外部测试组。详见 `docs/release/ios-release-process.md`。本机需安全配置 Apple Team ID 与 App Store Connect API key，`.p8` 文件不得提交到仓库。
 
 ```sh
 cd apps/mobile
