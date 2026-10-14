@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -134,6 +135,42 @@ func TestAgentsHandler读取历史并发送消息(t *testing.T) {
 	if messageResponse.Code != http.StatusNoContent || source.sent != "继续完成演示" {
 		t.Fatalf("发送结果 status=%d sent=%q body=%s", messageResponse.Code, source.sent, messageResponse.Body.String())
 	}
+}
+
+func TestAgentsHandler历史ErrAgentGone返回404(t *testing.T) {
+	source := &focusableSource{
+		sequenceSource: sequenceSource{snapshots: []herdrsource.Snapshot{{
+			Online: true,
+			Agents: []herdrsource.AgentObservation{{SourceID: "term-current"}},
+		}}},
+		historyErr: fmt.Errorf("读取历史: %w", herdrsource.ErrAgentGone),
+	}
+	handler := NewHandler(source)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, Path+"/term-current/history", nil))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("状态码 = %d, body = %s", response.Code, response.Body.String())
+	}
+	assertErrorCode(t, response, "agent_not_found")
+}
+
+func TestAgentsHandler历史其他错误返回502(t *testing.T) {
+	source := &focusableSource{
+		sequenceSource: sequenceSource{snapshots: []herdrsource.Snapshot{{
+			Online: true,
+			Agents: []herdrsource.AgentObservation{{SourceID: "term-current"}},
+		}}},
+		historyErr: errors.New("boom"),
+	}
+	handler := NewHandler(source)
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, Path+"/term-current/history", nil))
+	if response.Code != http.StatusBadGateway {
+		t.Fatalf("状态码 = %d, body = %s", response.Code, response.Body.String())
+	}
+	assertErrorCode(t, response, "history_failed")
 }
 
 func TestAgentsHandler拒绝空消息与未知Agent(t *testing.T) {
@@ -267,10 +304,14 @@ type focusableSource struct {
 	focused    string
 	interrupted string
 	history   herdrsource.AgentHistory
+	historyErr error
 	sent      string
 }
 
 func (s *focusableSource) ReadAgentHistory(_ context.Context, _ string, _ int) (herdrsource.AgentHistory, error) {
+	if s.historyErr != nil {
+		return herdrsource.AgentHistory{}, s.historyErr
+	}
 	return s.history, nil
 }
 

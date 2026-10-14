@@ -2,6 +2,7 @@ package herdrsource_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -283,6 +284,83 @@ func TestReadAgentHistoryPreservesShortMarkdownDivider(t *testing.T) {
 	}
 }
 
+func TestReadAgentHistoryDegradesToVisibleWhenNotIdle(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{
+		"agent get w26:p1": `{"result":{"type":"agent_info","agent":{"revision":3}}}`,
+	}, errOutputs: map[string]string{
+		"agent read w26:p1 --source recent-unwrapped --lines 120": `{"error":{"code":"agent_not_idle","message":"cannot read 120 lines while w26:p1 is working"}}`,
+	}}
+	runner.outputs["agent read w26:p1 --source visible"] = "visible line 1\nvisible line 2"
+
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	history, err := adapter.ReadAgentHistory(context.Background(), "w26:p1", 120)
+	if err != nil {
+		t.Fatalf("读取历史: %v", err)
+	}
+	if history.Text != "visible line 1\nvisible line 2" || history.Revision != 3 {
+		t.Fatalf("历史 = %#v", history)
+	}
+	wantCalls := []string{
+		"agent read w26:p1 --source recent-unwrapped --lines 120",
+		"agent read w26:p1 --source visible",
+		"agent get w26:p1",
+	}
+	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
+		t.Fatalf("命令 = %#v", runner.calls)
+	}
+}
+
+func TestReadAgentHistoryReturnsErrorWhenVisibleAlsoFails(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{}, errOutputs: map[string]string{
+		"agent read w26:p1 --source recent-unwrapped --lines 120": `{"error":{"code":"agent_not_idle","message":"working"}}`,
+		"agent read w26:p1 --source visible":                      `{"error":{"code":"some_other_error","message":"boom"}}`,
+	}}
+
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	_, err := adapter.ReadAgentHistory(context.Background(), "w26:p1", 120)
+	if err == nil {
+		t.Fatalf("visible 也失败时应返回错误")
+	}
+}
+
+func TestReadAgentHistoryDoesNotRetryVisibleForOtherErrors(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{}, errOutputs: map[string]string{
+		"agent read w26:p1 --source recent-unwrapped --lines 120": `{"error":{"code":"some_other_error","message":"boom"}}`,
+	}}
+
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	_, err := adapter.ReadAgentHistory(context.Background(), "w26:p1", 120)
+	if err == nil {
+		t.Fatalf("非 agent_not_idle 错误应返回错误")
+	}
+	wantCalls := []string{
+		"agent read w26:p1 --source recent-unwrapped --lines 120",
+	}
+	if strings.Join(runner.calls, "\n") != strings.Join(wantCalls, "\n") {
+		t.Fatalf("不应设置 visible 重试，命令 = %#v", runner.calls)
+	}
+}
+
+func TestReadAgentHistoryMapsAgentNotFoundToErrAgentGone(t *testing.T) {
+	t.Parallel()
+
+	runner := &recordingRunner{outputs: map[string]string{}, errOutputs: map[string]string{
+		"agent read w21:p7M --source recent-unwrapped --lines 120": `{"error":{"code":"agent_not_found","message":"gone"}}`,
+	}}
+
+	adapter := herdrsource.NewHerdrCLIAdapter(runner)
+	_, err := adapter.ReadAgentHistory(context.Background(), "w21:p7M", 120)
+	if !errors.Is(err, herdrsource.ErrAgentGone) {
+		t.Fatalf("err = %v, want wrapping ErrAgentGone", err)
+	}
+}
+
 type stubRunner struct{ output []byte }
 
 func (s stubRunner) Run(context.Context, string, ...string) ([]byte, error) { return s.output, nil }
@@ -299,13 +377,17 @@ func (r routingRunner) Run(_ context.Context, _ string, args ...string) ([]byte,
 }
 
 type recordingRunner struct {
-	outputs map[string]string
-	calls   []string
+	outputs    map[string]string
+	errOutputs map[string]string
+	calls      []string
 }
 
 func (r *recordingRunner) Run(_ context.Context, _ string, args ...string) ([]byte, error) {
 	key := strings.Join(args, " ")
 	r.calls = append(r.calls, key)
+	if errBody, ok := r.errOutputs[key]; ok {
+		return nil, errors.New(errBody)
+	}
 	output, ok := r.outputs[key]
 	if !ok {
 		return nil, fmt.Errorf("未配置命令 %q", key)

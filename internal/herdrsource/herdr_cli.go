@@ -3,11 +3,46 @@ package herdrsource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 )
+
+// ErrAgentGone 标记 Herdr CLI 返回 agent_not_found：pane 已经消失，调用方应把
+// 这类错误当成 404 处理，而不是 502。用 errors.Is 判断。
+var ErrAgentGone = errors.New("herdr: agent not found")
+
+// herdrErrorCode 从 CLI 调用失败的 err 中解析出 Herdr 的错误码（如
+// agent_not_idle、agent_not_found）。真实的 exec.CommandContext(...).Output()
+// 失败时，err 本身只有 "exit status 1"，错误详情在 *exec.ExitError.Stderr 里
+// 的 `{"error":{"code":...}}`；测试里的 mock runner 没有 exec.ExitError，直接
+// 把 JSON 文本放进 err.Error()，所以保留一个基于 err.Error() 的 fallback。
+func herdrErrorCode(err error) string {
+	if err == nil {
+		return ""
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
+		if code := parseHerdrErrorCode(exitErr.Stderr); code != "" {
+			return code
+		}
+	}
+	return parseHerdrErrorCode([]byte(err.Error()))
+}
+
+func parseHerdrErrorCode(data []byte) string {
+	var payload struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if json.Unmarshal(data, &payload) != nil {
+		return ""
+	}
+	return payload.Error.Code
+}
 
 type CommandRunner interface {
 	Run(context.Context, string, ...string) ([]byte, error)
@@ -73,7 +108,23 @@ func (a *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string,
 	}
 	output, err := a.runner.Run(ctx, a.binary, "agent", "read", sourceID, "--source", "recent-unwrapped", "--lines", strconv.Itoa(lines))
 	if err != nil {
-		return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read: %w", err)
+		if herdrErrorCode(err) == "agent_not_idle" {
+			// alternate-screen 历史只能在 agent idle 时靠滚屏回看 N 行；
+			// 它正在 working 时唯一能读到的就是当前可见这一屏，所以降级为
+			// `--source visible`（不传 --lines，该源本身就只给一屏）。
+			visibleOutput, visibleErr := a.runner.Run(ctx, a.binary, "agent", "read", sourceID, "--source", "visible")
+			if visibleErr != nil {
+				if herdrErrorCode(visibleErr) == "agent_not_found" {
+					return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read (visible): %w: %w", ErrAgentGone, visibleErr)
+				}
+				return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read (visible): %w", visibleErr)
+			}
+			output = visibleOutput
+		} else if herdrErrorCode(err) == "agent_not_found" {
+			return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read: %w: %w", ErrAgentGone, err)
+		} else {
+			return AgentHistory{}, fmt.Errorf("执行 Herdr agent.read: %w", err)
+		}
 	}
 	revision, err := a.readAgentRevision(ctx, sourceID)
 	if err != nil {
@@ -91,6 +142,9 @@ func (a *HerdrCLIAdapter) ReadAgentHistory(ctx context.Context, sourceID string,
 func (a *HerdrCLIAdapter) readAgentRevision(ctx context.Context, sourceID string) (uint64, error) {
 	output, err := a.runner.Run(ctx, a.binary, "agent", "get", sourceID)
 	if err != nil {
+		if herdrErrorCode(err) == "agent_not_found" {
+			return 0, fmt.Errorf("执行 Herdr agent.get: %w: %w", ErrAgentGone, err)
+		}
 		return 0, fmt.Errorf("执行 Herdr agent.get: %w", err)
 	}
 	var response herdrAgentGetResponse

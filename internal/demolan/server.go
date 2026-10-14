@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -221,6 +222,7 @@ func (h *handler) focusAgent(response http.ResponseWriter, request *http.Request
 		return
 	}
 	if err := focuser.FocusAgent(request.Context(), sourceID); err != nil {
+		log.Printf("focus_failed sourceID=%s err=%v", sourceID, err)
 		writeError(response, http.StatusBadGateway, "focus_failed", "failed to focus agent")
 		return
 	}
@@ -262,6 +264,7 @@ func (h *handler) interruptAgent(response http.ResponseWriter, request *http.Req
 		return
 	}
 	if err := interrupter.Interrupt(request.Context(), sourceID); err != nil {
+		log.Printf("interrupt_failed sourceID=%s err=%v", sourceID, err)
 		writeError(response, http.StatusBadGateway, "interrupt_failed", "failed to interrupt agent")
 		return
 	}
@@ -284,6 +287,12 @@ func (h *handler) readHistory(response http.ResponseWriter, request *http.Reques
 	}
 	history, err := reader.ReadAgentHistory(request.Context(), sourceID, HistoryLines)
 	if err != nil {
+		if errors.Is(err, herdrsource.ErrAgentGone) {
+			log.Printf("history agent_not_found sourceID=%s err=%v", sourceID, err)
+			writeError(response, http.StatusNotFound, "agent_not_found", "agent no longer exists")
+			return
+		}
+		log.Printf("history_failed sourceID=%s err=%v", sourceID, err)
 		writeError(response, http.StatusBadGateway, "history_failed", "failed to read agent history")
 		return
 	}
@@ -320,6 +329,7 @@ func (h *handler) sendMessage(response http.ResponseWriter, request *http.Reques
 		return
 	}
 	if err := sender.SendAgentMessage(request.Context(), sourceID, message.Text); err != nil {
+		log.Printf("send_failed sourceID=%s err=%v", sourceID, err)
 		writeError(response, http.StatusBadGateway, "send_failed", "failed to send agent message")
 		return
 	}
